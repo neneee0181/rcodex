@@ -6,15 +6,15 @@ export const logger = {
   },
 
   success(msg: string) {
-    console.log(`??${msg}`);
+    console.log(`[ok] ${msg}`);
   },
 
   warn(msg: string) {
-    console.log(`??${msg}`);
+    console.log(`[warn] ${msg}`);
   },
 
   error(msg: string) {
-    console.error(`??${msg}`);
+    console.error(`[error] ${msg}`);
   },
 
   info(msg: string) {
@@ -26,6 +26,6 @@ export const logger = {
   },
 
   separator() {
-    console.log("?€".repeat(50));
+    console.log("-".repeat(50));
   },
 };

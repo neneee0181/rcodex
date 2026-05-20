@@ -15,6 +15,7 @@ Durable user and project preferences live here. Update when the user gives a rul
 - Keep logs concise; do not paste temporary command output unless it changes future work.
 - Preserve user changes and avoid reverting unrelated work.
 - State unverified parts honestly in the final answer and handoff.
+- Commit when useful, but do not push unless the user explicitly asks for push in that turn.
 
 ## Project-Specific Rules
 

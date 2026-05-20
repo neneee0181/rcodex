@@ -112,17 +112,17 @@ export async function runLaunch(): Promise<void> {
   if (codexPort !== actualPort) {
     syncCodexConfigPort(configPath, actualPort);
     logger.success(
-      `Config updated: ${MANAGED_PROVIDER_KEY} ??http://localhost:${actualPort}/v1` +
+      `Config updated: ${MANAGED_PROVIDER_KEY} -> http://localhost:${actualPort}/v1` +
       (codexPort ? ` (was :${codexPort})` : " (new)")
     );
   } else {
-    logger.success(`Config OK: ${MANAGED_PROVIDER_KEY} ??http://localhost:${actualPort}/v1`);
+    logger.success(`Config OK: ${MANAGED_PROVIDER_KEY} -> http://localhost:${actualPort}/v1`);
   }
 
   // 5. Migrate threads if needed (only when there's something to do)
   if (hasUnmigratedThreads(MANAGED_PROVIDER_KEY)) {
     logger.separator();
-    logger.info("Unmigrated threads found ??migrating to rcodex Gateway...");
+    logger.info("Unmigrated threads found; migrating to rcodex Gateway...");
     const codexRunning = await isCodexRunning();
     if (codexRunning) {
       await killCodex();

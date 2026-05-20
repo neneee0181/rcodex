@@ -18,7 +18,7 @@ export async function runSwitch(target: SwitchTarget): Promise<void> {
   try {
     config = readCodexConfig(configPath);
   } catch (err) {
-    logger.error(`Config ?Œì‹± ?¤íŒ¨: ${err}`);
+    logger.error(`Config save failed: ${err}`);
     return;
   }
 
@@ -39,7 +39,7 @@ export async function runSwitch(target: SwitchTarget): Promise<void> {
     // Clear top-level model so Codex picks from /v1/models
     delete config.model;
 
-    logger.success(`Provider: ${MANAGED_PROVIDER_KEY} ??rcodex Gateway (${gatewayUrl})`);
+    logger.success(`Provider: ${MANAGED_PROVIDER_KEY} -> rcodex Gateway (${gatewayUrl})`);
     logger.info("Models are managed at the gateway web UI. Run 'rcodex' if not already running.");
 
   } else if (target === "openai") {
@@ -55,14 +55,14 @@ export async function runSwitch(target: SwitchTarget): Promise<void> {
 
     logger.success(`Provider: native OpenAI (${DEFAULT_OPENAI_BASE_URL})`);
     logger.success(`Model: gpt-5.5`);
-    logger.info("Bypassing rcodex Gateway ??using Codex built-in OpenAI auth.");
+    logger.info("Bypassing rcodex Gateway; using Codex built-in OpenAI auth.");
   }
 
   try {
     writeCodexConfig(configPath, config);
     logger.success(`Config saved: ${displayPath(configPath)}`);
   } catch (err) {
-    logger.error(`?€???¤íŒ¨: ${err}`);
+    logger.error(`Config save failed: ${err}`);
     return;
   }
 
