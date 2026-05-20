@@ -1,4 +1,79 @@
 ﻿import type { Message } from "./anthropic.js";
+import { existsSync, readFileSync } from "fs";
+
+function imageMime(value: string): string {
+  const lower = value.toLowerCase().split("?")[0];
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".webp")) return "image/webp";
+  if (lower.endsWith(".gif")) return "image/gif";
+  if (lower.endsWith(".bmp")) return "image/bmp";
+  if (lower.endsWith(".svg")) return "image/svg+xml";
+  return "image/png";
+}
+
+function localImageDataUrl(value: string): string | undefined {
+  let filePath = value.startsWith("file://") ? value.slice("file://".length) : value;
+  if (/^\/[A-Za-z]:/.test(filePath)) filePath = filePath.slice(1);
+  try { filePath = decodeURIComponent(filePath); } catch { /* keep raw */ }
+  if (!existsSync(filePath)) return undefined;
+  const data = readFileSync(filePath).toString("base64");
+  return `data:${imageMime(filePath)};base64,${data}`;
+}
+
+function imageUrlFromValue(raw: string): string | undefined {
+  const value = raw.trim().replace(/[)\]}>.,;:'"]+$/g, "");
+  if (/^data:image\//i.test(value) || /^https?:\/\//i.test(value)) return value;
+  return localImageDataUrl(value);
+}
+
+function contentWithDetectedImages(text: string): string | unknown[] {
+  const imageParts: unknown[] = [];
+  const seen = new Set<string>();
+  const patterns = [
+    /((?:file:\/\/\/?|[A-Za-z]:[\\/])[^\r\n"'<>]+?\.(?:png|jpe?g|webp|gif|bmp|svg))/gi,
+    /((?:\/|~\/)[^\r\n"'<>]+?\.(?:png|jpe?g|webp|gif|bmp|svg))/gi,
+  ];
+  for (const pattern of patterns) {
+    for (const match of text.matchAll(pattern)) {
+      const raw = match[1];
+      const url = imageUrlFromValue(raw);
+      if (!url || seen.has(url)) continue;
+      seen.add(url);
+      imageParts.push({ type: "image_url", image_url: { url } });
+    }
+  }
+  return imageParts.length ? [{ type: "text", text }, ...imageParts] : text;
+}
+
+function imageUrlFromPart(part: Record<string, unknown>): string | undefined {
+  const source = part.source as Record<string, unknown> | undefined;
+  if (source?.type === "base64" && typeof source.data === "string") {
+    return `data:${String(source.media_type ?? "image/png")};base64,${source.data}`;
+  }
+
+  const rawImageUrl = part.image_url as string | { url?: string } | undefined;
+  const raw = typeof rawImageUrl === "string"
+    ? rawImageUrl
+    : rawImageUrl?.url ?? part.url ?? part.path ?? part.file_path ?? part.filename;
+  if (typeof raw !== "string" || !raw) return undefined;
+  return imageUrlFromValue(raw);
+}
+
+export function toOllamaContent(content: Message["content"]): string | unknown[] {
+  if (typeof content === "string") return contentWithDetectedImages(content);
+  const parts: unknown[] = [];
+  for (const part of content as Record<string, unknown>[]) {
+    if (part.type === "image" || part.type === "input_image" || part.image_url || part.source) {
+      const url = imageUrlFromPart(part);
+      if (url) parts.push({ type: "image_url", image_url: { url } });
+      continue;
+    }
+    const text = typeof part.text === "string" ? part.text : "";
+    if (text) parts.push({ type: "text", text });
+  }
+  return parts.length ? parts : content.map((c) => c.text ?? "").join("");
+}
+
 
 export function isOllamaModel(model: string): boolean {
   return model.includes(":") || model.includes("/");
@@ -19,10 +94,7 @@ export async function callOllama(
     if (systemPrompt) msgs.push({ role: "system", content: systemPrompt });
     msgs.push(...messages.map((m) => ({
       role: m.role,
-      // Ollama only accepts string content ??flatten content-part arrays
-      content: typeof m.content === "string"
-        ? m.content
-        : m.content.map((c) => c.text ?? "").join(""),
+      content: toOllamaContent(m.content),
     })));
     return msgs;
   })();

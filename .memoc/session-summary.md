@@ -25,6 +25,7 @@ Keep each section <=3 bullets. Agent-owned; updated by you, not by `memoc update
 - Fixed Requests monitor scroll behavior so first load starts at top and refresh preserves current scroll instead of jumping to bottom.
 - Added gateway lifecycle logging for parent kills, daemon signals, uncaught errors, unhandled rejections, process exits, and Fastify close.
 - Cleaned remaining runtime gateway log prefixes from `??` to ASCII and replaced Ollama fallback file search commands so Windows no longer turns `2>/dev/null` into `C:\dev\null`.
+- Added Ollama vision message serialization: `input_image` parts and detected local image paths in text are converted to OpenAI-compatible `image_url` data URLs for vision-capable local models.
 
 ## Open Tasks
 - Copilot real OAuth login/API flow has not been smoke-tested.

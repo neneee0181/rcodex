@@ -7,7 +7,7 @@ import type { Message, ContentPart } from "./providers/anthropic.js";
 import { isAnthropicModel, callAnthropic, supportsThinking } from "./providers/anthropic.js";
 import { isOpenAIModel, callOpenAI, callOpenAIAndParse, callCodexAPI } from "./providers/openai.js";
 import { isGoogleModel, callGoogle } from "./providers/google.js";
-import { isOllamaModel, callOllama } from "./providers/ollama.js";
+import { isOllamaModel, callOllama, toOllamaContent } from "./providers/ollama.js";
 import { refreshOpenAIAccessToken } from "./providers/openai-oauth-flow.js";
 import { refreshClaudeAccessToken } from "./providers/claude-oauth-flow.js";
 import { isAntigravityModel, callAntigravity } from "./providers/antigravity.js";
@@ -451,7 +451,7 @@ function parseInput(input: string | InputItem[]): Message[] {
       role: item.role as string,
       content: typeof item.content === "string"
         ? item.content
-        : (item.content as { type?: string; text?: string }[]).map(c => ({ type: normalizeContentType(c.type), text: c.text ?? "" })),
+        : (item.content as { type?: string; text?: string; [key: string]: unknown }[]).map(c => ({ ...c, type: normalizeContentType(c.type), ...(c.text != null ? { text: c.text } : {}) })),
     }));
 }
 
@@ -459,7 +459,7 @@ function toOpenAIChatMessages(input: string | InputItem[], fallback: Message[]):
   if (!Array.isArray(input)) {
     return fallback.map(m => ({
       role: m.role === "developer" ? "system" : m.role,
-      content: typeof m.content === "string" ? m.content : m.content.map(c => c.text ?? "").join(""),
+      content: toOllamaContent(m.content),
     }));
   }
 
@@ -470,7 +470,7 @@ function toOpenAIChatMessages(input: string | InputItem[], fallback: Message[]):
   if (!hasFunctionItems) {
     return fallback.map(m => ({
       role: m.role === "developer" ? "system" : m.role,
-      content: typeof m.content === "string" ? m.content : m.content.map(c => c.text ?? "").join(""),
+      content: toOllamaContent(m.content),
     }));
   }
 
@@ -494,9 +494,9 @@ function toOpenAIChatMessages(input: string | InputItem[], fallback: Message[]):
     if (type === "message") {
       flushAssistant();
       const content = typeof item.content === "string" ? item.content
-        : ((item.content as { text?: string }[]) ?? []).map(c => c.text ?? "").join("");
+        : toOllamaContent(((item.content as { type?: string; text?: string; [key: string]: unknown }[]) ?? []).map(c => ({ ...c, type: normalizeContentType(c.type), ...(c.text != null ? { text: c.text } : {}) })));
       const role = ((item.role as string) || "user") === "developer" ? "system" : ((item.role as string) || "user");
-      if (role === "assistant") pendingText += content;
+      if (role === "assistant") pendingText += typeof content === "string" ? content : JSON.stringify(content);
       else msgs.push({ role, content });
     } else if (type === "function_call") {
       pendingToolCalls.push({
@@ -1600,12 +1600,16 @@ async function* streamSingleProvider(
     // web_search is handled by the gateway web_fetch fallback below.
     // computer_use is a GUI tool that local models cannot execute.
     const SKIP_FOR_OLLAMA = new Set(["web_search", ...Array.from(COMPUTER_USE_TYPES)]);
+    const SKIP_TOOL_NAMES_FOR_OLLAMA = new Set(["viewimage", "image", "analyzeimage"]);
     const ollamaTools = Array.isArray(req.tools) && req.tools.length > 0
       ? (req.tools as Record<string, unknown>[])
           .filter(t => {
             const type = t.type as string | undefined;
             if (type && SKIP_FOR_OLLAMA.has(type)) return false;
-            return toolName(t) != null;
+            const name = toolName(t);
+            if (!name) return false;
+            if (SKIP_TOOL_NAMES_FOR_OLLAMA.has(name.toLowerCase().replace(/[_\-\s]/g, ""))) return false;
+            return true;
           })
           .map(toOpenAIFunctionTool)
           .filter((t): t is Record<string, unknown> => t !== null)
@@ -1681,9 +1685,9 @@ async function* streamSingleProvider(
           if (type === "message") {
             flushAssistant();
             const content = typeof item.content === "string" ? item.content
-              : ((item.content as { text?: string }[]) ?? []).map(c => c.text ?? "").join("");
+              : toOllamaContent(((item.content as { type?: string; text?: string; [key: string]: unknown }[]) ?? []).map(c => ({ ...c, type: normalizeContentType(c.type), ...(c.text != null ? { text: c.text } : {}) })));
             const role = (item.role as string) || "user";
-            if (role === "assistant") { pendingText += content; }
+            if (role === "assistant") { pendingText += typeof content === "string" ? content : JSON.stringify(content); }
             else { msgs.push({ role, content }); }
           } else if (type === "function_call") {
             pendingToolCalls.push({
@@ -1735,8 +1739,7 @@ async function* streamSingleProvider(
       if (ollamaSystem) msgs.push({ role: "system", content: ollamaSystem });
       msgs.push(...messages.map(m => ({
         role: m.role,
-        content: typeof m.content === "string" ? m.content
-          : (m.content as { text?: string }[]).map(c => c.text ?? "").join(""),
+        content: toOllamaContent(m.content),
       })));
       return msgs;
     })();
@@ -1860,7 +1863,7 @@ async function* streamSingleProvider(
       const base: unknown[] = prebuiltMessages ?? (() => {
         const msgs: unknown[] = [];
         if (ollamaSystem) msgs.push({ role: "system", content: ollamaSystem });
-        msgs.push(...messages.map(m => ({ role: m.role, content: typeof m.content === "string" ? m.content : m.content.map(c => c.text ?? "").join("") })));
+        msgs.push(...messages.map(m => ({ role: m.role, content: toOllamaContent(m.content) })));
         return msgs;
       })();
       convStore.set(responseId, {

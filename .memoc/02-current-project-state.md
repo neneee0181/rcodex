@@ -62,7 +62,7 @@ See `.memoc/log.md` for full history.
 - Default gateway port is `3141`; Codex provider key managed by this project is `rcodex`; base URL is `http://localhost:<port>/v1` with `wire_api = "responses"`.
 - Package dependencies include Fastify/CORS for the gateway, Commander for CLI commands, `@iarna/toml` for Codex config edits, and `better-sqlite3` for Codex thread migration support.
 - Current package version is `0.0.12`; npm package name is `@kevin0181/rcodex`, binary/runtime directory/README/provider key are `rcodex`.
-- Ollama `view_image` tool calls are still not true image-analysis support; they are remapped to file lookup so bad `/dev/null` paths are avoided, but real multimodal Ollama support needs image payload handling and a vision-capable local model.
+- Ollama can now receive image payloads when Codex sends `input_image` parts or text containing local image paths; those are converted into OpenAI-compatible `image_url` data URLs. A vision-capable Ollama model is still required.
 - Antigravity credentials search order: user override `~/.rcodex/antigravity-app.json`, then bundled `dist/antigravity-credentials.json`; package warns when bundled credentials are absent.
 - Dynamic Windows Codex App Detection searches `%LOCALAPPDATA%\OpenAI\Codex\bin\*\codex.exe` dynamically to cover dynamic hash/version subfolders from local app installations.
 
