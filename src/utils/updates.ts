@@ -1,4 +1,4 @@
-import { spawnSync } from "child_process";
+import { spawn, spawnSync } from "child_process";
 import { createInterface } from "readline/promises";
 import { stdin as input, stdout as output } from "process";
 import { readFileSync } from "fs";
@@ -71,6 +71,34 @@ async function confirmUpdate(packageName: string, currentVersion: string, latest
   }
 }
 
+function quoteCmd(value: string): string {
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
+function startWindowsSelfUpdate(packageName: string, latestVersion: string): boolean {
+  const target = `${packageName}@${latestVersion}`;
+  const npmTarget = quoteCmd(target);
+  const fallback = `npm install -g ${target}`;
+  const command = [
+    `echo Updating rcodex to ${latestVersion}...`,
+    "ping 127.0.0.1 -n 2 >nul",
+    `npm install -g ${npmTarget}`,
+    `if errorlevel 1 (echo rcodex update failed. Please run: ${fallback}) else (echo rcodex updated successfully. Run rcodex again.)`,
+  ].join(" & ");
+
+  try {
+    const child = spawn(process.env.ComSpec ?? "cmd.exe", ["/d", "/s", "/c", command], {
+      stdio: "inherit",
+      detached: true,
+      windowsHide: false,
+    });
+    child.unref();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function installLatest(packageName: string, latestVersion: string): boolean {
   const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
   const result = spawnSync(npmCommand, ["install", "-g", `${packageName}@${latestVersion}`], {
@@ -92,6 +120,16 @@ export async function enforceAcceptedLatestVersion(): Promise<void> {
   if (!accepted) {
     console.error("Update required before launching rcodex.");
     process.exit(1);
+  }
+
+  if (process.platform === "win32") {
+    const started = startWindowsSelfUpdate(name, latestVersion);
+    if (!started) {
+      console.error(`rcodex update failed. Please run: npm install -g ${name}@latest`);
+      process.exit(1);
+    }
+    console.log("rcodex updater started. Wait for npm to finish, then run \"rcodex\" again.");
+    process.exit(0);
   }
 
   const installed = installLatest(name, latestVersion);

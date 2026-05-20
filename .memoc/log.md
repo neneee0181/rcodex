@@ -175,3 +175,9 @@ Append-only chronological log for project memory updates.
 - Ran `npm version patch --no-git-tag-version`, updating `package.json` and `package-lock.json` from `0.0.3` to `0.0.4`.
 - Verified `npm run build`, `node dist/index.js --version` (`0.0.4`), and `npm pack --dry-run`.
 - No publish or push performed.
+
+## [2026-05-20T20:16:00+0900] fix | Start Windows updater after exit
+
+- Changed Windows update acceptance flow to spawn a delayed `npm install -g` updater process instead of running synchronous npm inside the current rcodex process.
+- Bumped package version from `0.0.4` to `0.0.5` so the self-update fix can be published.
+- Verified `npm run build`, `node dist/index.js --version` (`0.0.5`), and `npm pack --dry-run`.
