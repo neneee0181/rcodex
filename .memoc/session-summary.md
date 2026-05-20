@@ -1,5 +1,5 @@
 # Session Summary
-Last: 2026-05-20T20:03:00+0900
+Last: 2026-05-20T20:07:00+0900
 Keep each section <=3 bullets. Agent-owned; updated by you, not by `memoc update`.
 
 ## Status
@@ -14,11 +14,12 @@ Keep each section <=3 bullets. Agent-owned; updated by you, not by `memoc update
 - Fixed remaining dashboard polish: ASCII gateway logs, icon-based UI controls, quota reset remaining-time parsing, and `#1/#2` labels for duplicate provider accounts.
 - Improved canvas nodes: wider account cards with visible duplicate-account badges, and hidden/deleted slot IDs persist so active slots do not reappear on `npm run dev`.
 - Audited rcodex rename fallout: fixed CLI version reporting to read `package.json`, removed unsupported Claude session option from UI, and corrected README/.gitignore rcodex details.
+- Bumped npm package version from `0.0.3` to `0.0.4`; verified build, CLI version output, and npm pack dry-run.
 
 ## Open Tasks
 - Copilot real OAuth login/API flow has not been smoke-tested.
 - No automated test script exists; use `npm run build` as the baseline verification for source edits.
-- If `0.0.3` was already published with broken output, next npm publish must bump to `0.0.4`.
+- Current package version is `0.0.4`; next npm publish can use `npm publish --access public`.
 
 ## Resume
 - If git metadata is restored, inspect `git status` and recent commits first.

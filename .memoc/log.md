@@ -169,3 +169,9 @@ Append-only chronological log for project memory updates.
 - Fixed CLI version output to read the installed `package.json` version instead of hardcoded `0.0.1`.
 - Removed unsupported Claude.ai session-token option from the dashboard and corrected README provider notes.
 - Corrected `.gitignore` runtime comment from `~/.cps/` to `~/.rcodex/`; verified build, `rcodex --version`, rendered UI script parsing, and npm pack dry-run.
+
+## [2026-05-20T20:07:00+0900] release | Bump package to 0.0.4
+
+- Ran `npm version patch --no-git-tag-version`, updating `package.json` and `package-lock.json` from `0.0.3` to `0.0.4`.
+- Verified `npm run build`, `node dist/index.js --version` (`0.0.4`), and `npm pack --dry-run`.
+- No publish or push performed.
