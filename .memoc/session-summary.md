@@ -27,6 +27,7 @@ Keep each section <=3 bullets. Agent-owned; updated by you, not by `memoc update
 - Cleaned remaining runtime gateway log prefixes from `??` to ASCII and replaced Ollama fallback file search commands so Windows no longer turns `2>/dev/null` into `C:\dev\null`.
 - Added Ollama vision message serialization: `input_image` parts and detected local image paths in text are converted to OpenAI-compatible `image_url` data URLs for vision-capable local models.
 - Handled Ollama `missing data required for image input` 500s as a normal text response so Codex stops reconnecting and tells the user to switch to a vision-capable Ollama model.
+- Fixed `llama3.2-vision`/Ollama models that reject tools by retrying the same stream request without gateway function tools when Ollama returns `does not support tools`.
 
 ## Open Tasks
 - Copilot real OAuth login/API flow has not been smoke-tested.

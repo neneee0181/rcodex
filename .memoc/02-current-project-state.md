@@ -64,6 +64,7 @@ See `.memoc/log.md` for full history.
 - Current package version is `0.0.12`; npm package name is `@kevin0181/rcodex`, binary/runtime directory/README/provider key are `rcodex`.
 - Ollama can now receive image payloads when Codex sends `input_image` parts or text containing local image paths; those are converted into OpenAI-compatible `image_url` data URLs. A vision-capable Ollama model is still required.
 - If Ollama returns `missing data required for image input`, the stream now completes with a clear text error instead of surfacing a protocol error that makes Codex reconnect repeatedly.
+- If an Ollama model returns `does not support tools` (for example `llama3.2-vision`), rcodex retries that stream without function tools instead of failing the stream.
 - Antigravity credentials search order: user override `~/.rcodex/antigravity-app.json`, then bundled `dist/antigravity-credentials.json`; package warns when bundled credentials are absent.
 - Dynamic Windows Codex App Detection searches `%LOCALAPPDATA%\OpenAI\Codex\bin\*\codex.exe` dynamically to cover dynamic hash/version subfolders from local app installations.
 

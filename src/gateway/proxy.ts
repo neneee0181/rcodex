@@ -1744,6 +1744,7 @@ async function* streamSingleProvider(
       return msgs;
     })();
     let loopMsgs: unknown[] = loopInitialMsgs;
+    let activeTurnTools = turnTools;
 
     let capturedOllamaTools: { id: string; name: string; input: Record<string, unknown>; rawArgs?: string }[] = [];
     let capturedOllamaText = { value: "" };
@@ -1755,9 +1756,14 @@ async function* streamSingleProvider(
       capturedOllamaTools = [];
       capturedOllamaText = { value: "" };
 
-      const res = await callOllama(config.ollamaBaseUrl, model, messages, ollamaSystem, true, signal, turnTools, loopMsgs);
+      const res = await callOllama(config.ollamaBaseUrl, model, messages, ollamaSystem, true, signal, activeTurnTools, loopMsgs);
       if (!res.ok) {
         const errorText = await res.text();
+        if (res.status === 400 && /does not support tools/i.test(errorText) && activeTurnTools?.length) {
+          gwarn(`[ollama] ${model} does not support tools; retrying without tools`);
+          activeTurnTools = undefined;
+          continue;
+        }
         if (res.status === 500 && /missing data required for image input/i.test(errorText)) {
           const msg = `Ollama model "${model}" cannot process image input. Use a vision-capable Ollama model with its projector/data installed, such as llama3.2-vision or llava.`;
           gerr(`[ollama] vision input unsupported by ${model}: ${errorText}`);
