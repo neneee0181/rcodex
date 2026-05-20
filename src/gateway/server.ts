@@ -904,12 +904,14 @@ export function createGatewayServer(): GatewayServer {
       if (port !== config.port) { config.port = port; saveConfig(config); }
       saveGatewayPid(process.pid);
       glog(`[gateway] ??started on port ${port} (pid=${process.pid}, accounts=${config.accounts.length})`);
+      glog(`[gateway] lifecycle: listening pid=${process.pid} port=${port}`);
       return port;
     },
     async stop(): Promise<void> {
-      glog("[gateway] stopping...");
+      glog(`[gateway] stopping pid=${process.pid}...`);
       clearGatewayPid();
       await fastify.close();
+      glog(`[gateway] lifecycle: fastify closed pid=${process.pid}`);
     },
   };
 }

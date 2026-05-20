@@ -222,3 +222,9 @@ Append-only chronological log for project memory updates.
 - Changed Requests monitor refresh to preserve `mn-body.scrollTop` instead of auto-jumping to bottom when content loads.
 - First load now starts at top because saved scroll is `0`; existing scroll position is preserved during refresh.
 - Fixed request detail collapse button text back to `+`; verified rendered UI script parsing and `npm run build`.
+
+## [2026-05-21T10:20:00+0900] observability | Gateway lifecycle logs
+
+- Added gateway lifecycle logs for parent-triggered kills, SIGTERM/SIGINT shutdown, uncaught exceptions, unhandled rejections, process exit codes, and Fastify close.
+- Parent `killExistingGateway()` now appends intent/result to `~/.rcodex/gateway.log`, so future restarts can be distinguished from crashes.
+- Verified `npm run build`.

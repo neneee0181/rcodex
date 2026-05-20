@@ -1,5 +1,5 @@
 # Session Summary
-Last: 2026-05-21T10:05:00+0900
+Last: 2026-05-21T10:20:00+0900
 Keep each section <=3 bullets. Agent-owned; updated by you, not by `memoc update`.
 
 ## Status
@@ -23,6 +23,7 @@ Keep each section <=3 bullets. Agent-owned; updated by you, not by `memoc update
 - Root-caused Windows self-update failure to `spawnSync('npm.cmd')` returning `EINVAL`; switched to foreground `cmd.exe /c npm install ...` with error details and bumped package to `0.0.9`.
 - Fixed Windows updater package target quoting that made npm see `""@kevin0181/rcodex@...""`; bumped package to `0.0.11`.
 - Fixed Requests monitor scroll behavior so first load starts at top and refresh preserves current scroll instead of jumping to bottom.
+- Added gateway lifecycle logging for parent kills, daemon signals, uncaught errors, unhandled rejections, process exits, and Fastify close.
 
 ## Open Tasks
 - Copilot real OAuth login/API flow has not been smoke-tested.

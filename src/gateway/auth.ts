@@ -4,6 +4,7 @@ import { homedir } from "os";
 
 const RCODEX_DIR = join(homedir(), ".rcodex");
 const CONFIG_PATH = join(RCODEX_DIR, "gateway.json");
+const GATEWAY_LOG_PATH = join(RCODEX_DIR, "gateway.log");
 
 // A single (account, model) slot in the active output routing chain
 export interface ModelSlot {
@@ -75,6 +76,17 @@ const DEFAULT_CONFIG: GatewayConfig = {
 
 function ensureDir(): void {
   if (!existsSync(RCODEX_DIR)) mkdirSync(RCODEX_DIR, { recursive: true });
+}
+
+function kst(): string {
+  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 19).replace("T", " ");
+}
+
+function appendGatewayLifecycleLog(message: string): void {
+  try {
+    ensureDir();
+    writeFileSync(GATEWAY_LOG_PATH, `[${kst()}] ${message}` + "\n", { flag: "a", encoding: "utf-8" });
+  } catch { /* ignore logging failures */ }
 }
 
 function genId(prefix: string): string {
@@ -214,7 +226,7 @@ export function removeAccount(id: string): void {
   saveConfig(config);
 }
 
-// ?€?€ Model slot management ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+// Model slot management
 
 export function addModelSlot(accountId: string, model: string, clientSlotId?: string): ModelSlot | null {
   const config = loadConfig();
@@ -310,9 +322,12 @@ export function killExistingGateway(): boolean {
   clearGatewayPid();
   try {
     process.kill(pid, 0);
+    appendGatewayLifecycleLog(`[gateway] lifecycle: parent killing existing gateway pid=${pid}`);
     process.kill(pid);
     return true;
-  } catch {
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    appendGatewayLifecycleLog(`[gateway] lifecycle: parent kill skipped pid=${pid} (${msg})`);
     return false;
   }
 }
