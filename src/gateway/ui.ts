@@ -74,6 +74,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
 .nav-item:hover{background:var(--s2)}
 .nav-ic{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;
   justify-content:center;font-size:15px;flex-shrink:0}
+.prov-icon{width:var(--isz);height:var(--isz);display:inline-flex;align-items:center;
+  justify-content:center;color:currentColor;line-height:0;flex-shrink:0}
+.prov-icon img{width:100%;height:100%;display:block;object-fit:cover;border-radius:5px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.08)}
+.prov-icon svg{width:100%;height:100%;display:block}
+.ptype-ic .prov-icon img{border-radius:6px}
+.acc-ic .prov-icon img,.nic .prov-icon img{border-radius:4px}
 .nav-info{flex:1}
 .nav-name{font-size:13px;font-weight:500}
 .nav-sub{font-size:10px;color:var(--mu);margin-top:1px}
@@ -406,9 +413,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
     <svg id="svgl"></svg>
     <div id="world"></div>
     <div class="zbar">
-      <button class="zbtn" onclick="zoomStep(-1)">-</button>
+      <button class="zbtn" onclick="zoomStep(-1)" title="Zoom out"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
       <div class="zpct" id="zpct">100%</div>
-      <button class="zbtn" onclick="zoomStep(1)">+</button>
+      <button class="zbtn" onclick="zoomStep(1)" title="Zoom in"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
       <button class="zbtn" onclick="fitAll()" title="Fit to view"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 9h6v6H9z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
     </div>
     <div class="hint">Scroll to zoom / Drag to pan / Drag ports to connect</div>
@@ -480,7 +487,9 @@ function providerImg(provider,size){
   size=size||18;
   const src=IMG_ICONS[provider];
   const fallback=PROVIDER_SVG[provider]||ICONS[provider]||'?';
-  return src?\`<img src="\${src}" style="width:\${size}px;height:\${size}px;object-fit:contain;border-radius:2px">\`:\`<span style="width:\${size}px;height:\${size}px;display:inline-flex;align-items:center;justify-content:center">\${fallback}</span>\`;
+  return src
+    ?\`<span class="prov-icon" style="--isz:\${size}px"><img src="\${src}" alt="" draggable="false"></span>\`
+    :\`<span class="prov-icon" style="--isz:\${size}px">\${fallback}</span>\`;
 }
 
 // App state

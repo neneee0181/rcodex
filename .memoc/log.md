@@ -198,3 +198,9 @@ Append-only chronological log for project memory updates.
 - Changed accepted self-updates to run `npm install -g <package>@<version>` in the foreground with inherited stdio, including Windows.
 - Removed detached Windows updater path so users can see npm progress/failure output and wait until completion.
 - Bumped package version from `0.0.6` to `0.0.7`; verified `npm run build`, `node dist/index.js --version` (`0.0.7`), and `npm pack --dry-run`.
+
+## [2026-05-20T21:47:00+0900] ui | Polish dashboard icons
+
+- Added a shared provider icon wrapper so image icons render clipped, rounded, and aligned consistently in provider lists, account rows, and canvas nodes.
+- Replaced canvas zoom text controls with SVG icon buttons.
+- Bumped package version from `0.0.7` to `0.0.8`; verified rendered UI script parsing, `npm run build`, `node dist/index.js --version` (`0.0.8`), and `npm pack --dry-run`.
