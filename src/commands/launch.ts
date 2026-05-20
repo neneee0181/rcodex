@@ -13,6 +13,21 @@ import { hasUnmigratedThreads, migrateThreads } from "./migrate.js";
 const RCODEX_DIR = join(homedir(), ".rcodex");
 const DAEMON_LOG = join(RCODEX_DIR, "gateway.log");
 
+function getGatewayDaemonCommand(): { command: string; args: string[] } {
+  const entry = process.argv[1] ?? "";
+  if (entry.endsWith(".ts")) {
+    return {
+      command: process.platform === "win32" ? "npm.cmd" : "npm",
+      args: ["run", "dev", "--", "_gateway"],
+    };
+  }
+
+  return {
+    command: process.execPath,
+    args: [entry, "_gateway"],
+  };
+}
+
 // Poll until gateway responds or timeout. Re-reads gateway.json each tick so we
 // pick up the actual port if the daemon had to use a different one.
 async function waitForGateway(initialPort: number, timeoutMs = 6000): Promise<number | null> {
@@ -74,7 +89,8 @@ export async function runLaunch(): Promise<void> {
   logger.info("Starting gateway in background...");
   if (!existsSync(RCODEX_DIR)) mkdirSync(RCODEX_DIR, { recursive: true });
   const logFd = openSync(DAEMON_LOG, "a");
-  const child = spawn(process.execPath, [process.argv[1], "_gateway"], {
+  const daemon = getGatewayDaemonCommand();
+  const child = spawn(daemon.command, daemon.args, {
     detached: true,
     stdio: ["ignore", logFd, logFd],
     windowsHide: true,
