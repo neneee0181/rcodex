@@ -204,3 +204,9 @@ Append-only chronological log for project memory updates.
 - Added a shared provider icon wrapper so image icons render clipped, rounded, and aligned consistently in provider lists, account rows, and canvas nodes.
 - Replaced canvas zoom text controls with SVG icon buttons.
 - Bumped package version from `0.0.7` to `0.0.8`; verified rendered UI script parsing, `npm run build`, `node dist/index.js --version` (`0.0.8`), and `npm pack --dry-run`.
+
+## [2026-05-20T21:58:00+0900] fix | Windows npm self-update spawn
+
+- Root cause: Node on Windows returned `spawnSync npm.cmd EINVAL`, so self-update never started npm and only printed the generic failure message.
+- Changed Windows self-update to run foreground `cmd.exe /c npm install -g "<package>@<version>"`, keeping npm output visible and waiting for completion.
+- Added explicit start/exit/signal error details; bumped package version from `0.0.8` to `0.0.9`; verified `cmd.exe /c npm --version`, `npm run build`, `node dist/index.js --version` (`0.0.9`), and `npm pack --dry-run`.

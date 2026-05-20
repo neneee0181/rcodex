@@ -72,13 +72,42 @@ async function confirmUpdate(packageName: string, currentVersion: string, latest
 }
 
 function installLatest(packageName: string, latestVersion: string): boolean {
-  const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+  const target = `${packageName}@${latestVersion}`;
   console.log(`Updating rcodex to ${latestVersion}...`);
-  const result = spawnSync(npmCommand, ["install", "-g", `${packageName}@${latestVersion}`], {
-    stdio: "inherit",
+
+  const result = process.platform === "win32"
+    ? spawnSync(process.env.ComSpec ?? "cmd.exe", ["/d", "/s", "/c", `npm install -g "${target}"`], {
+        stdio: "inherit",
+        windowsHide: false,
+      })
+    : spawnSync("npm", ["install", "-g", target], {
+        stdio: "inherit",
+      });
+
+  if (result.error) {
+    console.error(`rcodex update command failed to start: ${result.error.message}`);
+  }
+  if (typeof result.status === "number" && result.status !== 0) {
+    console.error(`rcodex update command exited with code ${result.status}.`);
+  }
+  if (result.signal) {
+    console.error(`rcodex update command stopped by signal ${result.signal}.`);
+  }
+
+  return result.status === 0;
+}
+
+function verifyNpmCommand(): void {
+  if (process.platform !== "win32") return;
+
+  const result = spawnSync(process.env.ComSpec ?? "cmd.exe", ["/d", "/s", "/c", "npm --version"], {
+    stdio: "ignore",
     windowsHide: false,
   });
-  return result.status === 0;
+  if (result.status !== 0 || result.error) {
+    const detail = result.error ? ` (${result.error.message})` : "";
+    console.error(`npm is not available from this shell${detail}.`);
+  }
 }
 
 export async function enforceAcceptedLatestVersion(): Promise<void> {
@@ -95,6 +124,7 @@ export async function enforceAcceptedLatestVersion(): Promise<void> {
     process.exit(1);
   }
 
+  verifyNpmCommand();
   const installed = installLatest(name, latestVersion);
   if (!installed) {
     console.error(`rcodex update failed. Please run: npm install -g ${name}@latest`);
