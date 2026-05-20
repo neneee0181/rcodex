@@ -17,8 +17,8 @@ function getGatewayDaemonCommand(): { command: string; args: string[] } {
   const entry = process.argv[1] ?? "";
   if (entry.endsWith(".ts")) {
     return {
-      command: process.platform === "win32" ? "npm.cmd" : "npm",
-      args: ["run", "dev", "--", "_gateway"],
+      command: process.execPath,
+      args: ["--import", "tsx", entry, "_gateway"],
     };
   }
 
@@ -88,11 +88,12 @@ export async function runLaunch(): Promise<void> {
   // 2. Spawn gateway as a detached background daemon
   logger.info("Starting gateway in background...");
   if (!existsSync(RCODEX_DIR)) mkdirSync(RCODEX_DIR, { recursive: true });
-  const logFd = openSync(DAEMON_LOG, "a");
+  const stdoutFd = openSync(DAEMON_LOG, "a");
+  const stderrFd = openSync(DAEMON_LOG, "a");
   const daemon = getGatewayDaemonCommand();
   const child = spawn(daemon.command, daemon.args, {
     detached: true,
-    stdio: ["ignore", logFd, logFd],
+    stdio: ["ignore", stdoutFd, stderrFd],
     windowsHide: true,
   });
   child.unref();
