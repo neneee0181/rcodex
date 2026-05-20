@@ -181,3 +181,9 @@ Append-only chronological log for project memory updates.
 - Changed Windows update acceptance flow to spawn a delayed `npm install -g` updater process instead of running synchronous npm inside the current rcodex process.
 - Bumped package version from `0.0.4` to `0.0.5` so the self-update fix can be published.
 - Verified `npm run build`, `node dist/index.js --version` (`0.0.5`), and `npm pack --dry-run`.
+
+## [2026-05-20T20:35:00+0900] ui | Provider icons and fit control
+
+- Replaced the dashboard bottom-right `fit` text button with a fit-to-view icon button.
+- Added embedded Antigravity and Copilot image icons for provider badges/cards.
+- Bumped package version from `0.0.5` to `0.0.6`; verified rendered UI script parsing, `npm run build`, `node dist/index.js --version` (`0.0.6`), and `npm pack --dry-run`.
