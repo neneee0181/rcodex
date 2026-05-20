@@ -1,0 +1,18 @@
+node_modules/
+dist/
+*.js.map
+*.d.ts.map
+
+# Runtime data (stored in ~/.cps/)
+gateway.json
+requests.jsonl
+gateway.log
+*.backup-*
+
+# macOS
+.DS_Store
+
+# Editor
+.obsidian/
+무제.md
+.memoc/.pending

@@ -1,0 +1,2 @@
+#!/bin/sh
+exec node 'C:\Users\kevin\AppData\Local\memoc\runtime\bin\cli.js' "$@"

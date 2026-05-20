@@ -1,0 +1,61 @@
+{
+  "name": "rcodex",
+  "version": "0.0.1",
+  "description": "Gateway and provider manager for Codex: Claude, GPT, Gemini, Ollama, Antigravity, and Copilot via a single local proxy",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "rcodex": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc && node -e \"if(process.platform!=='win32')require('child_process').execSync('chmod +x dist/index.js')\" && node -e \"const{existsSync}=require('fs');if(!existsSync('dist/antigravity-credentials.json'))console.warn('[rcodex] dist/antigravity-credentials.json missing; Antigravity OAuth requires ~/.rcodex/antigravity-app.json');\"",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "prepublishOnly": "npm run build",
+    "prepare": "npm run build",
+    "postinstall": "node scripts/postinstall.cjs"
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "codex",
+    "claude",
+    "openai",
+    "gemini",
+    "ollama",
+    "gateway",
+    "provider",
+    "proxy",
+    "ai"
+  ],
+  "author": "neneee0181",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neneee0181/rcodex.git"
+  },
+  "bugs": {
+    "url": "https://github.com/neneee0181/rcodex/issues"
+  },
+  "homepage": "https://github.com/neneee0181/rcodex#readme",
+  "dependencies": {
+    "@fastify/cors": "^11.2.0",
+    "@iarna/toml": "^2.2.5",
+    "better-sqlite3": "^12.10.0",
+    "commander": "^12.1.0",
+    "fastify": "^5.8.5",
+    "open": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^20.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

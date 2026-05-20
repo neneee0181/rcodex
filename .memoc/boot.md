@@ -1,0 +1,27 @@
+﻿# Agent Boot
+
+On-demand reference only. The entry-file managed block is authoritative.
+
+## Open Only When Needed
+
+| File | When to open |
+| --- | --- |
+| `.memoc/session-summary.md` | Every session start (only required read) |
+| `.memoc/02-current-project-state.md` | Before changing behavior or checking tasks |
+| `.memoc/04-handoff.md` | When resuming incomplete work |
+| `.memoc/06-project-rules.md` | When unsure about preferences or conventions |
+| `.memoc/01-agent-workflow.md` | When update routing is unclear |
+| `.memoc/05-done-checklist.md` | Before finishing substantial work |
+| `.memoc/03-decisions.md` | When a durable decision was made |
+| `.memoc/log.md` | For append-only history |
+| `.memoc/memoc-usage.md` | For command details |
+| `.memoc/systems/*.md` | Before touching a specific subsystem |
+| `.memoc/wiki/*.md` | For synthesized project knowledge |
+| `llms.txt` | For full project file map |
+
+## Search First
+
+`memoc search "<query>"` ??returns file:line matches across memory and agent docs only.
+`memoc grep "<query>"` ??searches project source/text files when memory docs are not enough.
+If `memoc` is not on PATH, try `.\.memoc\bin\memoc.cmd search "<query>"` on Windows or `.memoc/bin/memoc search "<query>"` in sh, then `npx @kevin0181/memoc search "<query>"`.
+Use it before opening any file to avoid reading more than needed.
