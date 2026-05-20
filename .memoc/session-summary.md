@@ -1,5 +1,5 @@
 # Session Summary
-Last: 2026-05-20T19:35:00+0900
+Last: 2026-05-20T19:44:00+0900
 Keep each section <=3 bullets. Agent-owned; updated by you, not by `memoc update`.
 
 ## Status
@@ -12,6 +12,7 @@ Keep each section <=3 bullets. Agent-owned; updated by you, not by `memoc update
 - Fixed dev daemon spawn to use `node --import tsx src/index.ts _gateway` instead of recursive `npm run dev`.
 - Restored `src/gateway/ui.ts` after broken rcodex rename/encoding strings stopped dashboard JS, node rendering, and button handlers.
 - Fixed remaining dashboard polish: ASCII gateway logs, icon-based UI controls, quota reset remaining-time parsing, and `#1/#2` labels for duplicate provider accounts.
+- Improved canvas nodes: wider account cards with visible duplicate-account badges, and hidden/deleted slot IDs persist so active slots do not reappear on `npm run dev`.
 
 ## Open Tasks
 - Copilot real OAuth login/API flow has not been smoke-tested.

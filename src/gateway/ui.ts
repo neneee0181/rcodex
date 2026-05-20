@@ -163,7 +163,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
 @keyframes sdash{to{stroke-dashoffset:-22}}
 
 /* Canvas nodes */
-.nd{position:absolute;width:215px;background:var(--s1);border:1px solid var(--b1);
+.nd{position:absolute;width:260px;background:var(--s1);border:1px solid var(--b1);
   border-radius:13px;box-shadow:0 6px 24px rgba(0,0,0,.5);
   transition:border-color .2s,box-shadow .2s}
 .nd:hover{border-color:var(--b2)}
@@ -175,6 +175,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
 .nic{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;
   justify-content:center;font-size:13px;flex-shrink:0}
 .nn{font-size:11px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acct-badge{font-size:9px;font-weight:800;color:var(--bl2);background:rgba(99,102,241,.16);
+  border:1px solid rgba(99,102,241,.28);border-radius:5px;padding:1px 5px;line-height:1.4;flex-shrink:0}
 .bk{font-size:9px;padding:2px 6px;border-radius:5px;font-weight:600;white-space:nowrap;flex-shrink:0}
 .bk-on{background:rgba(34,197,94,.12);color:var(--gr);border:1px solid rgba(34,197,94,.2)}
 .bk-off{background:rgba(96,96,128,.1);color:var(--mu);border:1px solid var(--b1)}
@@ -507,17 +509,21 @@ let codexMode = 'rcodex';
 const LS_POS    = 'rcodex-pos-v4';
 const LS_CANVAS = 'rcodex-canvas-v4';
 const LS_SLOTS  = 'rcodex-slots-v1';
+const LS_HIDDEN = 'rcodex-hidden-slots-v1';
 function loadPos(){   try{return JSON.parse(localStorage.getItem(LS_POS)||'{}')}catch{return {}} }
 function loadCanvas(){ try{return new Set(JSON.parse(localStorage.getItem(LS_CANVAS)||'[]'))}catch{return new Set()} }
 function loadSlots(){  try{return JSON.parse(localStorage.getItem(LS_SLOTS)||'{}')}catch{return {}} }
+function loadHidden(){ try{return new Set(JSON.parse(localStorage.getItem(LS_HIDDEN)||'[]'))}catch{return new Set()} }
 let NP        = loadPos();
 let onCanvas  = loadCanvas();  // Set of slotIds (+ 'out', 'monitor')
 let nodeSlots = loadSlots();   // {[slotId]: {accountId, model}}
+let hiddenSlots = loadHidden();
 
 function saveLS(){
   localStorage.setItem(LS_POS,    JSON.stringify(NP));
   localStorage.setItem(LS_CANVAS, JSON.stringify([...onCanvas]));
   localStorage.setItem(LS_SLOTS,  JSON.stringify(nodeSlots));
+  localStorage.setItem(LS_HIDDEN, JSON.stringify([...hiddenSlots]));
 }
 function accountNo(acc){
   const same=(ST.accounts||[]).filter(a=>a.provider===acc.provider&&a.label===acc.label);
@@ -875,6 +881,7 @@ function addToCanvas(accountId){
   const models=acc.models||[];
   const model=sidebarModelSel[accountId]||models[0]||'';
   const slotId='slot_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+  hiddenSlots.delete(slotId);
   nodeSlots[slotId]={accountId,model};
   onCanvas.add(slotId);
   if(!NP[slotId]){
@@ -892,6 +899,9 @@ function addToCanvas(accountId){
 async function removeFromCanvas(slotId){
   const info=nodeSlots[slotId];
   onCanvas.delete(slotId);
+  hiddenSlots.add(slotId);
+  delete NP[slotId];
+  delete nodeSlots[slotId];
   saveLS();
   render();
   if(sbOpen)renderSb();
@@ -899,7 +909,8 @@ async function removeFromCanvas(slotId){
     const acc=ST.accounts.find(a=>a.id===info.accountId);
     const slot=(acc?.activeModels||[]).find(s=>s.slotId===slotId);
     if(slot){
-      await api('DELETE',\`/api/accounts/\${info.accountId}/slots/\${slotId}\`);
+      const r=await api('DELETE',\`/api/accounts/\${info.accountId}/slots/\${slotId}\`);
+      if(!r.ok)toast('Remove failed: '+await r.text(),true);
       await fetchStatus();
     }
   }
@@ -1478,13 +1489,17 @@ function buildAccNode(slotId){
   const slot=(acc.activeModels||[]).find(s=>s.slotId===slotId);
   const isOut=!!slot;
   const sub=accountSubtext(acc);
+  const no=accountNo(acc);
+  const noBadge=no?\`<span class="acct-badge">#\${no}</span>\`:'';
   const subEl=sub?\`<div class="nd-acct" title="\${sub}">\${sub}</div>\`:'';
   const pos=NP[slotId]||{x:80,y:80};
   return \`<div class="nd \${isOut?'live':''}" id="nd-\${slotId}" style="left:\${pos.x}px;top:\${pos.y}px">
   <div class="nh">
     <div class="nic" style="background:\${IBGS[acc.provider]}">\${providerImg(acc.provider,14)}</div>
     <div style="flex:1;min-width:0">
-      <div class="nn">\${accountName(acc)}</div>
+      <div style="display:flex;align-items:center;gap:6px;min-width:0" title="\${accountName(acc)}">
+        <div class="nn">\${accountName(acc)}</div>\${noBadge}
+      </div>
       <div style="font-size:9px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="\${model}">\${model}</div>
     </div>
     <span class="bk \${isOut?'bk-on':'bk-off'}">\${isOut?'Active':'Idle'}</span>
@@ -1685,6 +1700,7 @@ async function connectOut(slotId){
   if(!info)return;
   const r=await api('POST',\`/api/accounts/\${info.accountId}/slots\`,{slotId,model:info.model});
   if(!r.ok){toast('Connection failed: '+await r.text(),true);return;}
+  hiddenSlots.delete(slotId);
   toast('Connected to output');
   await fetchStatus();
 }
@@ -1722,6 +1738,7 @@ async function fetchStatus(){
     let idx=[...onCanvas].length;
     for(const acc of ST.accounts){
       for(const slot of (acc.activeModels||[])){
+        if(hiddenSlots.has(slot.slotId))continue;
         if(!nodeSlots[slot.slotId]){
           nodeSlots[slot.slotId]={accountId:acc.id,model:slot.model};
         }

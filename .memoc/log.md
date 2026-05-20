@@ -157,3 +157,9 @@ Append-only chronological log for project memory updates.
 - Replaced broken `??` gateway log markers for account/slot add/remove messages with ASCII text and arrows.
 - Restored icon-based dashboard controls for provider nav, monitor node, OAuth/login, close buttons, provider fallbacks, and quota refresh.
 - Fixed quota reset display to parse epoch seconds/milliseconds and relative reset fields; duplicate same-provider labels now show `#1`, `#2` in sidebar, nodes, and output order.
+
+## [2026-05-20T19:44:00+0900] fix | Keep removed canvas nodes hidden
+
+- Widened provider canvas nodes and added a separate duplicate-account `#N` badge so account identity remains visible when labels are long.
+- Added `rcodex-hidden-slots-v1` localStorage tracking; removed active slots no longer auto-reappear when `fetchStatus()` syncs server `activeModels` on restart.
+- Verified rendered dashboard script parses and `npm run build` succeeds.

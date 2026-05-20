@@ -1,17 +1,17 @@
 # Current Project State
 
-Last synced: 2026-05-20T19:35:00+0900
+Last synced: 2026-05-20T19:44:00+0900
 
 ## Current Status
 
 - This repo is `rcodex`, a TypeScript Node CLI plus local Fastify Responses-compatible gateway for routing Codex requests through multiple AI providers.
 - The default `rcodex` command checks npm for a newer `rcodex` version and requires user approval to update before launch when one exists; then it restarts the gateway, syncs Codex config, migrates threads if needed, launches Codex, and opens the UI.
-- The gateway UI/API manages accounts, OAuth/API-key flows, model slots, provider ordering/fallback, monitor logs/requests/usage, quota checks, duplicate account labels, and Codex provider switching.
+- The gateway UI/API manages accounts, OAuth/API-key flows, model slots, provider ordering/fallback, monitor logs/requests/usage, quota checks, duplicate account labels, hidden canvas slots, and Codex provider switching.
 
 ## Project Snapshot
 
 <!-- memoc:snapshot:start -->
-- Last synced: 2026-05-20T19:35:00+0900
+- Last synced: 2026-05-20T19:44:00+0900
 - Detected stack: Node.js, Fastify, TypeScript
 
 ### Config Files
