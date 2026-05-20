@@ -192,3 +192,9 @@ Append-only chronological log for project memory updates.
 
 - Fixed the dashboard fit-to-view toolbar button rendering literal `${SVG_ICONS.fit}` by inlining the SVG markup in the HTML.
 - Verified rendered UI script parsing and `npm run build`.
+
+## [2026-05-20T20:50:00+0900] fix | Foreground self-update
+
+- Changed accepted self-updates to run `npm install -g <package>@<version>` in the foreground with inherited stdio, including Windows.
+- Removed detached Windows updater path so users can see npm progress/failure output and wait until completion.
+- Bumped package version from `0.0.6` to `0.0.7`; verified `npm run build`, `node dist/index.js --version` (`0.0.7`), and `npm pack --dry-run`.

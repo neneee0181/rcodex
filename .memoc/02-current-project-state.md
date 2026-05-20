@@ -1,6 +1,6 @@
 # Current Project State
 
-Last synced: 2026-05-20T20:42:00+0900
+Last synced: 2026-05-20T20:50:00+0900
 
 ## Current Status
 
@@ -11,7 +11,7 @@ Last synced: 2026-05-20T20:42:00+0900
 ## Project Snapshot
 
 <!-- memoc:snapshot:start -->
-- Last synced: 2026-05-20T20:42:00+0900
+- Last synced: 2026-05-20T20:50:00+0900
 - Detected stack: Node.js, Fastify, TypeScript
 
 ### Config Files
@@ -40,7 +40,7 @@ Last synced: 2026-05-20T20:42:00+0900
 
 - No automated test script exists; use `npm run build` as the baseline verification for source edits.
 - Copilot real GitHub device OAuth and provider API calls have not been smoke-tested.
-- Current package version is `0.0.6`; publish with `npm publish --access public` after review.
+- Current package version is `0.0.7`; publish with `npm publish --access public` after review.
 
 ## Completed Tasks
 
@@ -60,7 +60,7 @@ See `.memoc/log.md` for full history.
 - Main runtime config: `~/.rcodex/gateway.json`; logs: `~/.rcodex/gateway.log`; request history: `~/.rcodex/requests.jsonl`.
 - Default gateway port is `3141`; Codex provider key managed by this project is `rcodex`; base URL is `http://localhost:<port>/v1` with `wire_api = "responses"`.
 - Package dependencies include Fastify/CORS for the gateway, Commander for CLI commands, `@iarna/toml` for Codex config edits, and `better-sqlite3` for Codex thread migration support.
-- Current package version is `0.0.6`; npm package name is `@kevin0181/rcodex`, binary/runtime directory/README/provider key are `rcodex`.
+- Current package version is `0.0.7`; npm package name is `@kevin0181/rcodex`, binary/runtime directory/README/provider key are `rcodex`.
 - Antigravity credentials search order: user override `~/.rcodex/antigravity-app.json`, then bundled `dist/antigravity-credentials.json`; package warns when bundled credentials are absent.
 - Dynamic Windows Codex App Detection searches `%LOCALAPPDATA%\OpenAI\Codex\bin\*\codex.exe` dynamically to cover dynamic hash/version subfolders from local app installations.
 
