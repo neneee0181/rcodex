@@ -216,3 +216,9 @@ Append-only chronological log for project memory updates.
 - Root cause: the Windows updater wrapped the scoped package target in quotes inside `cmd.exe /c`, causing npm to receive `""@kevin0181/rcodex@...""` and reject it as `EINVALIDPACKAGENAME`.
 - Removed target quotes and `/s` from the Windows cmd invocation; verified the command string echoes as `npm install -g @kevin0181/rcodex@...`.
 - Bumped package version from `0.0.9` to `0.0.11`; verified `npm run build`, `node dist/index.js --version` (`0.0.11`), and `npm pack --dry-run`.
+
+## [2026-05-21T10:05:00+0900] fix | Requests monitor scroll start
+
+- Changed Requests monitor refresh to preserve `mn-body.scrollTop` instead of auto-jumping to bottom when content loads.
+- First load now starts at top because saved scroll is `0`; existing scroll position is preserved during refresh.
+- Fixed request detail collapse button text back to `+`; verified rendered UI script parsing and `npm run build`.

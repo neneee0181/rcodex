@@ -1140,7 +1140,7 @@ async function refreshRequests(){
   const body=document.getElementById('mn-reqs-body');
   const scroller=document.getElementById('mn-body');
   if(!body)return;
-  const atBottom=!scroller||scroller.scrollHeight-scroller.scrollTop-scroller.clientHeight<60;
+  const savedScroll=scroller?scroller.scrollTop:0;
   try{
     const d=await(await fetch('/api/requests')).json();
     if(!d.requests?.length){body.innerHTML='<div class="mn-empty">No requests yet</div>';return;}
@@ -1199,7 +1199,7 @@ async function refreshRequests(){
     // Save which detail panels are open (by ts-based ID) before rebuilding
     const openIds=new Set([...body.querySelectorAll('.req-detail-panel')].filter(el=>el.style.display!=='none').map(el=>el.id));
     body.innerHTML=hdr+rows;
-    if(scroller&&atBottom) scroller.scrollTop=scroller.scrollHeight;
+    if(scroller) scroller.scrollTop=savedScroll;
     // Restore open state after rebuild
     openIds.forEach(id=>{const el=document.getElementById(id);if(el){el.style.display='block';const btn=el.previousElementSibling?.querySelector('.req-expand-btn');if(btn)btn.textContent='-';}});
   }catch{body.innerHTML='<div class="mn-empty">Failed to load</div>';}
@@ -1209,7 +1209,7 @@ function toggleReqDetail(id){
   if(!el)return;
   const btn=el.previousElementSibling?.querySelector('.req-expand-btn');
   if(el.style.display==='none'){el.style.display='block';if(btn)btn.textContent='-';}
-  else{el.style.display='none';if(btn)btn.textContent='-';}
+  else{el.style.display='none';if(btn)btn.textContent='+';}
 }
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
