@@ -151,3 +151,9 @@ Append-only chronological log for project memory updates.
 - Repaired `src/gateway/ui.ts` after rcodex rename/encoding corruption broke rendered HTML/JS strings.
 - Replaced broken dashboard icon/control text with ASCII-safe labels so node rendering, sidebar buttons, monitor tabs, output controls, and request details can initialize.
 - Verified rendered dashboard script parses and `npm run build` succeeds.
+
+## [2026-05-20T19:35:00+0900] fix | Polish dashboard logs and quota UI
+
+- Replaced broken `??` gateway log markers for account/slot add/remove messages with ASCII text and arrows.
+- Restored icon-based dashboard controls for provider nav, monitor node, OAuth/login, close buttons, provider fallbacks, and quota refresh.
+- Fixed quota reset display to parse epoch seconds/milliseconds and relative reset fields; duplicate same-provider labels now show `#1`, `#2` in sidebar, nodes, and output order.

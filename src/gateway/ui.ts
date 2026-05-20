@@ -454,10 +454,29 @@ const IBGS={anthropic:'rgba(249,115,22,.15)',openai:'rgba(16,163,127,.15)',googl
   google:'data:image/jpeg;base64,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',
   ollama:'data:image/png;base64,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',
 };
+const SVG_ICONS={
+  providers:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3l7.5 4.3v8.5L12 20l-7.5-4.2V7.3L12 3z" stroke="currentColor" stroke-width="2"/><path d="M12 8v8M8.2 10.2l7.6 4.4M15.8 10.2l-7.6 4.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  monitor:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 19V5m5 14v-8m5 8V8m5 11V3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  terminal:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 7l5 5-5 5m8 0h8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  refresh:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M20 6v5h-5M4 18v-5h5M18.2 9A7 7 0 0 0 6.3 6.8M5.8 15A7 7 0 0 0 17.7 17.2" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  close:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  login:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M10 17l5-5-5-5M15 12H3M14 4h4a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-4" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  key:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="7.5" cy="14.5" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M10 12l8-8m-1 1l3 3m-6 0l2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  cookie:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M20 13.5A8 8 0 1 1 10.5 4a3 3 0 0 0 3 3 3 3 0 0 0 3 3 3 3 0 0 0 3.5 3.5z" stroke="currentColor" stroke-width="2"/><path d="M8 10h.01M12 16h.01M9 17h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>',
+};
+const PROVIDER_SVG={
+  anthropic:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 4l7 16h-3l-1.4-3.4H9.4L8 20H5l7-16zm1.6 10L12 9.8 10.4 14h3.2z" fill="currentColor"/></svg>',
+  openai:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3.5a4.2 4.2 0 0 1 4 2.9 4.2 4.2 0 0 1 3.2 6.3 4.2 4.2 0 0 1-4 5.9 4.2 4.2 0 0 1-6.4.2 4.2 4.2 0 0 1-3.9-6.1A4.2 4.2 0 0 1 8.8 6.4 4.2 4.2 0 0 1 12 3.5z" stroke="currentColor" stroke-width="1.8"/><path d="M8.8 6.4l6.4 3.7v7.8M19.2 12.7l-6.4 3.7-6.8-3.9M8.8 18.8V11l6.8-3.9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  google:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 12.2c0-.7-.1-1.4-.2-2H12v3.7h4.5a3.9 3.9 0 0 1-1.7 2.5v2h2.8c1.6-1.5 2.4-3.6 2.4-6.2z" fill="currentColor"/><path d="M12 20c2.2 0 4.1-.7 5.5-2l-2.8-2a5 5 0 0 1-7.4-2.6H4.4v2.1A8 8 0 0 0 12 20zM7.3 13.4a5 5 0 0 1 0-2.8V8.5H4.4a8 8 0 0 0 0 7l2.9-2.1zM12 7a4.4 4.4 0 0 1 3.1 1.2l2.4-2.4A8 8 0 0 0 4.4 8.5l2.9 2.1A4.8 4.8 0 0 1 12 7z" fill="currentColor"/></svg>',
+  ollama:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 12c0-4 2-7 5-7s5 3 5 7v7H7v-7z" stroke="currentColor" stroke-width="2"/><path d="M9 11h.01M15 11h.01M10 16h4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>',
+  antigravity:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.4 6.5L21 12l-6.6 2.5L12 21l-2.4-6.5L3 12l6.6-2.5L12 3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
+  copilot:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 10V8a5 5 0 0 1 10 0v2M5 11h14v6a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-6z" stroke="currentColor" stroke-width="2"/><path d="M9 15h.01M15 15h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>',
+};
 function providerImg(provider,size){
   size=size||18;
   const src=IMG_ICONS[provider];
-  return src?\`<img src="\${src}" style="width:\${size}px;height:\${size}px;object-fit:contain;border-radius:2px">\`:(ICONS[provider]||'?');
+  const fallback=PROVIDER_SVG[provider]||ICONS[provider]||'?';
+  return src?\`<img src="\${src}" style="width:\${size}px;height:\${size}px;object-fit:contain;border-radius:2px">\`:\`<span style="width:\${size}px;height:\${size}px;display:inline-flex;align-items:center;justify-content:center">\${fallback}</span>\`;
 }
 
 // App state
@@ -500,6 +519,21 @@ function saveLS(){
   localStorage.setItem(LS_CANVAS, JSON.stringify([...onCanvas]));
   localStorage.setItem(LS_SLOTS,  JSON.stringify(nodeSlots));
 }
+function accountNo(acc){
+  const same=(ST.accounts||[]).filter(a=>a.provider===acc.provider&&a.label===acc.label);
+  const idx=same.findIndex(a=>a.id===acc.id);
+  return same.length>1&&idx>=0?idx+1:null;
+}
+function accountName(acc){
+  const n=accountNo(acc);
+  return (acc.label||acc.provider)+(n?' #'+n:'');
+}
+function methodIcon(id){
+  if(id==='oauth')return SVG_ICONS.login;
+  if(id==='apikey')return SVG_ICONS.key;
+  if(id==='session')return SVG_ICONS.cookie;
+  return PROVIDER_SVG.ollama;
+}
 if(!NP.out) NP.out={x:520,y:280};
 
 // Viewport
@@ -534,7 +568,7 @@ function renderSb(){
     body.innerHTML=\`
       <div style="padding:8px 0">
         <div class="nav-item" onclick="sbGoTo('providers')">
-          <div class="nav-ic" style="background:rgba(99,102,241,.15)">P</div>
+          <div class="nav-ic" style="background:rgba(99,102,241,.15)">\${SVG_ICONS.providers}</div>
           <div class="nav-info">
             <div class="nav-name">Providers</div>
             <div class="nav-sub">Manage AI provider accounts</div>
@@ -550,7 +584,7 @@ function renderSb(){
           <span class="nav-badge">Soon</span>
         </div>
         <div class="nav-item" style="opacity:.4;pointer-events:none">
-          <div class="nav-ic" style="background:rgba(96,96,128,.1)">M</div>
+          <div class="nav-ic" style="background:rgba(96,96,128,.1)">\${SVG_ICONS.monitor}</div>
           <div class="nav-info">
             <div class="nav-name">Monitor</div>
             <div class="nav-sub">Request logs & metrics</div>
@@ -586,7 +620,7 @@ function renderSb(){
         \${methods.map(m=>\`
           <div class="auth-card" onclick="sbGoToMethod('\${m.id}')">
             <div class="auth-card-hdr">
-              <span class="auth-card-ic">\${m.icon}</span>
+              <span class="auth-card-ic">\${methodIcon(m.id)}</span>
               <span class="auth-card-name">\${m.name}</span>
             </div>
             <div class="auth-card-sub">\${m.desc}</div>
@@ -605,7 +639,7 @@ function renderSb(){
           <input class="form-input" id="f-label" placeholder="\${sbAddingDef.name} Account" value="\${sbAddingDef.name}"/>
           <div class="form-actions">
             <button class="form-cancel" onclick="sbGoBack()">Cancel</button>
-            <button class="form-submit" onclick="doOAuth()">Open Login</button>
+            <button class="form-submit" onclick="doOAuth()">\${SVG_ICONS.login} Open Login</button>
           </div>
         </div>\`;
     }
@@ -701,11 +735,11 @@ function renderConnectedAccounts(){
       <div style="display:flex;align-items:center;gap:10px">
         <div class="acc-ic" style="background:\${IBGS[a.provider]||'rgba(96,96,128,.1)'}">\${providerImg(a.provider,16)}</div>
         <div class="acc-info">
-          <div class="acc-name">\${a.label}</div>
-          <div class="acc-sub">\${methodLabel[a.method]||a.method}\${activeSlots?' · <span style="color:var(--gr)">active</span> '+activeSlots+' active':canvasCount?' · '+canvasCount+' on canvas':''}</div>
+          <div class="acc-name">\${accountName(a)}</div>
+          <div class="acc-sub">\${methodLabel[a.method]||a.method}\${activeSlots?' / <span style="color:var(--gr)">active</span> '+activeSlots+' active':canvasCount?' / '+canvasCount+' on canvas':''}</div>
           \${sub?\`<div class="acc-sub" style="opacity:.6;margin-top:1px;font-size:9px">\${sub}</div>\`:''}
         </div>
-        <button class="del-btn" onclick="deleteAccount('\${a.id}')" title="Delete">×</button>
+        <button class="del-btn" onclick="deleteAccount('\${a.id}')" title="Delete">\${SVG_ICONS.close}</button>
       </div>
       <div style="display:flex;gap:6px;padding:0 0 2px 40px">
         \${modelPicker}
@@ -965,7 +999,7 @@ function buildMonitorNode(){
 
   return \`<div class="nd mn" id="nd-monitor" style="left:\${pos.x}px;top:\${pos.y}px;width:\${sz.w}px">
   <div class="nh" style="border-radius:13px 13px 0 0;cursor:grab">
-    <div class="nic" style="background:rgba(99,102,241,.15);font-size:11px">T</div>
+    <div class="nic" style="background:rgba(99,102,241,.15);font-size:11px">\${SVG_ICONS.terminal}</div>
     <span class="nn">Monitor</span>
     <button class="nd-rm" onclick="toggleMonitor(monitorTab)" title="Close">×</button>
   </div>
@@ -1183,9 +1217,19 @@ function fmtCost(usd){
 function fmtTok(n){if(!n)return'-';if(n>=1e6)return(n/1e6).toFixed(2)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(n);}
 
 function fmtReset(isoStr){
-  if(!isoStr)return'';
-  const diff=new Date(isoStr)-Date.now();
-  if(diff<=0)return'now';
+  if(isoStr==null||isoStr==='')return'';
+  let t;
+  if(typeof isoStr==='number'){
+    t=isoStr<1e12?isoStr*1000:isoStr;
+  }else if(/^\d+$/.test(String(isoStr))){
+    const n=Number(isoStr);
+    t=n<1e12?n*1000:n;
+  }else{
+    t=Date.parse(String(isoStr));
+  }
+  if(!Number.isFinite(t))return'';
+  const diff=t-Date.now();
+  if(diff<=0)return'<1m';
   const h=Math.floor(diff/3600000),m=Math.floor((diff%3600000)/60000);
   if(diff<3600000)return m+'m';
   if(diff<86400000)return h+'h '+m+'m';
@@ -1236,12 +1280,12 @@ function renderUsage(){
         if(qs.data.secondary!=null)rows+=quotaRow('7d',qs.data.secondary.used,qs.data.secondary.resets_at);
       }
       if(!rows&&qs.data&&!qs.data.error)rows=\`<div style="font-size:9px;color:var(--mu)">No quota data</div>\`;
-      const btnStyle='background:none;border:1px solid var(--b2);border-radius:5px;color:var(--di);cursor:pointer;font-size:12px;padding:0 7px;line-height:1.8;transition:all .12s;flex-shrink:0';
+      const btnStyle='background:none;border:1px solid var(--b2);border-radius:5px;color:var(--di);cursor:pointer;font-size:12px;width:28px;height:24px;display:inline-flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0';
       return\`<div style="background:var(--s2);border-radius:8px;padding:8px 10px">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:\${rows?'6':'0'}px">
           <div style="width:20px;height:20px;border-radius:5px;background:\${IBGS[a.provider]||'rgba(96,96,128,.15)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">\${icon}</div>
           <span style="font-size:11px;font-weight:600;flex:1">\${escHtml(a.label||a.provider)}</span>
-          <button onclick="refreshQuota('\${a.id}')" \${qs.loading?'disabled':''} style="\${btnStyle}" title="Refresh quota">\${qs.loading?'...':'Refresh'}</button>
+          <button onclick="refreshQuota('\${a.id}')" \${qs.loading?'disabled':''} style="\${btnStyle}" title="Refresh quota">\${qs.loading?'...':SVG_ICONS.refresh}</button>
         </div>
         \${rows}
       </div>\`;
@@ -1440,11 +1484,11 @@ function buildAccNode(slotId){
   <div class="nh">
     <div class="nic" style="background:\${IBGS[acc.provider]}">\${providerImg(acc.provider,14)}</div>
     <div style="flex:1;min-width:0">
-      <div class="nn">\${acc.label}</div>
+      <div class="nn">\${accountName(acc)}</div>
       <div style="font-size:9px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="\${model}">\${model}</div>
     </div>
     <span class="bk \${isOut?'bk-on':'bk-off'}">\${isOut?'Active':'Idle'}</span>
-    <button class="nd-rm" onclick="removeFromCanvas('\${slotId}')" title="Remove from canvas">×</button>
+    <button class="nd-rm" onclick="removeFromCanvas('\${slotId}')" title="Remove from canvas">\${SVG_ICONS.close}</button>
   </div>
   \${sub?\`<div class="nb" style="padding:4px 12px 6px">\${subEl}</div>\`:''}
   <div class="po \${isOut?'live':''}" id="po-\${slotId}" title="Drag to connect to OUT"></div>
@@ -1475,11 +1519,11 @@ function buildOutNode(){
           \${multi?\`<span class="oi-num">\${i+1}</span>\`:''}
           <div class="oi-dot" style="background:\${COL[acc.provider]}"></div>
           <div class="oi-inf">
-            <div class="oi-pr">\${acc.label}</div>
+            <div class="oi-pr">\${accountName(acc)}</div>
             <div class="oi-mo" title="\${m}">\${m}</div>
           </div>
           \${orderBtns}
-          <button class="oi-x" onclick="removeOut('\${acc.id}','\${slot.slotId}')">×</button>
+          <button class="oi-x" onclick="removeOut('\${acc.id}','\${slot.slotId}')">\${SVG_ICONS.close}</button>
         </div>\`;
       }).join('')
     :'<div class="out-empty">No providers connected<br><span style="font-size:9px">Drag from a node here</span></div>';

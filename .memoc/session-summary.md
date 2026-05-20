@@ -1,5 +1,5 @@
 # Session Summary
-Last: 2026-05-20T19:18:00+0900
+Last: 2026-05-20T19:35:00+0900
 Keep each section <=3 bullets. Agent-owned; updated by you, not by `memoc update`.
 
 ## Status
@@ -11,6 +11,7 @@ Keep each section <=3 bullets. Agent-owned; updated by you, not by `memoc update
 - Cleaned CLI logger output to ASCII `[ok]`, `[warn]`, `[error]`, and dashed separators to avoid Windows console mojibake.
 - Fixed dev daemon spawn to use `node --import tsx src/index.ts _gateway` instead of recursive `npm run dev`.
 - Restored `src/gateway/ui.ts` after broken rcodex rename/encoding strings stopped dashboard JS, node rendering, and button handlers.
+- Fixed remaining dashboard polish: ASCII gateway logs, icon-based UI controls, quota reset remaining-time parsing, and `#1/#2` labels for duplicate provider accounts.
 
 ## Open Tasks
 - Copilot real OAuth login/API flow has not been smoke-tested.
