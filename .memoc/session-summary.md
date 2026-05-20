@@ -1,5 +1,5 @@
 # Session Summary
-Last: 2026-05-20T20:35:00+0900
+Last: 2026-05-20T20:42:00+0900
 Keep each section <=3 bullets. Agent-owned; updated by you, not by `memoc update`.
 
 ## Status
@@ -17,6 +17,7 @@ Keep each section <=3 bullets. Agent-owned; updated by you, not by `memoc update
 - Bumped npm package version from `0.0.3` to `0.0.4`; verified build, CLI version output, and npm pack dry-run.
 - Fixed Windows self-update flow by starting a delayed updater process before exit; bumped package to `0.0.5` for the fix.
 - Replaced the dashboard `fit` text control with an icon button, added Antigravity/Copilot image provider icons, and bumped package to `0.0.6`.
+- Fixed the fit icon button rendering by inlining the SVG in the toolbar HTML instead of referencing a script-local icon map.
 
 ## Open Tasks
 - Copilot real OAuth login/API flow has not been smoke-tested.

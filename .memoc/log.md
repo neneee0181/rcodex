@@ -187,3 +187,8 @@ Append-only chronological log for project memory updates.
 - Replaced the dashboard bottom-right `fit` text button with a fit-to-view icon button.
 - Added embedded Antigravity and Copilot image icons for provider badges/cards.
 - Bumped package version from `0.0.5` to `0.0.6`; verified rendered UI script parsing, `npm run build`, `node dist/index.js --version` (`0.0.6`), and `npm pack --dry-run`.
+
+## [2026-05-20T20:42:00+0900] fix | Inline fit icon
+
+- Fixed the dashboard fit-to-view toolbar button rendering literal `${SVG_ICONS.fit}` by inlining the SVG markup in the HTML.
+- Verified rendered UI script parsing and `npm run build`.
