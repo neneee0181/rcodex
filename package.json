@@ -1,6 +1,6 @@
 {
   "name": "@kevin0181/rcodex",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Gateway and provider manager for Codex: Claude, GPT, Gemini, Ollama, Antigravity, and Copilot via a single local proxy",
   "type": "module",
   "main": "./dist/index.js",
@@ -17,6 +17,7 @@
   },
   "files": [
     "dist/",
+    "scripts/postinstall.cjs",
     "README.md",
     "LICENSE"
   ],

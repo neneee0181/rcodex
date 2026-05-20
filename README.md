@@ -123,17 +123,15 @@ Run `rcodex doctor` to diagnose and auto-fix supported setup issues.
 
 npm is the distribution channel for the `rcodex` command. GitHub Releases are useful for release notes and source archives, but users receive updates from npm because they install the package with `npm install -g @kevin0181/rcodex`.
 
-For the first release:
+For the current release:
 
 ```bash
 npm login
 npm run build
 npm publish --access public
-git tag v0.0.1
-git push origin v0.0.1
 ```
 
-Then create a GitHub Release from tag `v0.0.1` and paste the release notes. For later versions:
+Then create a GitHub Release from the version tag and paste the release notes. For later versions:
 
 ```bash
 npm version patch
