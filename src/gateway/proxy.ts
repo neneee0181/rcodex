@@ -299,6 +299,12 @@ function fallbackToolResultText(output: unknown): string {
 const CODEX_EXECUTABLE = new Set(["exec_command", "shell_exec"]);
 
 // Map Ollama tool names to real Codex-executable tools
+function fileSearchCommand(target: string): string {
+  const encoded = Buffer.from(target, "utf8").toString("base64");
+  const code = "const fs=require('fs'),path=require('path');const q=Buffer.from(process.argv[1]||'','base64').toString();const out=[];const hit=p=>{out.push(path.resolve(p));if(out.length>=20){console.log(out.join('\\n'));process.exit(0)}};if(q&&fs.existsSync(q))hit(q);const needle=q.toLowerCase().replace(/[*]/g,'');const walk=d=>{let xs=[];try{xs=fs.readdirSync(d,{withFileTypes:true})}catch{return}for(const x of xs){const p=path.join(d,x.name);if(x.isDirectory()){if(x.name==='node_modules'||x.name==='.git')continue;walk(p)}else if(!needle||x.name.toLowerCase().includes(needle)||p.toLowerCase().includes(needle))hit(p)}};walk('.');console.log(out.join('\\n'))";
+  return `node -e "${code}" ${encoded}`;
+}
+
 function remapOllamaTool(name: string, input: Record<string, unknown>): { name: string; input: Record<string, unknown> } {
   // Gateway-handled and Codex-native web tools ??pass through unchanged
   if (name === "web_fetch" || name === "web_search") return { name, input };
@@ -322,7 +328,12 @@ function remapOllamaTool(name: string, input: Record<string, unknown>): { name: 
   if (lc === "findfile" || lc === "searchfile" || lc === "search" || lc === "findinfiles" || lc === "findfiles") {
     const target = query || path;
     if (!target) return { name: "exec_command", input: { cmd: `ls -la .` } };
-    return { name: "exec_command", input: { cmd: `find . -name "${target}" 2>/dev/null | head -20` } };
+    return { name: "exec_command", input: { cmd: fileSearchCommand(target) } };
+  }
+  if (lc === "viewimage" || lc === "image" || lc === "analyzeimage") {
+    const target = path || query;
+    if (!target) return { name: "exec_command", input: { cmd: `echo "No image path provided"` } };
+    return { name: "exec_command", input: { cmd: fileSearchCommand(target) } };
   }
   // read_file and similar ??cat
   if (lc === "readfile" || lc === "read_file" || lc === "getfile" || lc === "openfile" || lc === "getfilecontent") {
@@ -344,7 +355,7 @@ function remapOllamaTool(name: string, input: Record<string, unknown>): { name: 
   // Unknown: fallback
   const target = query || path;
   if (!target) return { name: "exec_command", input: { cmd: `ls -la .` } };
-  return { name: "exec_command", input: { cmd: `find . -name "${target}" 2>/dev/null | head -20` } };
+  return { name: "exec_command", input: { cmd: fileSearchCommand(target) } };
 }
 
 // ?€?€ Conversation state store (for multi-turn tool use) ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
@@ -629,7 +640,7 @@ export async function tryCodexPassthrough(
       gerr(`[gateway] Codex passthrough error: ${res.status}`);
       return null;
     }
-    glog(`[gateway] ??Codex passthrough: ${codexCandidate.model}`);
+    glog(`[gateway] Codex passthrough: ${codexCandidate.model}`);
     return { res, account, model: codexCandidate.model };
   } catch (err) {
     gerr(`[gateway] Codex passthrough failed: ${err instanceof Error ? err.message : String(err)}`);
@@ -823,7 +834,7 @@ async function* readOpenAISSEWithUsage(
       let rawInput: Record<string, unknown> = {};
       try { rawInput = JSON.parse(call.args || "{}"); } catch { /* ignore */ }
       const { name: finalName, input: finalInput } = remapOllamaTool(call.name, rawInput);
-      if (finalName !== call.name) glog(`[ollama] remap tool: ${call.name} ??${finalName}(${JSON.stringify(finalInput)})`);
+      if (finalName !== call.name) glog(`[ollama] remap tool: ${call.name} -> ${finalName}(${JSON.stringify(finalInput)})`);
       else glog(`[ollama] tool call: ${finalName}(${call.args})`);
       const finalArgs = JSON.stringify(finalInput);
       yield { type: 'tool_call_start', id: call.id, name: finalName, index: idx };
@@ -977,10 +988,10 @@ export async function ensureFreshToken(account: Account): Promise<Account> {
         : await refreshOpenAIAccessToken(account.oauthRefresh);
     const expiry = Date.now() + tokens.expiresIn * 1000;
     updateAccountOAuth(account.id, tokens.accessToken, tokens.refreshToken, expiry);
-    glog(`[gateway] ??token refreshed: ${account.provider}(${account.label})`);
+    glog(`[gateway] token refreshed: ${account.provider}(${account.label})`);
     return { ...account, oauthToken: tokens.accessToken, oauthRefresh: tokens.refreshToken, oauthExpiry: expiry };
   } catch (err) {
-    gerr(`[gateway] token refresh failed: ${account.provider} ??${err instanceof Error ? err.message : String(err)}`);
+    gerr(`[gateway] token refresh failed: ${account.provider} -> ${err instanceof Error ? err.message : String(err)}`);
     return account;
   }
 }
@@ -1926,7 +1937,7 @@ export async function* streamProxyRequest(
   const candidates = resolveAccounts(req.model, config);
   if (!candidates.length) throw new Error("No provider connected to output");
 
-  const order = candidates.map((c, i) => `${i + 1}.${c.account.provider}(${c.model})`).join(" ??");
+  const order = candidates.map((c, i) => `${i + 1}.${c.account.provider}(${c.model})`).join(" -> ");
   glog(`[gateway] stream routing order: ${order}`);
 
   const t0 = Date.now();
@@ -1940,8 +1951,8 @@ export async function* streamProxyRequest(
     try {
       for await (const chunk of streamSingleProvider(account, model, req, config, signal, usage, responseId)) {
         if (!yielded) {
-          if (i > 0) gwarn(`[gateway] ??stream fallback: ${account.provider}(${model})`);
-          else glog(`[gateway] ??stream ${account.provider}(${model})`);
+          if (i > 0) gwarn(`[gateway] stream fallback: ${account.provider}(${model})`);
+          else glog(`[gateway] stream ${account.provider}(${model})`);
           entry = pushLog({ ts: Date.now(), requestedModel: req.model, provider: account.provider, usedModel: model, fallback: i > 0, failedModels: failedModels.length ? [...failedModels] : undefined, ms: Date.now() - t0, status: "ok" });
           yielded = true;
         }
@@ -1959,7 +1970,7 @@ export async function* streamProxyRequest(
       if (yielded) throw err;
       lastError = err instanceof Error ? err : new Error(String(err));
       failedModels.push(model);
-      gerr(`[gateway] ??stream ${account.provider}(${model}) failed: ${lastError.message}${i < candidates.length - 1 ? " ??trying next" : ""}`);
+      gerr(`[gateway] stream ${account.provider}(${model}) failed: ${lastError.message}${i < candidates.length - 1 ? " -> trying next" : ""}`);
     }
   }
   const lastCand = candidates[candidates.length - 1];
@@ -1977,7 +1988,7 @@ export async function proxyRequest(
   const candidates = resolveAccounts(req.model, config);
   if (!candidates.length) throw new Error("No provider connected to output");
 
-  const order = candidates.map((c, i) => `${i + 1}.${c.account.provider}(${c.model})`).join(" ??");
+  const order = candidates.map((c, i) => `${i + 1}.${c.account.provider}(${c.model})`).join(" -> ");
   glog(`[gateway] routing order: ${order}`);
 
   const t0 = Date.now();
@@ -1987,15 +1998,15 @@ export async function proxyRequest(
     const { account, model } = candidates[i];
     try {
       const result = await callSingleProvider(account, model, req, config, signal);
-      if (i > 0) gwarn(`[gateway] ??fallback used: ${account.provider}(${model}) (primary failed)`);
-      else glog(`[gateway] ??${account.provider}(${model})`);
+      if (i > 0) gwarn(`[gateway] fallback used: ${account.provider}(${model}) (primary failed)`);
+      else glog(`[gateway] ${account.provider}(${model})`);
       pushLog({ ts: Date.now(), requestedModel: req.model, provider: account.provider, usedModel: model, fallback: i > 0, failedModels: failedModels.length ? [...failedModels] : undefined, ms: Date.now() - t0, status: "ok", inputTokens: result.usage?.input_tokens, outputTokens: result.usage?.output_tokens });
       flushLog();
       return result;
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
       failedModels.push(model);
-      gerr(`[gateway] ??${account.provider}(${model}) failed: ${lastError.message}${i < candidates.length - 1 ? " ??trying next" : ""}`);
+      gerr(`[gateway] ${account.provider}(${model}) failed: ${lastError.message}${i < candidates.length - 1 ? " -> trying next" : ""}`);
     }
   }
   const lastCandNS = candidates[candidates.length - 1];

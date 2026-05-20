@@ -7,6 +7,7 @@ Last synced: 2026-05-21T10:20:00+0900
 - This repo is `rcodex`, a TypeScript Node CLI plus local Fastify Responses-compatible gateway for routing Codex requests through multiple AI providers.
 - The default `rcodex` command checks npm for a newer `rcodex` version and requires user approval to update before launch when one exists; then it restarts the gateway, syncs Codex config, migrates threads if needed, launches Codex, and opens the UI.
 - The gateway UI/API manages accounts, OAuth/API-key flows, model slots, provider ordering/fallback, monitor logs/requests/usage, quota checks, duplicate account labels, hidden canvas slots, and Codex provider switching.
+- Gateway runtime logs now avoid emoji/mojibake prefixes in active log lines, and Ollama tool fallback file search uses a Node-based command instead of Unix `find ... 2>/dev/null`.
 
 ## Project Snapshot
 
@@ -61,6 +62,7 @@ See `.memoc/log.md` for full history.
 - Default gateway port is `3141`; Codex provider key managed by this project is `rcodex`; base URL is `http://localhost:<port>/v1` with `wire_api = "responses"`.
 - Package dependencies include Fastify/CORS for the gateway, Commander for CLI commands, `@iarna/toml` for Codex config edits, and `better-sqlite3` for Codex thread migration support.
 - Current package version is `0.0.12`; npm package name is `@kevin0181/rcodex`, binary/runtime directory/README/provider key are `rcodex`.
+- Ollama `view_image` tool calls are still not true image-analysis support; they are remapped to file lookup so bad `/dev/null` paths are avoided, but real multimodal Ollama support needs image payload handling and a vision-capable local model.
 - Antigravity credentials search order: user override `~/.rcodex/antigravity-app.json`, then bundled `dist/antigravity-credentials.json`; package warns when bundled credentials are absent.
 - Dynamic Windows Codex App Detection searches `%LOCALAPPDATA%\OpenAI\Codex\bin\*\codex.exe` dynamically to cover dynamic hash/version subfolders from local app installations.
 

@@ -441,12 +441,12 @@ export function createGatewayServer(): GatewayServer {
           oauthRefresh: tokens.refreshToken,
           oauthExpiry: expiry,
         });
-        glog(`[oauth] anthropic: ??account added (label="${label}", apiKey=${tokens.apiKey ? "yes" : "no"})`);
+        glog(`[oauth] anthropic: account added (label="${label}", apiKey=${tokens.apiKey ? "yes" : "no"})`);
       })
       .catch((err: Error) => {
         pendingOAuth = null;
         oauthError = err.message;
-        gerr(`[oauth] anthropic: ??failed ??${err.message}`);
+        gerr(`[oauth] anthropic: failed -> ${err.message}`);
       });
     return reply.send({ authUrl: url });
   });
@@ -468,12 +468,12 @@ export function createGatewayServer(): GatewayServer {
           oauthRefresh: tokens.refreshToken,
           oauthExpiry: expiry,
         });
-        glog(`[oauth] openai: ??account added (label="${label}")`);
+        glog(`[oauth] openai: account added (label="${label}")`);
       })
       .catch((err: Error) => {
         pendingOAuth = null;
         oauthError = err.message;
-        gerr(`[oauth] openai: ??failed ??${err.message}`);
+        gerr(`[oauth] openai: failed -> ${err.message}`);
       });
     return reply.send({ authUrl: url });
   });
@@ -495,20 +495,20 @@ export function createGatewayServer(): GatewayServer {
           oauthExpiry: expiry,
         });
         pendingOAuth = null;
-        glog(`[oauth] antigravity: ??account added (label="${label}")`);
+        glog(`[oauth] antigravity: account added (label="${label}")`);
         loadAntigravityProject(tokens.accessToken)
           .then(projectId => {
             updateAccountProjectId(account.id, projectId);
             glog(`[oauth] antigravity: fetched projectId=${projectId}`);
           })
           .catch((e: Error) => {
-            gerr(`[oauth] antigravity: could not fetch projectId ??${e.message}`);
+            gerr(`[oauth] antigravity: could not fetch projectId -> ${e.message}`);
           });
       })
       .catch((err: Error) => {
         pendingOAuth = null;
         oauthError = err.message;
-        gerr(`[oauth] antigravity: ??failed ??${err.message}`);
+        gerr(`[oauth] antigravity: failed -> ${err.message}`);
       });
     return reply.send({ authUrl: url });
   });
@@ -529,12 +529,12 @@ export function createGatewayServer(): GatewayServer {
             oauthToken: tokens.accessToken,
           });
           pendingOAuth = null;
-          glog(`[oauth] copilot: ??account added (label="${label}")`);
+          glog(`[oauth] copilot: account added (label="${label}")`);
         })
         .catch((err: Error) => {
           pendingOAuth = null;
           oauthError = err.message;
-          gerr(`[oauth] copilot: ??failed ??${err.message}`);
+          gerr(`[oauth] copilot: failed -> ${err.message}`);
         });
       return reply.send({
         authUrl: device.verificationUri,
@@ -545,7 +545,7 @@ export function createGatewayServer(): GatewayServer {
       pendingOAuth = null;
       const msg = err instanceof Error ? err.message : String(err);
       oauthError = msg;
-      gerr(`[oauth] copilot: ??failed ??${msg}`);
+      gerr(`[oauth] copilot: failed -> ${msg}`);
       return reply.code(502).send({ error: msg });
     }
   });
@@ -903,7 +903,7 @@ export function createGatewayServer(): GatewayServer {
       await fastify.listen({ port, host: "127.0.0.1" });
       if (port !== config.port) { config.port = port; saveConfig(config); }
       saveGatewayPid(process.pid);
-      glog(`[gateway] ??started on port ${port} (pid=${process.pid}, accounts=${config.accounts.length})`);
+      glog(`[gateway] started on port ${port} (pid=${process.pid}, accounts=${config.accounts.length})`);
       glog(`[gateway] lifecycle: listening pid=${process.pid} port=${port}`);
       return port;
     },
