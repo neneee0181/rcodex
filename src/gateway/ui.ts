@@ -18,7 +18,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   text-rendering:geometricPrecision;-webkit-text-size-adjust:100%}
 
-/* ?Ä?Ä Header ?Ä?Ä */
+/* Header */
 .hdr{height:46px;display:flex;align-items:center;justify-content:space-between;
   padding:0 14px 0 10px;background:rgba(13,13,18,.98);border-bottom:1px solid var(--b1);
   position:relative;z-index:100;flex-shrink:0;gap:8px}
@@ -40,10 +40,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
   box-shadow:0 0 5px var(--gr);animation:blink 2s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
 
-/* ?Ä?Ä Layout ?Ä?Ä */
+/* Layout */
 .layout{display:flex;flex:1;overflow:hidden;position:relative}
 
-/* ?Ä?Ä Sidebar shell ?Ä?Ä */
+/* Sidebar shell */
 .sb{position:absolute;left:0;top:0;bottom:0;width:280px;
   background:var(--s1);border-right:1px solid var(--b1);
   display:flex;flex-direction:column;z-index:60;
@@ -62,13 +62,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
 .sb-x:hover{background:var(--s2);color:var(--tx)}
 .sb-body{flex:1;overflow-y:auto}
 
-/* ?Ä?Ä Scrollbars (visible, styled) ?Ä?Ä */
+/* Scrollbars */
 .sb-body::-webkit-scrollbar,.mn-body::-webkit-scrollbar{width:5px}
 .sb-body::-webkit-scrollbar-track,.mn-body::-webkit-scrollbar-track{background:transparent}
 .sb-body::-webkit-scrollbar-thumb,.mn-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px}
 .sb-body::-webkit-scrollbar-thumb:hover,.mn-body::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.28)}
 
-/* ?Ä?Ä Home nav items ?Ä?Ä */
+/* Home nav items */
 .nav-item{display:flex;align-items:center;gap:11px;padding:11px 16px;
   cursor:pointer;transition:background .12s;user-select:none}
 .nav-item:hover{background:var(--s2)}
@@ -82,7 +82,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
   background:rgba(99,102,241,.15);color:var(--bl2);border:1px solid rgba(99,102,241,.2)}
 .sb-sep{height:1px;background:var(--b1);margin:4px 0}
 
-/* ?Ä?Ä Provider type list ?Ä?Ä */
+/* Provider type list */
 .ptype{display:flex;align-items:center;gap:10px;padding:10px 14px;
   cursor:pointer;transition:background .12s;border-radius:0}
 .ptype:hover{background:var(--s2)}
@@ -96,7 +96,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
   cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0}
 .add-btn:hover{background:rgba(99,102,241,.22);border-color:var(--bl)}
 
-/* ?Ä?Ä Connected accounts ?Ä?Ä */
+/* Connected accounts */
 .sb-section{font-size:9px;font-weight:700;text-transform:uppercase;
   letter-spacing:.1em;color:var(--mu);padding:12px 16px 6px}
 .acc-item{display:flex;align-items:center;gap:10px;padding:9px 14px;
@@ -119,7 +119,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
   justify-content:center;transition:all .12s}
 .del-btn:hover{background:rgba(239,68,68,.1);color:var(--rd)}
 
-/* ?Ä?Ä Auth method cards ?Ä?Ä */
+/* Auth method cards */
 .auth-cards{display:flex;flex-direction:column;gap:8px;padding:12px 14px}
 .auth-card{border:1px solid var(--b1);border-radius:11px;padding:12px 14px;
   cursor:pointer;transition:all .15s;background:var(--s2)}
@@ -132,7 +132,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
   border-radius:8px;padding:8px 11px;font-size:10px;color:#fcd34d;
   margin:0 14px 10px;line-height:1.5}
 
-/* ?Ä?Ä Auth form ?Ä?Ä */
+/* Auth form */
 .auth-form{padding:12px 14px;display:flex;flex-direction:column;gap:8px}
 .form-label{font-size:10px;color:var(--mu)}
 .form-input{width:100%;padding:8px 11px;border-radius:8px;background:var(--bg);
@@ -148,7 +148,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
   color:#fff;font-size:11px;font-weight:600;cursor:pointer}
 .form-submit:hover{opacity:.9}
 
-/* ?Ä?Ä Canvas ?Ä?Ä */
+/* Canvas */
 .ws{position:relative;flex:1;overflow:hidden;cursor:default;user-select:none;
   background-color:var(--bg);
   background-image:radial-gradient(circle,var(--b1) 1px,transparent 1px);
@@ -162,7 +162,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
   animation:sdash .5s linear infinite}
 @keyframes sdash{to{stroke-dashoffset:-22}}
 
-/* ?Ä?Ä Canvas nodes ?Ä?Ä */
+/* Canvas nodes */
 .nd{position:absolute;width:215px;background:var(--s1);border:1px solid var(--b1);
   border-radius:13px;box-shadow:0 6px 24px rgba(0,0,0,.5);
   transition:border-color .2s,box-shadow .2s}
@@ -192,7 +192,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.65;
   letter-spacing:.01em}
 
-/* ?Ä?Ä Ports ?Ä?Ä */
+/* Ports */
 .po{position:absolute;right:-11px;top:50%;transform:translateY(-50%);
   width:22px;height:22px;border-radius:50%;background:var(--s1);
   border:2px solid var(--b2);cursor:crosshair;z-index:15;
@@ -210,7 +210,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
 .pi.live{border-color:var(--gr)}.pi.live::after{background:var(--gr)}
 .pi.acc{border-color:var(--bl);box-shadow:0 0 0 4px rgba(99,102,241,.2)}.pi.acc::after{background:var(--bl)}
 
-/* ?Ä?Ä OUT node ?Ä?Ä */
+/* OUT node */
 .out-node{width:240px}
 .out-ic{width:26px;height:26px;border-radius:7px;
   background:linear-gradient(135deg,#6366f1,#8b5cf6);
@@ -233,7 +233,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
 .oi-x:hover{color:var(--rd)}
 .out-empty{font-size:10px;color:var(--mu);text-align:center;padding:12px 0;line-height:1.8}
 
-/* ?Ä?Ä Zoom ?Ä?Ä */
+/* Zoom */
 .zbar{position:absolute;bottom:18px;right:18px;display:flex;align-items:center;gap:3px;
   background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:3px 5px;
   z-index:50;box-shadow:0 4px 16px rgba(0,0,0,.35)}
@@ -245,7 +245,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
 .hint{position:absolute;bottom:18px;left:18px;font-size:10px;color:var(--mu);
   pointer-events:none;z-index:50;line-height:1.8}
 
-/* ?Ä?Ä Monitor node ?Ä?Ä */
+/* Monitor node */
 .mn{position:absolute;width:620px;background:var(--s1);border:1px solid var(--b1);
   border-radius:13px;box-shadow:0 8px 40px rgba(0,0,0,.65);z-index:20;min-width:320px;min-height:160px}
 .mn-rs-e{position:absolute;right:-4px;top:12px;bottom:12px;width:8px;cursor:ew-resize;z-index:21}
@@ -321,21 +321,21 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
 .mn-empty{display:flex;align-items:center;justify-content:center;height:100%;
   font-size:11px;color:var(--mu)}
 
-/* ?Ä?Ä Mode switcher ?Ä?Ä */
+/* Mode switcher */
 .mode-sw{display:flex;align-items:center;background:var(--s2);border:1px solid var(--b1);border-radius:7px;padding:2px;gap:1px}
 .ms-btn{padding:3px 10px;border-radius:5px;border:none;font-size:10px;font-weight:600;cursor:pointer;
   transition:all .15s;color:var(--mu);background:transparent;white-space:nowrap}
 .ms-btn.active{background:var(--bl);color:#fff}
 .ms-btn:not(.active):hover{color:var(--tx);background:rgba(255,255,255,.06)}
 
-/* ?Ä?Ä OUT node bypass warning ?Ä?Ä */
+/* OUT node bypass warning */
 .out-bypass{font-size:9px;color:#fcd34d;background:rgba(245,158,11,.1);
   border-top:1px solid rgba(245,158,11,.25);padding:5px 10px;text-align:center;
   border-radius:0 0 12px 12px;letter-spacing:.01em}
 .nd.bypassed{border-color:rgba(245,158,11,.5)!important;
   box-shadow:0 0 0 1px rgba(245,158,11,.1),0 6px 24px rgba(0,0,0,.5)!important}
 
-/* ?Ä?Ä Toast ?Ä?Ä */
+/* Toast */
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
   background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:8px 16px;
   font-size:11px;box-shadow:0 8px 32px rgba(0,0,0,.45);z-index:300;
@@ -355,9 +355,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
       </svg>
     </button>
     <div class="logo">
-      <div class="logo-ic">??/div>
+      <div class="logo-ic">R</div>
       <span class="logo-txt">rcodex Gateway</span>
-      <span class="logo-sep"> ¬∑ </span>
+      <span class="logo-sep"> / </span>
       <span class="logo-port">:${port}</span>
     </div>
   </div>
@@ -389,67 +389,66 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
 
 <div class="layout">
 
-  <!-- ?Ä?Ä Sidebar ?Ä?Ä -->
+  <!-- Sidebar -->
   <div class="sb" id="sb">
     <div class="sb-hdr">
-      <button class="sb-back" id="sb-back" onclick="sbGoBack()" style="display:none">??/button>
+      <button class="sb-back" id="sb-back" onclick="sbGoBack()" style="display:none">&lt;</button>
       <span class="sb-title" id="sb-title">Menu</span>
-      <button class="sb-x" onclick="toggleSb()">√ó</button>
+      <button class="sb-x" onclick="toggleSb()">x</button>
     </div>
     <div class="sb-body" id="sb-body"></div>
   </div>
 
-  <!-- ?Ä?Ä Canvas ?Ä?Ä -->
+  <!-- Canvas -->
   <div class="ws" id="ws">
     <svg id="svgl"></svg>
     <div id="world"></div>
     <div class="zbar">
-      <button class="zbtn" onclick="zoomStep(-1)">??/button>
+      <button class="zbtn" onclick="zoomStep(-1)">-</button>
       <div class="zpct" id="zpct">100%</div>
       <button class="zbtn" onclick="zoomStep(1)">+</button>
-      <button class="zbtn" onclick="fitAll()" style="font-size:12px">??/button>
+      <button class="zbtn" onclick="fitAll()" style="font-size:12px">fit</button>
     </div>
-    <div class="hint">Scroll to zoom ¬∑ Drag to pan ¬∑ Drag ??to connect</div>
+    <div class="hint">Scroll to zoom / Drag to pan / Drag ports to connect</div>
   </div>
 
 </div>
 
 <script>
-// ?Ä?Ä?Ä Provider definitions ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+// Provider definitions
 const PDEFS = [
-  {id:'anthropic',name:'Claude',sub:'Anthropic',icon:'?§ñ',ibg:'rgba(249,115,22,.15)',color:'#f97316',
+  {id:'anthropic',name:'Claude',sub:'Anthropic',icon:'C',ibg:'rgba(249,115,22,.15)',color:'#f97316',
    methods:[
-     {id:'oauth',icon:'?îê',name:'Login with Claude Code',desc:'OAuth login ??uses your Claude Pro/Max subscription',warn:null},
-     {id:'apikey',icon:'?îë',name:'API Key',desc:'Use Anthropic API key from console.anthropic.com',warn:null},
-     {id:'session',icon:'??,name:'Session Token',desc:'Use claude.ai browser cookie (unofficial)',warn:'Unofficial ??may break. Against ToS.'},
+     {id:'oauth',icon:'Auth',name:'Login with Claude Code',desc:'OAuth login uses your Claude Pro/Max subscription',warn:null},
+     {id:'apikey',icon:'Key',name:'API Key',desc:'Use Anthropic API key from console.anthropic.com',warn:null},
+     {id:'session',icon:'Cookie',name:'Session Token',desc:'Use claude.ai browser cookie (unofficial)',warn:'Unofficial; may break. Against ToS.'},
    ]},
-  {id:'openai',name:'ChatGPT / Codex',sub:'OpenAI',icon:'??,ibg:'rgba(16,163,127,.15)',color:'#10a37f',
+  {id:'openai',name:'ChatGPT / Codex',sub:'OpenAI',icon:'O',ibg:'rgba(16,163,127,.15)',color:'#10a37f',
    methods:[
-     {id:'oauth',icon:'?îê',name:'Login with ChatGPT',desc:'OAuth login ??uses your ChatGPT subscription',warn:null},
-     {id:'apikey',icon:'?îë',name:'API Key',desc:'Use OpenAI API key from platform.openai.com',warn:null},
-     {id:'session',icon:'??,name:'Session Token',desc:'Use chatgpt.com browser cookie (unofficial)',warn:'Unofficial ??may break. Against ToS.'},
+     {id:'oauth',icon:'Auth',name:'Login with ChatGPT',desc:'OAuth login uses your ChatGPT subscription',warn:null},
+     {id:'apikey',icon:'Key',name:'API Key',desc:'Use OpenAI API key from platform.openai.com',warn:null},
+     {id:'session',icon:'Cookie',name:'Session Token',desc:'Use chatgpt.com browser cookie (unofficial)',warn:'Unofficial; may break. Against ToS.'},
    ]},
-  {id:'google',name:'Gemini',sub:'Google',icon:'??,ibg:'rgba(66,133,244,.15)',color:'#4285f4',
+  {id:'google',name:'Gemini',sub:'Google',icon:'G',ibg:'rgba(66,133,244,.15)',color:'#4285f4',
    methods:[
-     {id:'apikey',icon:'?îë',name:'API Key',desc:'Use Google AI Studio key from aistudio.google.com',warn:null},
+     {id:'apikey',icon:'Key',name:'API Key',desc:'Use Google AI Studio key from aistudio.google.com',warn:null},
    ]},
-  {id:'ollama',name:'Ollama',sub:'Local models',icon:'?¶ô',ibg:'rgba(168,85,247,.15)',color:'#a855f7',
+  {id:'ollama',name:'Ollama',sub:'Local models',icon:'L',ibg:'rgba(168,85,247,.15)',color:'#a855f7',
    methods:[
-     {id:'local',icon:'?¶ô',name:'Connect Local',desc:'Use locally running Ollama (localhost:11434)',warn:null},
+     {id:'local',icon:'Local',name:'Connect Local',desc:'Use locally running Ollama (localhost:11434)',warn:null},
    ]},
-  {id:'antigravity',name:'Antigravity',sub:'Google (Daily)',icon:'??,ibg:'rgba(52,211,153,.15)',color:'#34d399',
+  {id:'antigravity',name:'Antigravity',sub:'Google (Daily)',icon:'A',ibg:'rgba(52,211,153,.15)',color:'#34d399',
    methods:[
-     {id:'oauth',icon:'?îê',name:'Login with Google',desc:'OAuth login ??uses your Google Cloud / Gemini Code Assist account',warn:null},
+     {id:'oauth',icon:'Auth',name:'Login with Google',desc:'OAuth login uses your Google Cloud / Gemini Code Assist account',warn:null},
    ]},
-  {id:'copilot',name:'Copilot',sub:'GitHub',icon:'?êô',ibg:'rgba(31,111,235,.15)',color:'#2f81f7',
+  {id:'copilot',name:'Copilot',sub:'GitHub',icon:'P',ibg:'rgba(31,111,235,.15)',color:'#2f81f7',
    methods:[
-     {id:'oauth',icon:'?îê',name:'Login with GitHub',desc:'OAuth device login ??uses your GitHub Copilot subscription',warn:null},
+     {id:'oauth',icon:'Auth',name:'Login with GitHub',desc:'OAuth device login uses your GitHub Copilot subscription',warn:null},
    ]},
 ];
 const COL={anthropic:'#f97316',openai:'#10a37f',google:'#4285f4',ollama:'#a855f7',antigravity:'#34d399',copilot:'#2f81f7'};
-const ICONS={anthropic:'?§ñ',openai:'??,google:'??,ollama:'?¶ô',antigravity:'??,copilot:'?êô'};
-const IBGS={anthropic:'rgba(249,115,22,.15)',openai:'rgba(16,163,127,.15)',google:'rgba(66,133,244,.15)',ollama:'rgba(168,85,247,.15)',antigravity:'rgba(52,211,153,.15)',copilot:'rgba(31,111,235,.15)'};
-const IMG_ICONS={
+const ICONS={anthropic:'C',openai:'O',google:'G',ollama:'L',antigravity:'A',copilot:'P'};
+const IBGS={anthropic:'rgba(249,115,22,.15)',openai:'rgba(16,163,127,.15)',google:'rgba(66,133,244,.15)',ollama:'rgba(168,85,247,.15)',antigravity:'rgba(52,211,153,.15)',copilot:'rgba(31,111,235,.15)'};const IMG_ICONS={
   anthropic:'data:image/png;base64,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',
   openai:'data:image/png;base64,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',
   google:'data:image/jpeg;base64,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',
@@ -461,7 +460,7 @@ function providerImg(provider,size){
   return src?\`<img src="\${src}" style="width:\${size}px;height:\${size}px;object-fit:contain;border-radius:2px">\`:(ICONS[provider]||'?');
 }
 
-// ?Ä?Ä?Ä App state ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+// App state
 let ST = { accounts:[], ollamaRunning:false, ollamaModels:[], ollamaBaseUrl:'http://localhost:11434' };
 let sbOpen = false;
 let sbScreen = 'home'; // 'home' | 'providers' | 'add-type' | 'add-method' | 'oauth-device'
@@ -507,7 +506,7 @@ if(!NP.out) NP.out={x:520,y:280};
 let vp={x:60,y:40,s:1};
 let panD=null,nodeD=null,connD=null;
 
-// ?Ä?Ä?Ä Sidebar navigation ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+// Sidebar navigation
 function toggleSb(){
   sbOpen=!sbOpen;
   document.getElementById('sb').classList.toggle('open',sbOpen);
@@ -535,15 +534,15 @@ function renderSb(){
     body.innerHTML=\`
       <div style="padding:8px 0">
         <div class="nav-item" onclick="sbGoTo('providers')">
-          <div class="nav-ic" style="background:rgba(99,102,241,.15)">?ì¶</div>
+          <div class="nav-ic" style="background:rgba(99,102,241,.15)">P</div>
           <div class="nav-info">
             <div class="nav-name">Providers</div>
             <div class="nav-sub">Manage AI provider accounts</div>
           </div>
-          <span class="nav-arr">??/span>
+          <span class="nav-arr">&gt;</span>
         </div>
         <div class="nav-item" style="opacity:.4;pointer-events:none">
-          <div class="nav-ic" style="background:rgba(96,96,128,.1)">??/div>
+          <div class="nav-ic" style="background:rgba(96,96,128,.1)">i</div>
           <div class="nav-info">
             <div class="nav-name">Settings</div>
             <div class="nav-sub">Gateway configuration</div>
@@ -551,7 +550,7 @@ function renderSb(){
           <span class="nav-badge">Soon</span>
         </div>
         <div class="nav-item" style="opacity:.4;pointer-events:none">
-          <div class="nav-ic" style="background:rgba(96,96,128,.1)">?ìä</div>
+          <div class="nav-ic" style="background:rgba(96,96,128,.1)">M</div>
           <div class="nav-info">
             <div class="nav-name">Monitor</div>
             <div class="nav-sub">Request logs & metrics</div>
@@ -597,7 +596,7 @@ function renderSb(){
   else if(sbScreen==='add-method'){
     const m=sbAddingMethod;
     title.textContent=m.name;
-    let warn=m.warn?\`<div class="auth-warn">??\${m.warn}</div>\`:'';
+    let warn=m.warn?\`<div class="auth-warn">\${m.warn}</div>\`:'';
 
     if(m.id==='oauth'){
       body.innerHTML=\`\${warn}
@@ -606,7 +605,7 @@ function renderSb(){
           <input class="form-input" id="f-label" placeholder="\${sbAddingDef.name} Account" value="\${sbAddingDef.name}"/>
           <div class="form-actions">
             <button class="form-cancel" onclick="sbGoBack()">Cancel</button>
-            <button class="form-submit" onclick="doOAuth()">?îê Open Login</button>
+            <button class="form-submit" onclick="doOAuth()">Open Login</button>
           </div>
         </div>\`;
     }
@@ -631,13 +630,13 @@ function renderSb(){
       const site=sbAddingDef.id==='anthropic'?'claude.ai':'chatgpt.com';
       body.innerHTML=\`\${warn}
         <div style="padding:0 14px 10px;font-size:10px;color:var(--mu);line-height:1.6">
-          Open DevTools ??Application ??Cookies ??\${site} ??copy session token.
+          Open DevTools > Application > Cookies > \${site} > copy session token.
         </div>
         <div class="auth-form">
           <div class="form-label">Account label</div>
           <input class="form-input" id="f-label" placeholder="\${sbAddingDef.name} Account" value="\${sbAddingDef.name}"/>
           <div class="form-label">Session Token</div>
-          <input class="form-input" id="f-ses" type="password" placeholder="Paste token??/>
+          <input class="form-input" id="f-ses" type="password" placeholder="Paste token"/>
           <div class="form-actions">
             <button class="form-cancel" onclick="sbGoBack()">Cancel</button>
             <button class="form-submit" onclick="doSession()">Connect</button>
@@ -703,7 +702,7 @@ function renderConnectedAccounts(){
         <div class="acc-ic" style="background:\${IBGS[a.provider]||'rgba(96,96,128,.1)'}">\${providerImg(a.provider,16)}</div>
         <div class="acc-info">
           <div class="acc-name">\${a.label}</div>
-          <div class="acc-sub">\${methodLabel[a.method]||a.method}\${activeSlots?' ¬∑ <span style="color:var(--gr)">??/span> '+activeSlots+' active':canvasCount?' ¬∑ '+canvasCount+' on canvas':''}</div>
+          <div class="acc-sub">\${methodLabel[a.method]||a.method}\${activeSlots?' ¬∑ <span style="color:var(--gr)">active</span> '+activeSlots+' active':canvasCount?' ¬∑ '+canvasCount+' on canvas':''}</div>
           \${sub?\`<div class="acc-sub" style="opacity:.6;margin-top:1px;font-size:9px">\${sub}</div>\`:''}
         </div>
         <button class="del-btn" onclick="deleteAccount('\${a.id}')" title="Delete">√ó</button>
@@ -716,7 +715,7 @@ function renderConnectedAccounts(){
   }).join('');
   if(ST.ollamaRunning&&!ST.accounts.find(a=>a.provider==='ollama')){
     html+=\`<div style="padding:8px 16px;font-size:10px;color:var(--mu)">
-      Ollama is running ??<button onclick="sbGoToAdd('ollama')" style="background:none;border:none;color:var(--bl2);cursor:pointer;font-size:10px">add it as an account</button>
+      Ollama is running <button onclick="sbGoToAdd('ollama')" style="background:none;border:none;color:var(--bl2);cursor:pointer;font-size:10px">add it as an account</button>
     </div>\`;
   }
   return html;
@@ -734,14 +733,14 @@ function sbGoToMethod(methodId){
   renderSb();
 }
 
-// ?Ä?Ä?Ä Auth actions ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+// Auth actions
 async function doApiKey(){
   const label=document.getElementById('f-label')?.value.trim()||sbAddingDef.name;
   const key=document.getElementById('f-key')?.value.trim();
   if(!key){toast('API key is required',true);return}
   const r=await api('POST','/api/accounts',{provider:sbAddingDef.id,label,method:'apikey',apiKey:key});
   if(!r.ok){toast('Error: '+await r.text(),true);return}
-  toast('??'+label+' connected');
+  toast(label+' connected');
   sbScreen='providers';
   await fetchStatus();
   renderSb();
@@ -753,7 +752,7 @@ async function doSession(){
   const method=sbAddingDef.id==='anthropic'?'oauth-unofficial':'oauth-unofficial';
   const r=await api('POST','/api/accounts',{provider:sbAddingDef.id,label,method,sessionToken:ses});
   if(!r.ok){toast('Error: '+await r.text(),true);return}
-  toast('??'+label+' connected');
+  toast(label+' connected');
   sbScreen='providers';
   await fetchStatus();
   renderSb();
@@ -777,7 +776,7 @@ async function doOAuth(){
     pollNewAccount(0,ST.accounts.length);
     return;
   }else{
-    toast('Complete login in the opened window??);
+    toast('Complete login in the opened window');
   }
   sbScreen='providers';
   renderSb();
@@ -786,7 +785,7 @@ async function doOAuth(){
 async function copyOAuthCode(){
   if(!sbOAuthDevice?.userCode)return;
   try{await navigator.clipboard?.writeText(sbOAuthDevice.userCode);toast('Code copied');}
-  catch{toast('Copy failed ??select the code manually',true);}
+  catch{toast('Copy failed - select the code manually',true);}
 }
 function openOAuthDevicePage(){
   if(sbOAuthDevice?.authUrl)window.open(sbOAuthDevice.authUrl,'_blank','width=600,height=700');
@@ -797,13 +796,13 @@ async function doLocal(){
   await api('POST','/api/ollama/config',{baseUrl:url});
   const r=await api('POST','/api/accounts',{provider:'ollama',label,method:'local'});
   if(!r.ok){toast('Error: '+await r.text(),true);return}
-  toast('??'+label+' added');
+  toast(label+' added');
   sbScreen='providers';
   await fetchStatus();
   renderSb();
 }
 function pollNewAccount(n,prevCount){
-  if(n>180){toast('OAuth timed out ??no account detected. Check terminal logs.',true);return;}
+  if(n>180){toast('OAuth timed out - no account detected. Check terminal logs.',true);return;}
   setTimeout(async()=>{
     await fetchStatus();
     renderSb();
@@ -813,7 +812,7 @@ function pollNewAccount(n,prevCount){
     }
     if(ST.accounts.length>prevCount){
       const newAcc=ST.accounts.slice(-1)[0];
-      toast('??'+(newAcc?.label||'Account')+' connected!');
+      toast((newAcc?.label||'Account')+' connected!');
       sbOAuthDevice=null;
       if(sbScreen==='oauth-device')sbScreen='providers';
       renderSb();
@@ -823,7 +822,7 @@ function pollNewAccount(n,prevCount){
   },4000);
 }
 
-// ?Ä?Ä?Ä Account / slot management ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+// Account / slot management
 async function deleteAccount(id){
   // Remove all canvas nodes belonging to this account
   for(const [slotId,info] of Object.entries(nodeSlots)){
@@ -872,7 +871,7 @@ async function removeFromCanvas(slotId){
   }
 }
 
-// ?Ä?Ä?Ä Monitor node ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+// Monitor node
 function toggleMonitor(tab){
   if(monitorOpen && monitorTab===tab){ monitorOpen=false; }
   else{ monitorOpen=true; monitorTab=tab; if(!NP.monitor) NP.monitor={x:80,y:60}; }
@@ -938,7 +937,7 @@ function buildMonitorNode(){
     usage:'<svg width="11" height="11" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="8" width="2.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="5.75" y="5" width="2.5" height="7.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="10" y="2" width="2.5" height="10.5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>',
   };
   const clearBtn=(monitorTab==='logs'||monitorTab==='requests')
-    ?\`<button onclick="clearMonitor()" style="margin:4px 8px;padding:2px 9px;border-radius:5px;border:1px solid var(--b2);background:rgba(239,68,68,.08);color:#f87171;font-size:9px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .12s" onmouseover="this.style.background='rgba(239,68,68,.18)'" onmouseout="this.style.background='rgba(239,68,68,.08)'">??Clear</button>\`
+    ?\`<button onclick="clearMonitor()" style="margin:4px 8px;padding:2px 9px;border-radius:5px;border:1px solid var(--b2);background:rgba(239,68,68,.08);color:#f87171;font-size:9px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .12s" onmouseover="this.style.background='rgba(239,68,68,.18)'" onmouseout="this.style.background='rgba(239,68,68,.08)'">Clear</button>\`
     :'';
   const tabHtml=tabs.map(t=>\`<div class="mn-t \${monitorTab===t?'on':''}" onclick="switchMonitorTab('\${t}')">\${icons[t]} \${labels[t]}</div>\`).join('')+
     \`<div style="flex:1"></div>\${clearBtn}\`;
@@ -951,22 +950,22 @@ function buildMonitorNode(){
     const short=cwd.replace(new RegExp('^/Users/[^/]+'),'~');
     inputRow=\`<div class="mn-inp-row">
       <span class="mn-cwd-lbl" title="\${cwd}">\${short}$</span>
-      <input class="mn-inp" id="mn-inp" placeholder="Enter command?? autocomplete="off" spellcheck="false"/>
-      <button class="mn-run" onclick="sendTerm()">??/button>
+      <input class="mn-inp" id="mn-inp" placeholder="Enter command" autocomplete="off" spellcheck="false"/>
+      <button class="mn-run" onclick="sendTerm()">Run</button>
     </div>\`;
   } else if(monitorTab==='status'){
-    content=\`<div id="mn-status-body"><div class="mn-empty">Loading??/div></div>\`;
+    content=\`<div id="mn-status-body"><div class="mn-empty">Loading</div></div>\`;
   } else if(monitorTab==='logs'){
-    content=\`<div class="log-wrap" id="mn-logs-body"><div class="mn-empty">Loading??/div></div>\`;
+    content=\`<div class="log-wrap" id="mn-logs-body"><div class="mn-empty">Loading</div></div>\`;
   } else if(monitorTab==='requests'){
-    content=\`<div class="req-wrap" id="mn-reqs-body"><div class="mn-empty">Loading??/div></div>\`;
+    content=\`<div class="req-wrap" id="mn-reqs-body"><div class="mn-empty">Loading</div></div>\`;
   } else if(monitorTab==='usage'){
-    content=\`<div id="mn-usage-body">\${usageHtmlCache||'<div class="mn-empty">Loading??/div>'}</div>\`;
+    content=\`<div id="mn-usage-body">\${usageHtmlCache||'<div class="mn-empty">Loading</div>'}</div>\`;
   }
 
   return \`<div class="nd mn" id="nd-monitor" style="left:\${pos.x}px;top:\${pos.y}px;width:\${sz.w}px">
   <div class="nh" style="border-radius:13px 13px 0 0;cursor:grab">
-    <div class="nic" style="background:rgba(99,102,241,.15);font-size:11px">??/div>
+    <div class="nic" style="background:rgba(99,102,241,.15);font-size:11px">T</div>
     <span class="nn">Monitor</span>
     <button class="nd-rm" onclick="toggleMonitor(monitorTab)" title="Close">√ó</button>
   </div>
@@ -981,7 +980,7 @@ function buildMonitorNode(){
 
 function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-// ?Ä?Ä?Ä Terminal ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+// Terminal
 function addTermLine(t,v){
   termLines.push({t,v});
   if(termLines.length>500)termLines.splice(0,termLines.length-500);
@@ -1031,7 +1030,7 @@ function setupTermKeys(){
   inp.focus();
 }
 
-// ?Ä?Ä?Ä Status / Logs / Requests refresh ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+// Status / Logs / Requests refresh
 async function refreshStatus(){
   const body=document.getElementById('mn-status-body');
   if(!body)return;
@@ -1074,7 +1073,7 @@ async function refreshLogs(forceBottom=false){
     const d=await(await fetch('/api/logs?n=120')).json();
     if(!d.lines?.length){body.innerHTML='<div class="mn-empty">No log entries yet</div>';return;}
     body.innerHTML=d.lines.map(l=>{
-      const cls=l.includes('??)||l.includes('error')||l.includes('Error')?'err':l.includes('??)||l.includes('warn')?'warn':l.includes('??)?'ok':'';
+      const lower=String(l).toLowerCase(); const cls=lower.includes('error')?'err':lower.includes('warn')?'warn':lower.includes('[ok]')?'ok':'';
       return \`<div class="log-l \${cls}">\${escHtml(l)}</div>\`;
     }).join('');
     if(scroller&&atBottom) scroller.scrollTop=scroller.scrollHeight;
@@ -1102,37 +1101,37 @@ async function refreshRequests(){
       } else if(r.failedModels?.length&&!r.usedModel){
         modelLabel=r.failedModels.map(m=>\`<div style="opacity:.5;text-decoration:line-through;line-height:1.4">\${m}</div>\`).join('');
       } else {
-        modelLabel=r.usedModel||'??;
+        modelLabel=r.usedModel||'-';
       }
       const tokensTxt=r.inputTokens!=null||r.outputTokens!=null
-        ?\`<span style="color:#6ee7b7">\${r.inputTokens??0}</span>/<span style="color:#f9a8d4">\${r.outputTokens??0}</span>\`:'??;
+        ?\`<span style="color:#6ee7b7">\${r.inputTokens??0}</span>/<span style="color:#f9a8d4">\${r.outputTokens??0}</span>\`:'-';
       const hasDetail=!!(r.inputPreview||r.outputPreview||r.toolCalls?.length||r.toolCallDetails?.length||r.webFetches?.length||r.error);
       const detailId=\`req-detail-\${r.ts}\`;
-      const detailBtn=hasDetail?\`<button class="req-expand-btn" onclick="toggleReqDetail('\${detailId}')" title="Show detail">??/button>\`:'';
+      const detailBtn=hasDetail?\`<button class="req-expand-btn" onclick="toggleReqDetail('\${detailId}')" title="Show detail">+</button>\`:'';
 
       // Build detail panel
       let detailHtml='';
       if(hasDetail){
         const parts=[];
-        if(r.inputPreview) parts.push(\`<div class="req-detail-section"><div class="req-detail-label">??User</div><div class="req-detail-val">\${escHtml(r.inputPreview)}</div></div>\`);
+        if(r.inputPreview) parts.push(\`<div class="req-detail-section"><div class="req-detail-label">User</div><div class="req-detail-val">\${escHtml(r.inputPreview)}</div></div>\`);
         if(r.toolCallDetails?.length){
           const detailLines=r.toolCallDetails.map(tc=>{
             let argStr='';
-            try{const p=JSON.parse(tc.args);const cmd=p.cmd??p.command??p.script??p.url??p.path;argStr=cmd?\` <span style="color:var(--mu)">??\${escHtml(String(cmd))}</span>\`:\`<span style="color:var(--mu);font-size:9px"> \${escHtml(tc.args.slice(0,80))}</span>\`;}catch{argStr=tc.args?\`<span style="color:var(--mu);font-size:9px"> \${escHtml(tc.args.slice(0,80))}</span>\`:'';};
+            try{const p=JSON.parse(tc.args);const cmd=p.cmd??p.command??p.script??p.url??p.path;argStr=cmd?\` <span style="color:var(--mu)">\${escHtml(String(cmd))}</span>\`:\`<span style="color:var(--mu);font-size:9px"> \${escHtml(tc.args.slice(0,80))}</span>\`;}catch{argStr=tc.args?\`<span style="color:var(--mu);font-size:9px"> \${escHtml(tc.args.slice(0,80))}</span>\`:'';};
             return\`<code>\${escHtml(tc.name)}</code>\${argStr}\`;
           });
-          parts.push(\`<div class="req-detail-section"><div class="req-detail-label">??Tools called</div><div class="req-detail-val">\${detailLines.join('<br>')}</div></div>\`);
-        } else if(r.toolCalls?.length) parts.push(\`<div class="req-detail-section"><div class="req-detail-label">??Tools called</div><div class="req-detail-val">\${r.toolCalls.map(n=>\`<code>\${escHtml(n)}</code>\`).join(' ')}</div></div>\`);
-        if(r.webFetches?.length) parts.push(\`<div class="req-detail-section"><div class="req-detail-label">?åê Web fetched</div><div class="req-detail-val">\${r.webFetches.map(u=>\`<code>\${escHtml(u)}</code>\`).join('<br>')}</div></div>\`);
-        if(r.outputPreview) parts.push(\`<div class="req-detail-section"><div class="req-detail-label">??Model</div><div class="req-detail-val">\${escHtml(r.outputPreview)}</div></div>\`);
-        if(r.error) parts.push(\`<div class="req-detail-section"><div class="req-detail-label" style="color:#f87171">??Error</div><div class="req-detail-val" style="color:#f87171">\${escHtml(r.error)}</div></div>\`);
+          parts.push(\`<div class="req-detail-section"><div class="req-detail-label">Tools called</div><div class="req-detail-val">\${detailLines.join('<br>')}</div></div>\`);
+        } else if(r.toolCalls?.length) parts.push(\`<div class="req-detail-section"><div class="req-detail-label">Tools called</div><div class="req-detail-val">\${r.toolCalls.map(n=>\`<code>\${escHtml(n)}</code>\`).join(' ')}</div></div>\`);
+        if(r.webFetches?.length) parts.push(\`<div class="req-detail-section"><div class="req-detail-label">Web fetched</div><div class="req-detail-val">\${r.webFetches.map(u=>\`<code>\${escHtml(u)}</code>\`).join('<br>')}</div></div>\`);
+        if(r.outputPreview) parts.push(\`<div class="req-detail-section"><div class="req-detail-label">Model</div><div class="req-detail-val">\${escHtml(r.outputPreview)}</div></div>\`);
+        if(r.error) parts.push(\`<div class="req-detail-section"><div class="req-detail-label" style="color:#f87171">Error</div><div class="req-detail-val" style="color:#f87171">\${escHtml(r.error)}</div></div>\`);
         detailHtml=\`<div id="\${detailId}" class="req-detail-panel" style="display:none">\${parts.join('')}</div>\`;
       }
 
       return \`<div style="flex-direction:column;display:flex;border-bottom:1px solid rgba(255,255,255,.035)">
         <div class="req-row \${stCls}-row" style="border-bottom:none">
           <span class="req-ts">\${ts}</span>
-          <span class="req-prov" style="color:\${col}">\${r.provider||'??}</span>
+          <span class="req-prov" style="color:\${col}">\${r.provider||'-'}</span>
           <span class="req-model">\${modelLabel}</span>
           <span class="req-ms">\${r.ms}</span>
           <span>\${tokensTxt}</span>
@@ -1146,19 +1145,19 @@ async function refreshRequests(){
     body.innerHTML=hdr+rows;
     if(scroller&&atBottom) scroller.scrollTop=scroller.scrollHeight;
     // Restore open state after rebuild
-    openIds.forEach(id=>{const el=document.getElementById(id);if(el){el.style.display='block';const btn=el.previousElementSibling?.querySelector('.req-expand-btn');if(btn)btn.textContent='??;}});
+    openIds.forEach(id=>{const el=document.getElementById(id);if(el){el.style.display='block';const btn=el.previousElementSibling?.querySelector('.req-expand-btn');if(btn)btn.textContent='-';}});
   }catch{body.innerHTML='<div class="mn-empty">Failed to load</div>';}
 }
 function toggleReqDetail(id){
   const el=document.getElementById(id);
   if(!el)return;
   const btn=el.previousElementSibling?.querySelector('.req-expand-btn');
-  if(el.style.display==='none'){el.style.display='block';if(btn)btn.textContent='??;}
-  else{el.style.display='none';if(btn)btn.textContent='??;}
+  if(el.style.display==='none'){el.style.display='block';if(btn)btn.textContent='-';}
+  else{el.style.display='none';if(btn)btn.textContent='-';}
 }
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-// ?Ä?Ä?Ä Usage ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+// Usage
 const PRICING={
   'claude-opus-4-7':[15,75],'claude-opus-4-7-20250514':[15,75],'claude-opus-4-5':[15,75],
   'claude-sonnet-4-6':[3,15],'claude-sonnet-4-5':[3,15],
@@ -1176,12 +1175,12 @@ function getPrice(model){
   return key?PRICING[key]:null;
 }
 function fmtCost(usd){
-  if(usd==null)return'??;
+  if(usd==null)return'-';
   if(usd<0.0001)return'<$0.0001';
   if(usd<0.01)return'$'+usd.toFixed(4);
   return'$'+usd.toFixed(3);
 }
-function fmtTok(n){if(!n)return'??;if(n>=1e6)return(n/1e6).toFixed(2)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(n);}
+function fmtTok(n){if(!n)return'-';if(n>=1e6)return(n/1e6).toFixed(2)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(n);}
 
 function fmtReset(isoStr){
   if(!isoStr)return'';
@@ -1215,7 +1214,7 @@ function renderUsage(){
   const body=document.getElementById('mn-usage-body');
   if(!body)return;
 
-  // ?Ä?Ä Quota section ??built from ST.accounts + quotaState (no auto-fetch) ?Ä?Ä
+  // ?ÔøΩ?ÔøΩ Quota section ??built from ST.accounts + quotaState (no auto-fetch) ?ÔøΩ?ÔøΩ
   const oauthAccts=(ST.accounts||[]).filter(a=>a.method==='oauth-official'&&(a.provider==='anthropic'||a.provider==='openai'));
   let quotaHtml='';
   if(oauthAccts.length){
@@ -1224,9 +1223,9 @@ function renderUsage(){
       const icon=providerImg(a.provider,14);
       let rows='';
       if(qs.loading){
-        rows=\`<div style="font-size:9px;color:var(--mu)">Fetching??/div>\`;
+        rows=\`<div style="font-size:9px;color:var(--mu)">Fetching</div>\`;
       }else if(!qs.data){
-        rows=\`<div style="font-size:9px;color:var(--mu);opacity:.5">Click ??to load</div>\`;
+        rows=\`<div style="font-size:9px;color:var(--mu);opacity:.5">Click refresh to load</div>\`;
       }else if(qs.data.error){
         rows=\`<div style="font-size:9px;color:var(--rd)">Error: \${qs.data.error}</div>\`;
       }else if(a.provider==='anthropic'){
@@ -1242,7 +1241,7 @@ function renderUsage(){
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:\${rows?'6':'0'}px">
           <div style="width:20px;height:20px;border-radius:5px;background:\${IBGS[a.provider]||'rgba(96,96,128,.15)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">\${icon}</div>
           <span style="font-size:11px;font-weight:600;flex:1">\${escHtml(a.label||a.provider)}</span>
-          <button onclick="refreshQuota('\${a.id}')" \${qs.loading?'disabled':''} style="\${btnStyle}" title="Refresh quota">\${qs.loading?'??:'??}</button>
+          <button onclick="refreshQuota('\${a.id}')" \${qs.loading?'disabled':''} style="\${btnStyle}" title="Refresh quota">\${qs.loading?'...':'Refresh'}</button>
         </div>
         \${rows}
       </div>\`;
@@ -1253,7 +1252,7 @@ function renderUsage(){
     </div>\`;
   }
 
-  // ?Ä?Ä Token usage section ??built from lastReqData ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // ?ÔøΩ?ÔøΩ Token usage section ??built from lastReqData ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ?ÔøΩ
   const reqs=(lastReqData?.requests||[]);
   const ok=reqs.filter(r=>r.status==='ok'&&r.usedModel);
   let tokenHtml='';
@@ -1273,7 +1272,7 @@ function renderUsage(){
     const cards=\`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
       <div class="usg-card"><div class="usg-val">\${fmtTok(totIn)}</div><div class="usg-lbl">Input tokens</div></div>
       <div class="usg-card"><div class="usg-val">\${fmtTok(totOut)}</div><div class="usg-lbl">Output tokens</div></div>
-      <div class="usg-card"><div class="usg-val" style="color:var(--gr)">\${hasCost?fmtCost(totCost):'??}</div><div class="usg-lbl">Est. cost</div></div>
+      <div class="usg-card"><div class="usg-val" style="color:var(--gr)">\${hasCost?fmtCost(totCost):'-'}</div><div class="usg-lbl">Est. cost</div></div>
     </div>\`;
     const hdr=\`<div class="usg-row usg-hdr"><span>Model</span><span>Reqs</span><span>In</span><span>Out</span><span>Cost</span></div>\`;
     const rows=Object.entries(byModel).sort((a,b)=>b[1].inT+b[1].outT-(a[1].inT+a[1].outT)).map(([model,m])=>{
@@ -1283,8 +1282,8 @@ function renderUsage(){
           <span style="width:6px;height:6px;border-radius:50%;background:\${col};flex-shrink:0"></span>
           <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\${model}</span>
         </span>
-        <span>\${m.reqs}</span><span>\${fmtTok(m.inT)||'??}</span><span>\${fmtTok(m.outT)||'??}</span>
-        <span>\${m.hasCost?fmtCost(m.cost):'??}</span>
+        <span>\${m.reqs}</span><span>\${fmtTok(m.inT)||'-'}</span><span>\${fmtTok(m.outT)||'-'}</span>
+        <span>\${m.hasCost?fmtCost(m.cost):'-'}</span>
       </div>\`;
     }).join('');
     tokenHtml=\`<div style="padding:10px 10px 0">
@@ -1320,7 +1319,7 @@ async function refreshQuota(accountId){
   renderUsage();
 }
 
-// ?Ä?Ä?Ä Canvas viewport ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+// Canvas viewport
 function applyVp(){
   // Use CSS zoom for scaling so the browser re-renders content at the exact zoom level
   // (crisp text at any zoom), and translate for panning (in parent pixel space)
@@ -1362,11 +1361,11 @@ function fitAll(){
   applyVp();
 }
 
-// ?Ä?Ä?Ä Canvas render ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+// Canvas render
 function render(){
   const world=document.getElementById('world');
   const savedScroll=document.getElementById('mn-body')?.scrollTop??0;
-  // Snapshot current monitor content so rebuild doesn't flash "Loading??
+  // Snapshot current monitor content so rebuild doesn't flash "Loading
   const savedReqs=document.getElementById('mn-reqs-body')?.innerHTML;
   const savedLogs=document.getElementById('mn-logs-body')?.innerHTML;
   const savedStat=document.getElementById('mn-status-body')?.innerHTML;
@@ -1410,19 +1409,19 @@ function accountSubtext(acc){
         const pad=parts[1].replace(/-/g,'+').replace(/_/g,'/');
         const payload=JSON.parse(atob(pad+'=='.slice(0,(4-pad.length%4)%4)));
         const email=payload.email||payload.sub||'';
-        if(email)return '?ë§ '+email;
+        if(email)return 'User '+email;
       }
       // No email in JWT ??show provider-specific label
-      if(acc.provider==='anthropic')return '?§ñ Claude Code OAuth';
+      if(acc.provider==='anthropic')return 'Claude Code OAuth';
     }
   }catch{}
-  if(acc.method==='oauth-official')return acc.provider==='anthropic'?'?§ñ Claude Code OAuth':'?îê OAuth';
+  if(acc.method==='oauth-official')return acc.provider==='anthropic'?'Claude Code OAuth':'OAuth';
   if(acc.method==='apikey'&&acc.apiKey){
     const k=acc.apiKey;
-    return '?îë '+k.slice(0,10)+'¬∑¬∑¬∑'+k.slice(-4);
+    return 'Key '+k.slice(0,10)+'...'+k.slice(-4);
   }
-  if(acc.method==='oauth-unofficial')return '?ç™ Session Token';
-  if(acc.method==='local')return '?¶ô '+(ST.ollamaBaseUrl||'localhost:11434');
+  if(acc.method==='oauth-unofficial')return 'Session Token';
+  if(acc.method==='local')return 'Local '+(ST.ollamaBaseUrl||'localhost:11434');
   return '';
 }
 
@@ -1462,15 +1461,15 @@ function buildOutNode(){
   allSlots.sort((a,b)=>a.slot.order-b.slot.order);
   const piCls='pi'+(allSlots.length?' live':'');
   const multi=allSlots.length>1;
-  const subtitle=multi?'Priority order ¬∑ fallback chain':'Codex uses these models';
+  const subtitle=multi?'Priority order / fallback chain':'Codex uses these models';
   const body=allSlots.length
     ?allSlots.map(({acc,slot},i)=>{
         const m=slot.model||'(auto)';
         const upDis=i===0?'disabled':'';
         const dnDis=i===allSlots.length-1?'disabled':'';
         const orderBtns=multi?\`<div class="oi-ord">
-          <button class="oi-arr" onclick="moveOut('\${acc.id}','\${slot.slotId}',-1)" \${upDis}>??/button>
-          <button class="oi-arr" onclick="moveOut('\${acc.id}','\${slot.slotId}',1)" \${dnDis}>??/button>
+          <button class="oi-arr" onclick="moveOut('\${acc.id}','\${slot.slotId}',-1)" \${upDis}>&uarr;</button>
+          <button class="oi-arr" onclick="moveOut('\${acc.id}','\${slot.slotId}',1)" \${dnDis}>&darr;</button>
         </div>\`:'';
         return \`<div class="oi">
           \${multi?\`<span class="oi-num">\${i+1}</span>\`:''}
@@ -1483,14 +1482,14 @@ function buildOutNode(){
           <button class="oi-x" onclick="removeOut('\${acc.id}','\${slot.slotId}')">√ó</button>
         </div>\`;
       }).join('')
-    :'<div class="out-empty">No providers connected<br><span style="font-size:9px">??Drag ??from a node here</span></div>';
+    :'<div class="out-empty">No providers connected<br><span style="font-size:9px">Drag from a node here</span></div>';
   const pos=NP.out||{x:520,y:280};
   const bypassed=codexMode==='openai';
-  const bypassBanner=bypassed?'<div class="out-bypass">??Bypassed ??Codex using OpenAI directly</div>':'';
+  const bypassBanner=bypassed?'<div class="out-bypass">Bypassed - Codex using OpenAI directly</div>':'';
   return \`<div class="nd out-node\${bypassed?' bypassed':''}" id="nd-out" style="left:\${pos.x}px;top:\${pos.y}px">
   <div class="\${piCls}" id="pi"></div>
   <div class="nh">
-    <div class="out-ic">??/div>
+    <div class="out-ic">O</div>
     <div style="flex:1;min-width:0">
       <div class="nn">Active Output</div>
       <div style="font-size:9px;color:var(--mu)">\${subtitle}</div>
@@ -1501,7 +1500,7 @@ function buildOutNode(){
 </div>\`;
 }
 
-// ?Ä?Ä?Ä SVG lines ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+// SVG lines
 function portPos(el){
   const ws=document.getElementById('ws').getBoundingClientRect();
   const r=el.getBoundingClientRect();
@@ -1535,7 +1534,7 @@ function drawLines(){
   });
 }
 
-// ?Ä?Ä?Ä Node drag ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+// Node drag
 function startNodeDrag(e,id){
   if(e.target.tagName==='BUTTON'||e.target.tagName==='SELECT'||e.target.tagName==='INPUT')return;
   e.preventDefault();e.stopPropagation();
@@ -1636,13 +1635,13 @@ WS.addEventListener('wheel',e=>{
   zoomAt(e.deltaY<0?1.1:1/1.1,e.clientX-r.left,e.clientY-r.top);
 },{passive:false});
 
-// ?Ä?Ä?Ä State changes ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+// State changes
 async function connectOut(slotId){
   const info=nodeSlots[slotId];
   if(!info)return;
   const r=await api('POST',\`/api/accounts/\${info.accountId}/slots\`,{slotId,model:info.model});
   if(!r.ok){toast('Connection failed: '+await r.text(),true);return;}
-  toast('??Connected to output');
+  toast('Connected to output');
   await fetchStatus();
 }
 async function removeOut(accountId,slotId){
@@ -1669,7 +1668,7 @@ async function moveOut(accountId,slotId,dir){
   await fetchStatus();
 }
 
-// ?Ä?Ä?Ä Fetch ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+// Fetch
 async function fetchStatus(){
   try{
     const d=await(await fetch('/api/accounts')).json();
@@ -1716,12 +1715,12 @@ function updateModeUI(){
 }
 async function switchProvider(mode){
   try{
-    toast(mode==='rcodex'?'Switching to rcodex Gateway??:'Switching to OpenAI direct??);
+    toast(mode==='rcodex'?'Switching to rcodex Gateway':'Switching to OpenAI direct');
     const r=await api('POST','/api/codex-provider',{mode});
     if(!r.ok){toast('Switch failed',true);return;}
     codexMode=mode;
     updateModeUI();
-    toast(mode==='rcodex'?'??rcodex Gateway ??Codex restarted':'??OpenAI direct ??Codex restarted');
+    toast(mode==='rcodex'?'rcodex Gateway - Codex restarted':'OpenAI direct - Codex restarted');
   }catch{toast('Switch failed',true);}
 }
 function toast(msg,err){
@@ -1732,7 +1731,7 @@ function toast(msg,err){
 
 window.addEventListener('resize',drawLines);
 
-// ?Ä?Ä?Ä Init ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+// Init
 async function init(){
   await fetchStatus();
   try{const d=await(await fetch('/api/status')).json();if(d.home)termCwd=d.home;}catch{}

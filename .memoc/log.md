@@ -145,3 +145,9 @@ Append-only chronological log for project memory updates.
 - Added Copilot OpenAI function-tool forwarding, anti-hallucination bridge instructions, and Responses tool-result history reconstruction; verified `npm run build`.
 
 ## [2026-05-20T07:59:44] upgrade | Re-scanned: Node.js, Fastify, TypeScript
+
+## [2026-05-20T19:18:00+0900] fix | Restore gateway dashboard UI
+
+- Repaired `src/gateway/ui.ts` after rcodex rename/encoding corruption broke rendered HTML/JS strings.
+- Replaced broken dashboard icon/control text with ASCII-safe labels so node rendering, sidebar buttons, monitor tabs, output controls, and request details can initialize.
+- Verified rendered dashboard script parses and `npm run build` succeeds.
