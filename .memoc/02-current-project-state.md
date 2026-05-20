@@ -1,6 +1,6 @@
 # Current Project State
 
-Last synced: 2026-05-20T19:44:00+0900
+Last synced: 2026-05-20T20:03:00+0900
 
 ## Current Status
 
@@ -11,7 +11,7 @@ Last synced: 2026-05-20T19:44:00+0900
 ## Project Snapshot
 
 <!-- memoc:snapshot:start -->
-- Last synced: 2026-05-20T19:44:00+0900
+- Last synced: 2026-05-20T20:03:00+0900
 - Detected stack: Node.js, Fastify, TypeScript
 
 ### Config Files
@@ -52,6 +52,7 @@ See `.memoc/log.md` for full history.
 - `npm run build`: compile TypeScript into `dist/`.
 - `npm start`: run the built CLI from `dist/index.js`.
 - `rcodex`: package binary that enforces accepted npm updates, then starts gateway + launches Codex.
+- `rcodex --version`: reads the installed package version from `package.json`.
 - `rcodex setup`: first-time setup in foreground mode.
 
 ## Notes

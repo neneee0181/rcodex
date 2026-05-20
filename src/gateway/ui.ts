@@ -423,7 +423,6 @@ const PDEFS = [
    methods:[
      {id:'oauth',icon:'Auth',name:'Login with Claude Code',desc:'OAuth login uses your Claude Pro/Max subscription',warn:null},
      {id:'apikey',icon:'Key',name:'API Key',desc:'Use Anthropic API key from console.anthropic.com',warn:null},
-     {id:'session',icon:'Cookie',name:'Session Token',desc:'Use claude.ai browser cookie (unofficial)',warn:'Unofficial; may break. Against ToS.'},
    ]},
   {id:'openai',name:'ChatGPT / Codex',sub:'OpenAI',icon:'O',ibg:'rgba(16,163,127,.15)',color:'#10a37f',
    methods:[

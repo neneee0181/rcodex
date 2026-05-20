@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { readFileSync } from "node:fs";
 import { runSync } from "./commands/sync.js";
 import { runDoctor } from "./commands/doctor.js";
 import { runSwitch } from "./commands/switch.js";
@@ -10,12 +11,21 @@ import { runLaunch } from "./commands/launch.js";
 import { runGatewayDaemon } from "./commands/gateway-daemon.js";
 import { enforceAcceptedLatestVersion } from "./utils/updates.js";
 
+function getPackageVersion(): string {
+  try {
+    const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version?: string };
+    return pkg.version ?? "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+}
+
 const program = new Command();
 
 program
   .name("rcodex")
   .description("rcodex - manage AI providers for Codex")
-  .version("0.0.1");
+  .version(getPackageVersion());
 
 program.action(async () => {
   await enforceAcceptedLatestVersion();

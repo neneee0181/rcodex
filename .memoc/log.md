@@ -163,3 +163,9 @@ Append-only chronological log for project memory updates.
 - Widened provider canvas nodes and added a separate duplicate-account `#N` badge so account identity remains visible when labels are long.
 - Added `rcodex-hidden-slots-v1` localStorage tracking; removed active slots no longer auto-reappear when `fetchStatus()` syncs server `activeModels` on restart.
 - Verified rendered dashboard script parses and `npm run build` succeeds.
+
+## [2026-05-20T20:03:00+0900] fix | Audit rcodex rename regressions
+
+- Fixed CLI version output to read the installed `package.json` version instead of hardcoded `0.0.1`.
+- Removed unsupported Claude.ai session-token option from the dashboard and corrected README provider notes.
+- Corrected `.gitignore` runtime comment from `~/.cps/` to `~/.rcodex/`; verified build, `rcodex --version`, rendered UI script parsing, and npm pack dry-run.

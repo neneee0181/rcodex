@@ -62,8 +62,8 @@ Use the sidebar to add accounts and model slots. Drag model slots onto the canva
 
 Supported account types:
 
-- Claude with Anthropic API key.
-- OpenAI API key or OAuth flow.
+- Claude with Anthropic API key or Claude Code OAuth.
+- OpenAI API key, OAuth flow, or unofficial ChatGPT session token.
 - Google Gemini API key.
 - Antigravity OAuth, using Gemini / Cloud Code routing.
 - GitHub Copilot OAuth device login.
@@ -86,7 +86,7 @@ Supported account types:
 
 ### Claude
 
-rcodex supports Anthropic API-key accounts. Older unofficial Claude.ai session auth is not supported for direct inference; use an Anthropic API key for Claude model access.
+rcodex supports Anthropic API-key accounts and Claude Code OAuth. Older unofficial Claude.ai session auth is not supported for direct inference, so the UI does not offer it.
 
 ### Ollama
 
