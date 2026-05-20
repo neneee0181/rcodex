@@ -59,7 +59,7 @@ See `.memoc/log.md` for full history.
 - Main runtime config: `~/.rcodex/gateway.json`; logs: `~/.rcodex/gateway.log`; request history: `~/.rcodex/requests.jsonl`.
 - Default gateway port is `3141`; Codex provider key managed by this project is `rcodex`; base URL is `http://localhost:<port>/v1` with `wire_api = "responses"`.
 - Package dependencies include Fastify/CORS for the gateway, Commander for CLI commands, `@iarna/toml` for Codex config edits, and `better-sqlite3` for Codex thread migration support.
-- Package version is prepared as `0.0.1`; npm name, binary, runtime directory, README, and provider key are all `rcodex`.
+- Package version is prepared as `0.0.1`; npm package name is `@kevin0181/rcodex`, binary/runtime directory/README/provider key are `rcodex`.
 - Antigravity credentials search order: user override `~/.rcodex/antigravity-app.json`, then bundled `dist/antigravity-credentials.json`; package warns when bundled credentials are absent.
 - Dynamic Windows Codex App Detection searches `%LOCALAPPDATA%\OpenAI\Codex\bin\*\codex.exe` dynamically to cover dynamic hash/version subfolders from local app installations.
 

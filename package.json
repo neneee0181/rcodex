@@ -1,5 +1,5 @@
 {
-  "name": "rcodex",
+  "name": "@kevin0181/rcodex",
   "version": "0.0.1",
   "description": "Gateway and provider manager for Codex: Claude, GPT, Gemini, Ollama, Antigravity, and Copilot via a single local proxy",
   "type": "module",

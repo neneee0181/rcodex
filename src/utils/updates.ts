@@ -51,11 +51,11 @@ async function getLatestNpmVersion(packageName: string): Promise<string | null> 
   }
 }
 
-async function confirmUpdate(currentVersion: string, latestVersion: string): Promise<boolean> {
+async function confirmUpdate(packageName: string, currentVersion: string, latestVersion: string): Promise<boolean> {
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
     console.error(
       `rcodex ${latestVersion} is available, but this shell is not interactive. ` +
-      `Run "npm install -g rcodex@latest" and then run "rcodex" again.`
+      `Run "npm install -g ${packageName}@latest" and then run "rcodex" again.`
     );
     return false;
   }
@@ -88,7 +88,7 @@ export async function enforceAcceptedLatestVersion(): Promise<void> {
     return;
   }
 
-  const accepted = await confirmUpdate(version, latestVersion);
+  const accepted = await confirmUpdate(name, version, latestVersion);
   if (!accepted) {
     console.error("Update required before launching rcodex.");
     process.exit(1);
@@ -96,7 +96,7 @@ export async function enforceAcceptedLatestVersion(): Promise<void> {
 
   const installed = installLatest(name, latestVersion);
   if (!installed) {
-    console.error("rcodex update failed. Please run: npm install -g rcodex@latest");
+    console.error(`rcodex update failed. Please run: npm install -g ${name}@latest`);
     process.exit(1);
   }
 

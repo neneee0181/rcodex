@@ -23,7 +23,7 @@ A local AI gateway that lets [Codex](https://github.com/openai/codex) talk to Cl
 ## Installation
 
 ```bash
-npm install -g rcodex
+npm install -g @kevin0181/rcodex
 ```
 
 Then launch rcodex:
@@ -45,7 +45,7 @@ rcodex 0.0.2 is available (installed: 0.0.1). Update now? [y/N]
 If the user accepts, rcodex runs:
 
 ```bash
-npm install -g rcodex@latest
+npm install -g @kevin0181/rcodex@latest
 ```
 
 After the update completes, run `rcodex` again. If the user declines, rcodex exits instead of launching the older version. If the npm registry cannot be reached, rcodex allows the installed version to run so offline users are not blocked.
@@ -121,14 +121,14 @@ Run `rcodex doctor` to diagnose and auto-fix supported setup issues.
 
 ## Publishing
 
-npm is the distribution channel for the `rcodex` command. GitHub Releases are useful for release notes and source archives, but users receive updates from npm because they install the package with `npm install -g rcodex`.
+npm is the distribution channel for the `rcodex` command. GitHub Releases are useful for release notes and source archives, but users receive updates from npm because they install the package with `npm install -g @kevin0181/rcodex`.
 
 For the first release:
 
 ```bash
 npm login
 npm run build
-npm publish
+npm publish --access public
 git tag v0.0.1
 git push origin v0.0.1
 ```
@@ -137,7 +137,7 @@ Then create a GitHub Release from tag `v0.0.1` and paste the release notes. For 
 
 ```bash
 npm version patch
-npm publish
+npm publish --access public
 git push origin main --tags
 ```
 
