@@ -104,7 +104,7 @@ Copilot uses GitHub device-code OAuth. After approval, rcodex stores the GitHub 
 
 ### Antigravity
 
-Antigravity OAuth uses the Google Cloud Code Assist compatible flow. To avoid shipping OAuth app secrets in the npm package, rcodex reads the Google OAuth client from:
+Antigravity OAuth uses the Google Cloud Code Assist compatible flow. rcodex includes a public desktop OAuth client fallback so login works after npm install. You can override it with your own Google OAuth client at:
 
 ```text
 ~/.rcodex/antigravity-app.json
@@ -128,7 +128,7 @@ For the current release:
 ```bash
 npm login
 npm run build
-git tag v0.0.13
+git tag v0.0.14
 git push origin main --tags
 npm publish --access public
 ```

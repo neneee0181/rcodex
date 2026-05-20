@@ -42,7 +42,7 @@ Last synced: 2026-05-21T02:45:20+0900
 
 - No automated test script exists; use `npm run build` as the baseline verification for source edits.
 - Copilot real GitHub device OAuth and provider API calls have not been smoke-tested.
-- Current package version is `0.0.13`; publish with `npm publish --access public` after review.
+- Current package version is `0.0.14`; publish with `npm publish --access public` after review.
 
 ## Completed Tasks
 
@@ -62,12 +62,12 @@ See `.memoc/log.md` for full history.
 - Main runtime config: `~/.rcodex/gateway.json`; logs: `~/.rcodex/gateway.log`; request history: `~/.rcodex/requests.jsonl`.
 - Default gateway port is `3141`; Codex provider key managed by this project is `rcodex`; base URL is `http://localhost:<port>/v1` with `wire_api = "responses"`.
 - Package dependencies include Fastify/CORS for the gateway, Commander for CLI commands, `@iarna/toml` for Codex config edits, and `better-sqlite3` for Codex thread migration support.
-- Current package version is `0.0.13`; npm package name is `@kevin0181/rcodex`, binary/runtime directory/README/provider key are `rcodex`.
+- Current package version is `0.0.14`; npm package name is `@kevin0181/rcodex`, binary/runtime directory/README/provider key are `rcodex`.
 - Ollama can now receive image payloads when Codex sends `input_image` parts or text containing local image paths; those are converted into OpenAI-compatible `image_url` data URLs. A vision-capable Ollama model is still required.
 - If Ollama returns `missing data required for image input`, the stream now completes with a clear text error instead of surfacing a protocol error that makes Codex reconnect repeatedly.
 - If an Ollama model returns `does not support tools` (for example `llama3.2-vision`), rcodex retries that stream without function tools instead of failing the stream.
-- Antigravity credentials search order: user override `~/.rcodex/antigravity-app.json`, then bundled private `dist/antigravity-credentials.json` when available; OAuth app credentials are not embedded in source/package history.
-- Antigravity OAuth uses 9router-aligned Cloud Code Assist scopes (`cclog` and `experimentsandconfigs`), but still requires local/bundled OAuth app credentials.
+- Antigravity credentials search order: user override `~/.rcodex/antigravity-app.json`, bundled private `dist/antigravity-credentials.json` when available, then built-in public desktop OAuth client fallback.
+- Antigravity OAuth uses 9router-aligned Cloud Code Assist scopes (`cclog` and `experimentsandconfigs`) and should work from npm install without local app credentials.
 - Antigravity models are fetched dynamically from `cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels` when available, with the old default/probe list as fallback; usage monitor can show per-model Antigravity remaining/reset quota.
 - Usage monitor includes Anthropic, OpenAI, and Antigravity OAuth accounts; output-node disconnect now removes the local canvas node and marks it hidden so browser refresh does not resurrect it.
 - Antigravity provider subtitle is `Google Code Assist`; the old `Google (Daily)` wording came from Google's daily-cloudcode internal endpoint naming.
