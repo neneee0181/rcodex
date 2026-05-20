@@ -1756,7 +1756,17 @@ async function* streamSingleProvider(
       capturedOllamaText = { value: "" };
 
       const res = await callOllama(config.ollamaBaseUrl, model, messages, ollamaSystem, true, signal, turnTools, loopMsgs);
-      if (!res.ok) throw new Error(`Ollama error ${res.status}: ${await res.text()}`);
+      if (!res.ok) {
+        const errorText = await res.text();
+        if (res.status === 500 && /missing data required for image input/i.test(errorText)) {
+          const msg = `Ollama model "${model}" cannot process image input. Use a vision-capable Ollama model with its projector/data installed, such as llama3.2-vision or llava.`;
+          gerr(`[ollama] vision input unsupported by ${model}: ${errorText}`);
+          capturedOllamaText.value += msg;
+          yield { type: "text", content: msg };
+          return;
+        }
+        throw new Error(`Ollama error ${res.status}: ${errorText}`);
+      }
 
       // Stream chunks to server.ts, suppressing tool_call events for gateway-handled tools
       const gatewayCallIds = new Set<string>();
