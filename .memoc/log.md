@@ -210,3 +210,9 @@ Append-only chronological log for project memory updates.
 - Root cause: Node on Windows returned `spawnSync npm.cmd EINVAL`, so self-update never started npm and only printed the generic failure message.
 - Changed Windows self-update to run foreground `cmd.exe /c npm install -g "<package>@<version>"`, keeping npm output visible and waiting for completion.
 - Added explicit start/exit/signal error details; bumped package version from `0.0.8` to `0.0.9`; verified `cmd.exe /c npm --version`, `npm run build`, `node dist/index.js --version` (`0.0.9`), and `npm pack --dry-run`.
+
+## [2026-05-20T22:07:00+0900] fix | Windows updater target quoting
+
+- Root cause: the Windows updater wrapped the scoped package target in quotes inside `cmd.exe /c`, causing npm to receive `""@kevin0181/rcodex@...""` and reject it as `EINVALIDPACKAGENAME`.
+- Removed target quotes and `/s` from the Windows cmd invocation; verified the command string echoes as `npm install -g @kevin0181/rcodex@...`.
+- Bumped package version from `0.0.9` to `0.0.11`; verified `npm run build`, `node dist/index.js --version` (`0.0.11`), and `npm pack --dry-run`.

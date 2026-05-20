@@ -76,7 +76,7 @@ function installLatest(packageName: string, latestVersion: string): boolean {
   console.log(`Updating rcodex to ${latestVersion}...`);
 
   const result = process.platform === "win32"
-    ? spawnSync(process.env.ComSpec ?? "cmd.exe", ["/d", "/s", "/c", `npm install -g "${target}"`], {
+    ? spawnSync(process.env.ComSpec ?? "cmd.exe", ["/d", "/c", `npm install -g ${target}`], {
         stdio: "inherit",
         windowsHide: false,
       })
