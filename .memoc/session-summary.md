@@ -1,5 +1,5 @@
 # Session Summary
-Last: 2026-05-21T10:20:00+0900
+Last: 2026-05-21T02:45:20+0900
 Keep each section <=3 bullets. Agent-owned; updated by you, not by `memoc update`.
 
 ## Status
@@ -28,11 +28,15 @@ Keep each section <=3 bullets. Agent-owned; updated by you, not by `memoc update
 - Added Ollama vision message serialization: `input_image` parts and detected local image paths in text are converted to OpenAI-compatible `image_url` data URLs for vision-capable local models.
 - Handled Ollama `missing data required for image input` 500s as a normal text response so Codex stops reconnecting and tells the user to switch to a vision-capable Ollama model.
 - Fixed `llama3.2-vision`/Ollama models that reject tools by retrying the same stream request without gateway function tools when Ollama returns `does not support tools`.
+- Aligned Antigravity OAuth with 9router scopes (`cclog`, `experimentsandconfigs`) while keeping OAuth app credentials local-only via `~/.rcodex/antigravity-app.json` or bundled private package file.
+- Changed Antigravity model discovery from hardcoded probe-only to `fetchAvailableModels`, added `ag/gemini-3.5-flash` fallback, and surfaced per-model Antigravity quota rows in the usage monitor.
+- Fixed usage monitor account filter to include Antigravity, made OpenAI/Claude OAuth model loading attempt dynamic fetch before fallback, and made output disconnect remove/hide the canvas node persistently.
+- Made OpenAI quota 401/403 show as unavailable instead of a red refresh error, and renamed the Antigravity provider subtitle from `Google (Daily)` to `Google Code Assist`.
 
 ## Open Tasks
 - Copilot real OAuth login/API flow has not been smoke-tested.
 - No automated test script exists; use `npm run build` as the baseline verification for source edits.
-- Current package version is `0.0.12`; next npm publish can use `npm publish --access public`.
+- Current package version is `0.0.13`; next npm publish can use `npm publish --access public`.
 
 ## Resume
 - If git metadata is restored, inspect `git status` and recent commits first.

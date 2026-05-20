@@ -145,7 +145,8 @@ async function callAnthropicUnofficial(
 
 export async function getAnthropicModels(auth: ProviderAuth): Promise<string[]> {
   if (auth.method === "oauth-official") {
-    return ["claude-haiku-4-5-20251001"];
+    const models = auth.oauthToken ? await fetchAnthropicModels({ authorization: `Bearer ${auth.oauthToken}` }) : [];
+    return models.length ? models : ["claude-haiku-4-5-20251001"];
   }
   if (auth.method === "oauth-unofficial") {
     return [];
@@ -154,13 +155,18 @@ export async function getAnthropicModels(auth: ProviderAuth): Promise<string[]> 
     return [];
   }
   try {
-    const res = await fetch(`${API_BASE}/models`, {
-      headers: { "x-api-key": auth.apiKey, "anthropic-version": "2023-06-01" },
-    });
-    if (!res.ok) throw new Error("failed");
-    const data = await res.json() as { data: { id: string }[] };
-    return data.data.map((m) => m.id);
+    return await fetchAnthropicModels({ "x-api-key": auth.apiKey });
   } catch {
     return [];
   }
+}
+
+async function fetchAnthropicModels(authHeader: Record<string, string>): Promise<string[]> {
+  const res = await fetch(`${API_BASE}/models`, {
+    headers: { ...authHeader, "anthropic-version": "2023-06-01" },
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!res.ok) throw new Error("failed");
+  const data = await res.json() as { data: { id: string }[] };
+  return data.data.map((m) => m.id).sort();
 }

@@ -206,8 +206,8 @@ export async function callOpenAIAndParse(
 
 export async function getOpenAIModels(auth: ProviderAuth): Promise<string[]> {
   if (auth.method === "oauth-official") {
-    // Codex backend has no model discovery API ??return known subscription models
-    return CODEX_MODELS;
+    const fetched = auth.oauthToken ? await getCodexModels(auth.oauthToken) : [];
+    return fetched.length ? fetched : CODEX_MODELS;
   }
   if (auth.method === "oauth-unofficial") {
     return ["gpt-4o", "gpt-4o-mini", "o1", "o3-mini", "chatgpt-4o-latest"];
@@ -227,6 +227,38 @@ export async function getOpenAIModels(auth: ProviderAuth): Promise<string[]> {
   } catch {
     return [];
   }
+}
+
+async function getCodexModels(token: string): Promise<string[]> {
+  const endpoints = [
+    `${CHATGPT_API_BASE}/codex/models`,
+    `${CHATGPT_API_BASE}/models`,
+  ];
+  for (const endpoint of endpoints) {
+    try {
+      const res = await fetch(endpoint, {
+        headers: {
+          authorization: `Bearer ${token}`,
+          accept: "application/json",
+          originator: "codex-cli",
+          "user-agent": "codex-cli/1.0.18",
+        },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) continue;
+      const data = await res.json() as Record<string, unknown>;
+      const raw = Array.isArray(data.data) ? data.data
+        : Array.isArray(data.models) ? data.models
+        : Array.isArray(data) ? data
+        : [];
+      const models = raw
+        .map((m) => typeof m === "string" ? m : ((m as Record<string, unknown>).id ?? (m as Record<string, unknown>).slug ?? (m as Record<string, unknown>).model))
+        .filter((id): id is string => typeof id === "string" && isUsableOpenAIChatModel(id))
+        .sort();
+      if (models.length) return models;
+    } catch { /* try next */ }
+  }
+  return [];
 }
 
 function isUsableOpenAIChatModel(id: string): boolean {

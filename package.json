@@ -1,6 +1,6 @@
 {
   "name": "@kevin0181/rcodex",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Gateway and provider manager for Codex: Claude, GPT, Gemini, Ollama, Antigravity, and Copilot via a single local proxy",
   "type": "module",
   "main": "./dist/index.js",
@@ -8,7 +8,7 @@
     "rcodex": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsc && node -e \"if(process.platform!=='win32')require('child_process').execSync('chmod +x dist/index.js')\" && node -e \"const{existsSync}=require('fs');if(!existsSync('dist/antigravity-credentials.json'))console.warn('[rcodex] dist/antigravity-credentials.json missing; Antigravity OAuth requires ~/.rcodex/antigravity-app.json');\"",
+    "build": "tsc && node -e \"if(process.platform!=='win32')require('child_process').execSync('chmod +x dist/index.js')\"",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "prepublishOnly": "npm run build",

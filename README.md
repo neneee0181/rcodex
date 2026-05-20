@@ -104,13 +104,13 @@ Copilot uses GitHub device-code OAuth. After approval, rcodex stores the GitHub 
 
 ### Antigravity
 
-Antigravity OAuth needs app credentials. If bundled credentials are not available in the package, place credentials at:
+Antigravity OAuth uses the Google Cloud Code Assist compatible flow. To avoid shipping OAuth app secrets in the npm package, rcodex reads the Google OAuth client from:
 
 ```text
 ~/.rcodex/antigravity-app.json
 ```
 
-Run `rcodex doctor` to diagnose and auto-fix supported setup issues.
+Run `rcodex doctor` to diagnose supported setup issues.
 
 ## Data and Privacy
 
@@ -128,15 +128,17 @@ For the current release:
 ```bash
 npm login
 npm run build
+git tag v0.0.13
+git push origin main --tags
 npm publish --access public
 ```
 
-Then create a GitHub Release from the version tag and paste the release notes. For later versions:
+Then create a GitHub Release from the pushed version tag and paste the release notes. For later versions:
 
 ```bash
 npm version patch
-npm publish --access public
 git push origin main --tags
+npm publish --access public
 ```
 
 Use `npm version minor` or `npm version major` when the change is larger than a patch release.

@@ -5,10 +5,8 @@ import { isOllamaInstalled, getOllamaModels } from "../core/ollama.js";
 import { readCodexConfig } from "../core/config.js";
 import { loadConfig } from "../gateway/auth.js";
 import { MANAGED_PROVIDER_KEY } from "../core/constants.js";
-import { existsSync, writeFileSync, mkdirSync } from "fs";
-import { join } from "path";
-import { homedir } from "os";
-import { hasAppCredentials, getAppCredentials } from "../gateway/providers/antigravity-oauth-flow.js";
+import { existsSync } from "fs";
+import { hasAppCredentials } from "../gateway/providers/antigravity-oauth-flow.js";
 
 export async function runDoctor(): Promise<void> {
   logger.header();
@@ -54,28 +52,14 @@ export async function runDoctor(): Promise<void> {
     logger.warn("Ollama NOT found: https://ollama.com (optional)");
   }
 
-  // Antigravity credentials check + auto-fix
+  // Antigravity credentials check
   logger.separator();
   logger.info("Checking Antigravity (Google Cloud Code) credentials...");
-  const rcodexDir = join(homedir(), ".rcodex");
-  const userCredsPath = join(rcodexDir, "antigravity-app.json");
 
   if (hasAppCredentials()) {
     logger.success("Antigravity credentials available");
   } else {
-    logger.warn("Antigravity credentials not found; attempting auto-fix...");
-    // Try to extract bundled credentials and write to user path
-    try {
-      const creds = getAppCredentials(); // will throw if bundled also missing
-      mkdirSync(rcodexDir, { recursive: true });
-      writeFileSync(userCredsPath, JSON.stringify(creds, null, 2), "utf-8");
-      logger.success(`Created ${userCredsPath}`);
-    } catch {
-      logger.warn(
-        "Could not auto-fix. Manually create ~/.rcodex/antigravity-app.json:\n" +
-        '  { "clientId": "<your-client-id>", "clientSecret": "<your-client-secret>" }'
-      );
-    }
+    logger.warn("Antigravity credentials unavailable");
   }
 
   // Codex config

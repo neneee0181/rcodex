@@ -445,7 +445,7 @@ const PDEFS = [
    methods:[
      {id:'local',icon:'Local',name:'Connect Local',desc:'Use locally running Ollama (localhost:11434)',warn:null},
    ]},
-  {id:'antigravity',name:'Antigravity',sub:'Google (Daily)',icon:'A',ibg:'rgba(52,211,153,.15)',color:'#34d399',
+  {id:'antigravity',name:'Antigravity',sub:'Google Code Assist',icon:'A',ibg:'rgba(52,211,153,.15)',color:'#34d399',
    methods:[
      {id:'oauth',icon:'Auth',name:'Login with Google',desc:'OAuth login uses your Google Cloud / Gemini Code Assist account',warn:null},
    ]},
@@ -1269,7 +1269,7 @@ function quotaRow(label,used,resetsAt){
   const col=used>80?'#ef4444':used>50?'#f59e0b':'#6366f1';
   const reset=fmtReset(resetsAt);
   return\`<div style="display:flex;align-items:center;gap:8px;padding:3px 0">
-    <span style="font-size:9px;color:var(--mu);width:26px;flex-shrink:0">\${label}</span>
+    <span title="\${escHtml(label)}" style="font-size:9px;color:var(--mu);width:72px;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0">\${escHtml(label)}</span>
     \${quotaBar(used,col)}
     <span style="font-size:9px;width:28px;text-align:right;flex-shrink:0;\${used>80?'color:#ef4444':used>50?'color:#f59e0b':''}">\${remaining}%</span>
     \${reset?\`<span style="font-size:9px;color:var(--mu);flex-shrink:0">reset: \${reset}</span>\`:''}
@@ -1281,7 +1281,7 @@ function renderUsage(){
   if(!body)return;
 
   // ?�?� Quota section ??built from ST.accounts + quotaState (no auto-fetch) ?�?�
-  const oauthAccts=(ST.accounts||[]).filter(a=>a.method==='oauth-official'&&(a.provider==='anthropic'||a.provider==='openai'));
+  const oauthAccts=(ST.accounts||[]).filter(a=>a.method==='oauth-official'&&(a.provider==='anthropic'||a.provider==='openai'||a.provider==='antigravity'));
   let quotaHtml='';
   if(oauthAccts.length){
     const cards=oauthAccts.map(a=>{
@@ -1292,6 +1292,8 @@ function renderUsage(){
         rows=\`<div style="font-size:9px;color:var(--mu)">Fetching</div>\`;
       }else if(!qs.data){
         rows=\`<div style="font-size:9px;color:var(--mu);opacity:.5">Click refresh to load</div>\`;
+      }else if(qs.data.unavailable){
+        rows=\`<div style="font-size:9px;color:var(--mu);line-height:1.45">\${escHtml(qs.data.unavailable)}</div>\`;
       }else if(qs.data.error){
         rows=\`<div style="font-size:9px;color:var(--rd)">Error: \${qs.data.error}</div>\`;
       }else if(a.provider==='anthropic'){
@@ -1300,6 +1302,12 @@ function renderUsage(){
       }else if(a.provider==='openai'){
         if(qs.data.primary!=null)rows+=quotaRow('5h',qs.data.primary.used,qs.data.primary.resets_at);
         if(qs.data.secondary!=null)rows+=quotaRow('7d',qs.data.secondary.used,qs.data.secondary.resets_at);
+      }else if(a.provider==='antigravity'){
+        if(Array.isArray(qs.data.models)){
+          qs.data.models.slice(0,8).forEach(m=>{
+            rows+=quotaRow(m.displayName||m.name,m.used,m.resets_at);
+          });
+        }
       }
       if(!rows&&qs.data&&!qs.data.error)rows=\`<div style="font-size:9px;color:var(--mu)">No quota data</div>\`;
       const btnStyle='background:none;border:1px solid var(--b2);border-radius:5px;color:var(--di);cursor:pointer;font-size:12px;width:28px;height:24px;display:inline-flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0';
@@ -1717,9 +1725,13 @@ async function connectOut(slotId){
 }
 async function removeOut(accountId,slotId){
   await api('DELETE',\`/api/accounts/\${accountId}/slots/\${slotId}\`);
-  // Also remove from canvas
   onCanvas.delete(slotId);
+  hiddenSlots.add(slotId);
+  delete nodeSlots[slotId];
+  delete NP[slotId];
   saveLS();
+  render();
+  toast('Disconnected');
   await fetchStatus();
 }
 async function moveOut(accountId,slotId,dir){

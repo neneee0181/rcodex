@@ -2,8 +2,10 @@
 import { platform, arch } from "os";
 
 const AG_BASE = "https://daily-cloudcode-pa.googleapis.com";
+const AG_CONTROL_BASE = "https://cloudcode-pa.googleapis.com";
 
 export const ANTIGRAVITY_DEFAULT_MODELS = [
+  "ag/gemini-3.5-flash",
   "ag/gemini-3.1-pro-high",
   "ag/gemini-3.1-pro-low",
   "ag/gemini-3-flash",
@@ -13,6 +15,19 @@ export const ANTIGRAVITY_DEFAULT_MODELS = [
 ];
 
 const modelCache = new Map<string, { models: string[]; expiresAt: number }>();
+const quotaCache = new Map<string, { quota: AntigravityQuota; expiresAt: number }>();
+
+export interface AntigravityQuotaModel {
+  name: string;
+  displayName?: string;
+  used: number;
+  remainingPercentage: number;
+  resets_at: string | number | null;
+}
+
+export interface AntigravityQuota {
+  models: AntigravityQuotaModel[];
+}
 
 export function isAntigravityModel(model: string): boolean {
   return model.startsWith("ag/");
@@ -82,13 +97,82 @@ export async function getAntigravityModels(accessToken: string, projectId?: stri
   const cached = modelCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.models;
 
-  const checks = await Promise.all(ANTIGRAVITY_DEFAULT_MODELS.map(async model => {
-    const ok = await probeAntigravityModel(accessToken, model, projectId);
-    return ok ? model : null;
-  }));
-  const models = checks.filter((model): model is string => Boolean(model));
+  let models = await fetchAntigravityModels(accessToken, projectId);
+  if (!models.length) {
+    const checks = await Promise.all(ANTIGRAVITY_DEFAULT_MODELS.map(async model => {
+      const ok = await probeAntigravityModel(accessToken, model, projectId);
+      return ok ? model : null;
+    }));
+    models = checks.filter((model): model is string => Boolean(model));
+  }
   modelCache.set(key, { models, expiresAt: Date.now() + 10 * 60_000 });
   return models;
+}
+
+function parseResetTime(value: unknown): string | number | null {
+  if (typeof value === "string" || typeof value === "number") return value;
+  return null;
+}
+
+async function fetchAvailableModels(accessToken: string, projectId?: string): Promise<Record<string, unknown> | null> {
+  try {
+    const res = await fetch(`${AG_CONTROL_BASE}/v1internal:fetchAvailableModels`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "authorization": `Bearer ${accessToken}`,
+        "user-agent": `antigravity/1.107.0 ${platform()}/${arch()}`,
+        "x-client-name": "antigravity",
+        "x-client-version": "1.107.0",
+        "x-request-source": "local",
+      },
+      body: JSON.stringify({ ...(projectId ? { project: projectId } : {}) }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return null;
+    return await res.json() as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchAntigravityModels(accessToken: string, projectId?: string): Promise<string[]> {
+  const data = await fetchAvailableModels(accessToken, projectId);
+  const rawModels = data?.models;
+  if (!rawModels || typeof rawModels !== "object" || Array.isArray(rawModels)) return [];
+  return Object.entries(rawModels as Record<string, { isInternal?: boolean }>)
+    .filter(([id, info]) => id && !info?.isInternal)
+    .map(([id]) => `ag/${id}`)
+    .sort();
+}
+
+export async function getAntigravityQuota(accessToken: string, projectId?: string): Promise<AntigravityQuota> {
+  const key = `${accessToken.slice(0, 16)}:${projectId ?? ""}`;
+  const cached = quotaCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached.quota;
+
+  const data = await fetchAvailableModels(accessToken, projectId);
+  const rawModels = data?.models;
+  const models: AntigravityQuotaModel[] = [];
+  if (rawModels && typeof rawModels === "object" && !Array.isArray(rawModels)) {
+    for (const [name, infoRaw] of Object.entries(rawModels as Record<string, Record<string, unknown>>)) {
+      if (!name || infoRaw.isInternal) continue;
+      const quotaInfo = infoRaw.quotaInfo as Record<string, unknown> | undefined;
+      if (!quotaInfo) continue;
+      const remainingFraction = typeof quotaInfo.remainingFraction === "number" ? quotaInfo.remainingFraction : Number(quotaInfo.remainingFraction ?? 0);
+      const remainingPercentage = Math.max(0, Math.min(100, remainingFraction * 100));
+      models.push({
+        name,
+        displayName: typeof infoRaw.displayName === "string" ? infoRaw.displayName : undefined,
+        used: Math.max(0, Math.min(100, 100 - remainingPercentage)),
+        remainingPercentage,
+        resets_at: parseResetTime(quotaInfo.resetTime),
+      });
+    }
+  }
+  const quota = { models: models.sort((a, b) => a.name.localeCompare(b.name)) };
+  quotaCache.set(key, { quota, expiresAt: Date.now() + 90_000 });
+  return quota;
 }
 
 async function probeAntigravityModel(accessToken: string, model: string, projectId?: string): Promise<boolean> {

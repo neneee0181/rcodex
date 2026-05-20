@@ -29,11 +29,7 @@ export function getAppCredentials(): AppCreds {
   const fromPkg = tryReadCreds(bundledPath);
   if (fromPkg) return fromPkg;
 
-  throw new Error(
-    "Antigravity credentials not found.\n" +
-    "Run: rcodex doctor  ??to diagnose and auto-fix setup issues.\n" +
-    "Or create ~/.rcodex/antigravity-app.json with { \"clientId\": \"...\", \"clientSecret\": \"...\" }"
-  );
+  throw new Error("Antigravity OAuth credentials not found. Create ~/.rcodex/antigravity-app.json.");
 }
 
 export function hasAppCredentials(): boolean {
@@ -44,10 +40,11 @@ const TOKEN_URL     = "https://oauth2.googleapis.com/token";
 const CALLBACK_PORT = 49157;
 const REDIRECT_URI  = `http://localhost:${CALLBACK_PORT}/callback`;
 const SCOPES        = [
-  "openid",
-  "email",
-  "profile",
   "https://www.googleapis.com/auth/cloud-platform",
+  "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/userinfo.profile",
+  "https://www.googleapis.com/auth/cclog",
+  "https://www.googleapis.com/auth/experimentsandconfigs",
 ].join(" ");
 
 export interface AntigravityTokens {

@@ -19,7 +19,7 @@ import {
 import { buildAuthUrl, waitForCallback, exchangeCode } from "./providers/openai-oauth-flow.js";
 import { buildClaudeAuthUrl, waitForClaudeCallback, exchangeClaudeCode } from "./providers/claude-oauth-flow.js";
 import { buildAntigravityAuthUrl, waitForAntigravityCallback, exchangeAntigravityCode, loadAntigravityProject } from "./providers/antigravity-oauth-flow.js";
-import { ANTIGRAVITY_DEFAULT_MODELS, getAntigravityModels } from "./providers/antigravity.js";
+import { getAntigravityModels, getAntigravityQuota } from "./providers/antigravity.js";
 import { getCopilotModels, startCopilotDeviceAuth, pollCopilotDeviceToken, getCopilotToken } from "./providers/copilot.js";
 import { proxyRequest, streamProxyRequest, tryCodexPassthrough, requestLog, pushLog, flushLog, ensureFreshToken, glog, gwarn, gerr, type ResponsesRequest, type ResponsesResponse, type RequestLogEntry } from "./proxy.js";
 import { getAnthropicModels } from "./providers/anthropic.js";
@@ -79,6 +79,8 @@ export function createGatewayServer(): GatewayServer {
     seven_day?: { utilization: number; resets_at: string | number | null };
     primary?: { used: number; resets_at: string | number | null };
     secondary?: { used: number; resets_at: string | number | null };
+    models?: { name: string; displayName?: string; used: number; remainingPercentage: number; resets_at: string | number | null }[];
+    unavailable?: string;
     error?: string;
   };
   const quotaCache = new Map<string, { entry: QuotaEntry; ts: number }>();
@@ -205,10 +207,38 @@ export function createGatewayServer(): GatewayServer {
               secondary: secondary ? { used: Math.min(100, secondary.used_percent ?? secondary.percent_used ?? 0), resets_at: resetValue(secondary) } : undefined,
             };
           } else {
-            entry = { provider: "openai", label: account.label, id: account.id, error: `${res.status}` };
+            if (res.status === 401 || res.status === 403) {
+              entry = {
+                provider: "openai",
+                label: account.label,
+                id: account.id,
+                unavailable: `ChatGPT usage API rejected this Codex OAuth token (${res.status}). Request token totals still work below.`,
+              };
+              gwarn(`[quota] openai usage unavailable: ${res.status}`);
+            } else {
+              entry = { provider: "openai", label: account.label, id: account.id, error: `${res.status}` };
+            }
           }
         } catch (e) {
           entry = { provider: "openai", label: account.label, id: account.id, error: String(e) };
+        }
+        if (!entry.error) quotaCache.set(account.id, { entry, ts: Date.now() });
+        results.push(entry);
+      }
+
+      if (account.provider === "antigravity") {
+        let entry: QuotaEntry;
+        try {
+          if (!account.oauthToken) throw new Error("missing access token");
+          let projectId = account.projectId;
+          if (!projectId) {
+            projectId = await loadAntigravityProject(account.oauthToken);
+            updateAccountProjectId(account.id, projectId);
+          }
+          const quota = await getAntigravityQuota(account.oauthToken, projectId);
+          entry = { provider: "antigravity", label: account.label, id: account.id, models: quota.models };
+        } catch (e) {
+          entry = { provider: "antigravity", label: account.label, id: account.id, error: String(e) };
         }
         if (!entry.error) quotaCache.set(account.id, { entry, ts: Date.now() });
         results.push(entry);
@@ -555,7 +585,8 @@ export function createGatewayServer(): GatewayServer {
     const config = loadConfig();
     const account = config.accounts.find(a => a.id === req.params.id && a.provider === "antigravity");
     if (!account) return reply.status(404).send({ error: "Account not found" });
-    return reply.send({ models: ANTIGRAVITY_DEFAULT_MODELS });
+    const auth = accountToProviderAuth(account);
+    return reply.send({ models: await getAntigravityModels(auth.oauthToken ?? "", account.projectId) });
   });
 
   // ?�?� Models (only from connected accounts, filtered by selectedModel) ?�?�?�?�?�?�?�?�
