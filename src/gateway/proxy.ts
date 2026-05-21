@@ -592,6 +592,51 @@ function sanitizeOpenAIChatHistoryForStrictTools(messages: unknown[]): unknown[]
   return out;
 }
 
+function inputItemText(content: unknown): string {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  return content.map(part => {
+    if (!part || typeof part !== "object") return "";
+    const p = part as { text?: unknown; type?: unknown };
+    if (typeof p.text === "string") return p.text;
+    return p.type ? JSON.stringify(part) : "";
+  }).filter(Boolean).join("\n");
+}
+
+function buildAntigravityTextContentsFromInput(inputArr: Record<string, unknown>[]): unknown[] {
+  const contents: unknown[] = [];
+  const callIdToName = new Map<string, string>();
+  let pendingModelText: string[] = [];
+  const flushModel = () => {
+    if (!pendingModelText.length) return;
+    contents.push({ role: "model", parts: [{ text: pendingModelText.join("\n\n") }] });
+    pendingModelText = [];
+  };
+
+  for (const item of inputArr) {
+    const type = item.type as string;
+    if (type === "message") {
+      flushModel();
+      const text = inputItemText(item.content);
+      contents.push({ role: (item.role as string) === "assistant" ? "model" : "user", parts: [{ text }] });
+    } else if (type === "function_call") {
+      const id = (item.id ?? item.call_id) as string | undefined;
+      const name = (item.name as string | undefined) ?? id ?? "tool";
+      if (id) callIdToName.set(id, name);
+      const args = typeof item.arguments === "string" ? item.arguments : JSON.stringify(item.arguments ?? {});
+      pendingModelText.push("Tool call: " + name + (id ? " (" + id + ")" : "") + "\nArguments: " + args);
+    } else if (type === "function_call_output") {
+      flushModel();
+      const callId = item.call_id as string | undefined;
+      const name = (callId && callIdToName.get(callId)) || callId || "tool";
+      contents.push({ role: "user", parts: [{ text: "Tool result for " + name + ":\n" + parseCodexToolOutput(item.output) }] });
+    }
+  }
+
+  flushModel();
+  return contents;
+}
+
 // ?€?€ Response format converters ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
 function chatToResponses(
   data: { id?: string; model: string; choices: { message: { content: string } }[]; usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number } },
@@ -1538,48 +1583,27 @@ async function* streamSingleProvider(
     if (req.previous_response_id) {
       const prior = convStore.get(req.previous_response_id);
       if (prior?.googleContents) {
-        const fnResponses = inputArr
+        const callNames = new Map((prior.googleToolCalls ?? []).map(t => [t.id, t.name]));
+        const responseParts = inputArr
           .filter(item => (item.type as string) === "function_call_output")
           .map(item => {
-            const callId = item.call_id as string;
-            const name = prior.googleToolCalls?.find(t => t.id === callId)?.name ?? callId ?? "tool";
-            const output = typeof item.output === "string" ? item.output : JSON.stringify(item.output ?? "");
-            return { functionResponse: { id: callId, name, response: { result: output } } };
+            const callId = item.call_id as string | undefined;
+            const name = callId ? callNames.get(callId) : undefined;
+            if (callId && name) {
+              const output = typeof item.output === "string" ? item.output : JSON.stringify(item.output ?? "");
+              return { functionResponse: { id: callId, name, response: { result: output } } };
+            }
+            return { text: `Tool result for ${callId ?? "tool"}:\n${parseCodexToolOutput(item.output)}` };
           });
-        agContents = fnResponses.length
-          ? [...prior.googleContents, { role: "user", parts: fnResponses }]
+        agContents = responseParts.length
+          ? [...prior.googleContents, { role: "user", parts: responseParts }]
           : [...prior.googleContents];
         glog(`[gateway] antigravity: using stored googleContents (thoughtSignature preserved)`);
       }
     }
     if (!agContents && hasFnItems) {
-      const callIdToName = new Map<string, string>();
-      const contents: unknown[] = [];
-      let pendingFnCalls: unknown[] = [];
-      const flushModel = () => { if (pendingFnCalls.length) { contents.push({ role: "model", parts: pendingFnCalls }); pendingFnCalls = []; } };
-      for (const item of inputArr) {
-        const type = item.type as string;
-        if (type === "message") {
-          flushModel();
-          const content = typeof item.content === "string" ? item.content : ((item.content as { text?: string }[]) ?? []).map(c => c.text ?? "").join("");
-          contents.push({ role: (item.role as string) === "assistant" ? "model" : "user", parts: [{ text: content }] });
-        } else if (type === "function_call") {
-          const id = (item.id ?? item.call_id) as string;
-          const name = item.name as string;
-          if (id && name) callIdToName.set(id, name);
-          let args: Record<string, unknown> = {};
-          try { args = typeof item.arguments === "string" ? JSON.parse(item.arguments) : (item.arguments as Record<string, unknown> ?? {}); } catch { /**/ }
-          pendingFnCalls.push({ functionCall: { id, name, args } });
-        } else if (type === "function_call_output") {
-          flushModel();
-          const callId = item.call_id as string;
-          const name = callIdToName.get(callId) ?? callId ?? "tool";
-          const output = typeof item.output === "string" ? item.output : JSON.stringify(item.output ?? "");
-          contents.push({ role: "user", parts: [{ functionResponse: { id: callId, name, response: { result: output } } }] });
-        }
-      }
-      flushModel();
-      agContents = contents;
+      agContents = buildAntigravityTextContentsFromInput(inputArr);
+      glog(`[gateway] antigravity: rebuilt stateless tool history as text (missing thoughtSignature)`);
     }
 
     const agFinalContents = agContents ?? messages.map(m => ({
@@ -1631,16 +1655,18 @@ async function* streamSingleProvider(
       const assistantParts: unknown[] = [];
       if (agCapturedText.value) assistantParts.push({ text: agCapturedText.value });
       for (const t of agCapturedTools) {
+        if (!t.thoughtSignature) {
+          assistantParts.push({ text: `Tool call: ${t.name}\nArguments: ${JSON.stringify(t.input)}` });
+          continue;
+        }
         const fc: Record<string, unknown> = { name: t.name, args: t.input };
-        const part: Record<string, unknown> = { functionCall: fc };
-        if (t.thoughtSignature) part.thoughtSignature = t.thoughtSignature;
-        assistantParts.push(part);
+        assistantParts.push({ functionCall: fc, thoughtSignature: t.thoughtSignature });
       }
       convStore.set(responseId, {
         provider: "antigravity", model,
         messages: [],
         googleContents: [...agCurrentContents, { role: "model", parts: assistantParts }],
-        googleToolCalls: agCapturedTools.map(t => ({ id: t.id, name: t.name })),
+        googleToolCalls: agCapturedTools.filter(t => t.thoughtSignature).map(t => ({ id: t.id, name: t.name })),
         instructions: agSystem, tools: req.tools, ts: Date.now(),
       });
       glog(`[gateway] conv stored (antigravity): ${responseId} (${agCapturedTools.length} tools)`);
