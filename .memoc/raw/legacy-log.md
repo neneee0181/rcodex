@@ -1,3 +1,14 @@
+---
+memoc: true
+type: raw
+scope: project-memory
+created: 2026-05-21T06:39:07
+updated: 2026-05-21T06:39:07
+status: active
+tags:
+  - memoc
+  - memoc/raw
+---
 # Project Log
 
 Append-only chronological log for project memory updates.
@@ -70,7 +81,7 @@ Append-only chronological log for project memory updates.
 ## [2026-05-18T22:23:43+0900] fix | Show text-tool status as reasoning
 
 - Added synthetic `reasoning` chunks for parsed raw text-tool calls before emitting Codex `function_call` events.
-- `exec_command` searches for `SimpleGame.cpp` now surface as a grey-style status message (`SimpleGame.cpp 찾아보는 �?) instead of plain assistant text.
+- `exec_command` searches for `SimpleGame.cpp` now surface as a grey-style status message (`SimpleGame.cpp 찾아보는 �?) instead of plain assistant text.
 - Verified `npm run build`.
 
 ## [2026-05-18T22:41:23+0900] fix | Repair Ollama native tool calls and final text

@@ -1,3 +1,14 @@
+---
+memoc: true
+type: core
+scope: project-memory
+created: 2026-05-21T06:39:07
+updated: 2026-05-21T06:39:07
+status: active
+tags:
+  - memoc
+  - memoc/core
+---
 # Agent Index
 
 This is the fast entry map for agents. Start here, then open only the docs relevant to the task.
@@ -11,7 +22,7 @@ This is the fast entry map for agents. Start here, then open only the docs relev
 ## Project Snapshot
 
 <!-- memoc:snapshot:start -->
-- Last synced: 2026-05-20T07:59:44
+- Last synced: 2026-05-21T06:39:07
 - Detected stack: Node.js, Fastify, TypeScript
 
 ### Config Files
@@ -28,7 +39,7 @@ This is the fast entry map for agents. Start here, then open only the docs relev
 
 ### Package Scripts
 
-- `build`: `tsc && node -e "if(process.platform!=='win32')require('child_process').execSync('chmod +x dist/index.js')" && node -e "const{existsSync}=require('fs');if(!existsSync('dist/antigravity-credentials.json'))console.warn('??dist/antigravity-credentials.json missing ??Antigravity OAuth will fail. Copy from ~/.rcodex/antigravity-app.json');"`
+- `build`: `tsc && node -e "if(process.platform!=='win32')require('child_process').execSync('chmod +x dist/index.js')"`
 - `start`: `node dist/index.js`
 - `dev`: `tsx src/index.ts`
 - `prepublishOnly`: `npm run build`
@@ -48,8 +59,11 @@ This is the fast entry map for agents. Start here, then open only the docs relev
 - [Done Checklist](05-done-checklist.md)
 - [Project Rules](06-project-rules.md)
 - [Session Summary](session-summary.md)
-- [Project Log](log.md)
+- [Activity](activity.md)
+- [Actors](actors/README.md)
+- [Worklog](worklog/README.md)
 - [Wiki Index](wiki/index.md)
+- [Raw Sources](raw/README.md)
 - [Systems Index](systems/README.md)
 
 ## System Docs
@@ -58,4 +72,8 @@ _None yet. Add entries when subsystems are documented._
 
 ## Wiki
 
-_None yet. Add entries when wiki pages are created._
+- [Wiki Index](wiki/index.md) — hub for every synthesized wiki page.
+- [Sources](wiki/sources.md) — source provenance and ingest notes.
+- [Glossary](wiki/glossary.md) — project terms and aliases.
+- [Open Questions](wiki/questions.md) — unresolved knowledge gaps.
+- [Wiki Lint](wiki/lint.md) — orphan, stale, and contradiction checks.

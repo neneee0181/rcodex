@@ -1,3 +1,14 @@
+---
+memoc: true
+type: core
+scope: project-memory
+created: 2026-05-21T06:39:07
+updated: 2026-05-21T06:39:07
+status: active
+tags:
+  - memoc
+  - memoc/core
+---
 # Project Brief
 
 This is the shortest project summary for a fresh agent. Keep it factual and easy to scan.
@@ -5,16 +16,13 @@ This is the shortest project summary for a fresh agent. Keep it factual and easy
 ## Identity
 
 <!-- memoc:identity:start -->
-- Project name: `rcodex`
+- Project name: `@kevin0181/rcodex`
 - Detected stack: Node.js, Fastify, TypeScript
 <!-- memoc:identity:end -->
 
 ## Current Direction
 
-- Local Codex provider gateway and manager shipped as the `rcodex` CLI / `rcodex` npm package.
-- `rcodex` starts a local Fastify gateway, registers it in `~/.codex/config.toml`, launches Codex, and exposes a browser UI for provider routing.
-- Supported provider paths in source: OpenAI/Codex OAuth or API key, Anthropic Claude OAuth or API key, Google Gemini API key, and local Ollama.
-- The user is actively using this to connect the Codex desktop app to rcodex as an endpoint and experiment with alternate models, especially Claude Code / Anthropic OAuth behavior.
+_Not set yet._
 
 ## How To Approach
 
@@ -25,10 +33,8 @@ This is the shortest project summary for a fresh agent. Keep it factual and easy
 
 ## Next Useful Work
 
-- Keep README, package metadata, and memory docs aligned when command behavior or provider support changes.
-- Run `npm run build` after source edits; there are no test scripts currently defined.
+_None yet._
 
 ## Important Notes
 
-- Gateway runtime data lives outside the repo under `~/.rcodex/`; Codex provider config is managed under `~/.codex/config.toml`.
-- The project uses `.memoc/` for agent memory, with `AGENTS.md`, `CLAUDE.md`, and `llms.txt` as entry maps.
+_None yet._

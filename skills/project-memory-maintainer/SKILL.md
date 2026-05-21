@@ -1,8 +1,16 @@
-﻿---
+---
 name: project-memory-maintainer
 description: Maintain this project's LLM-wiki memory files after durable context changes.
+memoc: true
+type: skill
+scope: project-memory
+updated: 2026-05-21T06:39:07
+created: 2026-05-21T06:39:07
+status: active
+tags:
+  - memoc
+  - memoc/skill
 ---
-
 # Project Memory Maintainer
 
 Use this local skill after meaningful project work so future agents can continue without rediscovering context.
@@ -15,18 +23,35 @@ Use this local skill after meaningful project work so future agents can continue
 
 ## Maintenance Checklist
 
+- If the user asked to update/refresh memoc project memory, run `memoc update` first so managed sections, wiki scaffold links, and Obsidian tags are current.
 - Keep `llms.txt` and `.memoc/00-agent-index.md` as concise maps.
 - Keep `.memoc/00-project-brief.md` as the shortest project summary.
+- Rewrite `.memoc/session-summary.md` as the latest snapshot only; never append a timeline. If it is over 800B, run `memoc trim-summary`.
 - Update `.memoc/02-current-project-state.md` with new status, tasks, commands, and change log entries.
 - Update `.memoc/03-decisions.md` when a durable decision is made.
 - Update `.memoc/04-handoff.md` before ending substantial work.
 - Check `.memoc/05-done-checklist.md` before saying substantial work is complete.
 - Update `.memoc/06-project-rules.md` when the user gives durable preferences.
-- Append `.memoc/log.md` for meaningful changes, decisions, and handoffs.
+- Create a short actor worklog with `memoc work "<title>" --from-git` for meaningful changes, decisions, and handoffs.
 - Create or update `.memoc/systems/*.md` when a subsystem needs durable explanation.
 - Create or update `.memoc/wiki/*.md` when synthesized knowledge should compound over time.
-- Keep completed history in `.memoc/log.md`; keep current-state files short.
+- Use `memoc ingest <path-or-url>` for source material and `memoc note "<title>"` for durable query results or analysis.
+- Use `memoc work "<title>" --from-git` for meaningful shared-repo work so details are saved in actor-scoped worklog files instead of causing shared-file conflicts.
+- Keep the wiki graph connected: update `.memoc/wiki/index.md`, add relative Markdown links between related pages, and include a `## Related` section on every new wiki page.
+- Run `memoc lint-wiki` after wiki/source/topic edits and address broken links before finishing.
+- Keep completed history in actor worklogs; keep current-state files short.
+- Move completed session details out of `session-summary.md` into `.memoc/worklog/<actor>/YYYY-MM/`; move incomplete/risky resume details into `04-handoff.md`.
+- In shared repos, do not use `log.md`; prefer new files under `.memoc/worklog/<actor>/YYYY-MM/` and regenerate `.memoc/activity.md` with `memoc activity --write`.
 - Keep tool output small; prefer `summary`, file-only search, `--limit`, and targeted reads.
+
+## Wiki Link Rules
+
+- Use relative Markdown links that Obsidian can follow, for example `[Glossary](glossary.md)` or `[Topics](topics/README.md)`.
+- Every wiki page must have at least one inbound link from `wiki/index.md`, a directory README, a source page, or a related topic.
+- Every wiki page must link outward to its parent hub plus 1-5 genuinely related pages when they exist.
+- Prefer links in normal prose when the connection is meaningful; use `## Related` for compact navigation.
+- When a concept appears in multiple pages, create or update a topic/glossary page and link all mentions to it.
+- After wiki edits, check `.memoc/wiki/lint.md` and note orphan pages, missing backlinks, contradictions, or stale claims.
 
 ## Concrete Triggers
 

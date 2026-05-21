@@ -1,3 +1,14 @@
+---
+memoc: true
+type: state
+scope: project-memory
+created: 2026-05-21T06:39:07
+updated: 2026-05-21T06:39:07
+status: active
+tags:
+  - memoc
+  - memoc/state
+---
 # Current Project State
 
 Last synced: 2026-05-21T12:18:54+0900
@@ -15,7 +26,7 @@ Last synced: 2026-05-21T12:18:54+0900
 ## Project Snapshot
 
 <!-- memoc:snapshot:start -->
-- Last synced: 2026-05-21T10:20:00+0900
+- Last synced: 2026-05-21T06:39:07
 - Detected stack: Node.js, Fastify, TypeScript
 
 ### Config Files
@@ -32,7 +43,7 @@ Last synced: 2026-05-21T12:18:54+0900
 
 ### Package Scripts
 
-- `build`: `tsc && node -e "if(process.platform!=='win32')require('child_process').execSync('chmod +x dist/index.js')" && node -e "const{existsSync}=require('fs');if(!existsSync('dist/antigravity-credentials.json'))console.warn('[rcodex] dist/antigravity-credentials.json missing; Antigravity OAuth requires ~/.rcodex/antigravity-app.json');"`
+- `build`: `tsc && node -e "if(process.platform!=='win32')require('child_process').execSync('chmod +x dist/index.js')"`
 - `start`: `node dist/index.js`
 - `dev`: `tsx src/index.ts`
 - `prepublishOnly`: `npm run build`
@@ -49,7 +60,7 @@ Last synced: 2026-05-21T12:18:54+0900
 
 ## Completed Tasks
 
-See `.memoc/log.md` for full history.
+See `.memoc/worklog/` for full shared activity history.
 
 ## Commands
 
@@ -80,4 +91,4 @@ See `.memoc/log.md` for full history.
 
 ## Change Log
 
-See `.memoc/log.md`.
+See `.memoc/worklog/` and generated `.memoc/activity.md`.

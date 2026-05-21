@@ -1,3 +1,14 @@
+---
+memoc: true
+type: system
+scope: project-memory
+created: 2026-05-21T06:39:07
+updated: 2026-05-21T06:39:07
+status: active
+tags:
+  - memoc
+  - memoc/system
+---
 # Gateway and CLI
 
 ## Purpose

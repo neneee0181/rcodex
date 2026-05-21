@@ -1,4 +1,15 @@
-﻿# Project Rules
+---
+memoc: true
+type: state
+scope: project-memory
+created: 2026-05-21T06:39:07
+updated: 2026-05-21T06:39:07
+status: active
+tags:
+  - memoc
+  - memoc/state
+---
+# Project Rules
 
 Durable user and project preferences live here. Update when the user gives a rule that should persist across sessions.
 

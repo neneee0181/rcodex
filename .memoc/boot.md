@@ -1,4 +1,15 @@
-﻿# Agent Boot
+---
+memoc: true
+type: core
+scope: project-memory
+created: 2026-05-21T06:39:07
+updated: 2026-05-21T06:39:07
+status: active
+tags:
+  - memoc
+  - memoc/core
+---
+# Agent Boot
 
 On-demand reference only. The entry-file managed block is authoritative.
 
@@ -13,7 +24,6 @@ On-demand reference only. The entry-file managed block is authoritative.
 | `.memoc/01-agent-workflow.md` | When update routing is unclear |
 | `.memoc/05-done-checklist.md` | Before finishing substantial work |
 | `.memoc/03-decisions.md` | When a durable decision was made |
-| `.memoc/log.md` | For append-only history |
 | `.memoc/memoc-usage.md` | For command details |
 | `.memoc/systems/*.md` | Before touching a specific subsystem |
 | `.memoc/wiki/*.md` | For synthesized project knowledge |
@@ -21,7 +31,7 @@ On-demand reference only. The entry-file managed block is authoritative.
 
 ## Search First
 
-`memoc search "<query>"` ??returns file:line matches across memory and agent docs only.
-`memoc grep "<query>"` ??searches project source/text files when memory docs are not enough.
+`memoc search "<query>"` — returns file:line matches across memory and agent docs only.
+`memoc grep "<query>"` — searches project source/text files when memory docs are not enough.
 If `memoc` is not on PATH, try `.\.memoc\bin\memoc.cmd search "<query>"` on Windows or `.memoc/bin/memoc search "<query>"` in sh, then `npx @kevin0181/memoc search "<query>"`.
 Use it before opening any file to avoid reading more than needed.
