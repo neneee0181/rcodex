@@ -13,6 +13,31 @@ import { refreshClaudeAccessToken } from "./providers/claude-oauth-flow.js";
 import { isAntigravityModel, callAntigravity } from "./providers/antigravity.js";
 import { refreshAntigravityAccessToken, loadAntigravityProject } from "./providers/antigravity-oauth-flow.js";
 import { callCopilot } from "./providers/copilot.js";
+import { KIRO_MODELS, callKiro, readKiroEventStream } from "./providers/kiro.js";
+import { VERTEX_MODELS, VERTEX_PARTNER_MODELS, callVertex, callVertexPartner } from "./providers/vertex.js";
+import { OPENCODE_MODELS, callOpenCode } from "./providers/opencode.js";
+import { FREETIER_PROVIDERS, isFreetierProvider, callFreetier } from "./providers/freetier.js";
+
+function isKiroModel(model: string): boolean {
+  return KIRO_MODELS.includes(model);
+}
+function isVertexModel(model: string): boolean {
+  return VERTEX_MODELS.includes(model);
+}
+function isVertexPartnerModel(model: string): boolean {
+  return VERTEX_PARTNER_MODELS.includes(model);
+}
+function isOpenCodeModel(model: string): boolean {
+  return OPENCODE_MODELS.includes(model);
+}
+function findFreetierProviderForModel(model: string): string | null {
+  for (const p of FREETIER_PROVIDERS) {
+    if (p.models.some(m => m.id === model)) {
+      return p.id;
+    }
+  }
+  return null;
+}
 
 const RCODEX_DIR = join(homedir(), ".rcodex");
 const REQUESTS_PATH = join(RCODEX_DIR, "requests.jsonl");
@@ -1277,14 +1302,26 @@ function resolveAccounts(requestedModel: string, config: GatewayConfig): { accou
     ollama: requestedModel,
     antigravity: "ag/gemini-3.1-pro-high",
     copilot: "gpt-4o",
+    kiro: "claude-sonnet-4.5",
+    vertex: "gemini-3.1-pro-preview",
+    opencode: "nemotron-3-super-free",
   };
+
+  for (const pDef of FREETIER_PROVIDERS) {
+    safeDefault[pDef.id] = pDef.models[0]?.id || "auto";
+  }
 
   const providerFromModel =
     isAnthropicModel(requestedModel)   ? "anthropic"   :
     isOpenAIModel(requestedModel)      ? "openai"      :
     isGoogleModel(requestedModel)      ? "google"      :
     isOllamaModel(requestedModel)      ? "ollama"      :
-    isAntigravityModel(requestedModel) ? "antigravity" : null;
+    isAntigravityModel(requestedModel) ? "antigravity" :
+    isKiroModel(requestedModel)        ? "kiro"        :
+    isVertexModel(requestedModel)      ? "vertex"      :
+    isVertexPartnerModel(requestedModel) ? "vertex"    :
+    isOpenCodeModel(requestedModel)    ? "opencode"    :
+    findFreetierProviderForModel(requestedModel) ?? null;
 
   const candidates: { account: Account; model: string; order: number }[] = [];
 
@@ -1384,6 +1421,60 @@ async function callSingleProvider(
     const res = await callCopilot(account.oauthToken ?? "", model, copilotMessages, copilotInstructions(req, tools), false, signal, tools);
     if (!res.ok) throw new Error(`Copilot error ${res.status}: ${await res.text()}`);
     return chatToResponses(await res.json() as Parameters<typeof chatToResponses>[0], model);
+  }
+
+  if (account.provider === "kiro") {
+    const res = await callKiro(account.apiKey ?? "", model, messages, cleanInstructions(instructions), signal, buildOpenAIToolsForProvider(req));
+    if (!res.ok) throw new Error(`Kiro error ${res.status}: ${await res.text()}`);
+    let text = "";
+    const usageObj: { inputTokens?: number; outputTokens?: number } = {};
+    for await (const chunk of readKiroEventStream(res, usageObj)) {
+      if (chunk.type === "text") text += chunk.content;
+    }
+    return {
+      id: `resp_${Date.now()}`,
+      object: "response",
+      model,
+      output: [{ type: "message", role: "assistant", content: [{ type: "output_text", text }] }],
+      usage: usageObj.inputTokens !== undefined || usageObj.outputTokens !== undefined ? {
+        input_tokens: usageObj.inputTokens ?? 0,
+        output_tokens: usageObj.outputTokens ?? 0,
+        total_tokens: (usageObj.inputTokens ?? 0) + (usageObj.outputTokens ?? 0),
+      } : undefined,
+    };
+  }
+
+  if (account.provider === "vertex") {
+    if (isVertexModel(model)) {
+      const res = await callVertex(account.apiKey ?? "", model, messages, cleanInstructions(instructions), false, signal, buildOpenAIToolsForProvider(req));
+      if (!res.ok) throw new Error(`Vertex error ${res.status}: ${await res.text()}`);
+      return googleToResponses(await res.json() as Parameters<typeof googleToResponses>[0], model);
+    } else {
+      const res = await callVertexPartner(account.apiKey ?? "", model, messages, cleanInstructions(instructions), false, signal);
+      if (!res.ok) throw new Error(`Vertex Partner error ${res.status}: ${await res.text()}`);
+      return chatToResponses(await res.json() as Parameters<typeof chatToResponses>[0], model);
+    }
+  }
+
+  if (account.provider === "opencode") {
+    const res = await callOpenCode(model, messages, cleanInstructions(instructions), false, signal);
+    if (!res.ok) throw new Error(`OpenCode error ${res.status}: ${await res.text()}`);
+    const data = await res.json();
+    if (model === "big-pickle") {
+      return anthropicToResponses(data as Parameters<typeof anthropicToResponses>[0], model);
+    }
+    return chatToResponses(data as Parameters<typeof chatToResponses>[0], model);
+  }
+
+  if (isFreetierProvider(account.provider)) {
+    const res = await callFreetier(account.provider, account.apiKey ?? "", model, messages, cleanInstructions(instructions), false, signal);
+    if (!res.ok) throw new Error(`Free-tier provider ${account.provider} error ${res.status}: ${await res.text()}`);
+    const data = await res.json();
+    const providerDef = FREETIER_PROVIDERS.find(p => p.id === account.provider);
+    if (providerDef?.format === "claude") {
+      return anthropicToResponses(data as Parameters<typeof anthropicToResponses>[0], model);
+    }
+    return chatToResponses(data as Parameters<typeof chatToResponses>[0], model);
   }
 
   // OpenAI
@@ -2025,6 +2116,54 @@ async function* streamSingleProvider(
         instructions: copilotInstructions(req, tools), tools: req.tools, ts: Date.now(),
       });
       glog(`[gateway] conv stored (copilot): ${responseId} (${capturedCopilotTools.length} tools)`);
+    }
+    return;
+  }
+
+  if (account.provider === "kiro") {
+    const res = await callKiro(account.apiKey ?? "", model, messages, cleanInstructions(instructions), signal, buildOpenAIToolsForProvider(req));
+    if (!res.ok) throw new Error(`Kiro error ${res.status}: ${await res.text()}`);
+    yield* readKiroEventStream(res, usage);
+    return;
+  }
+
+  if (account.provider === "vertex") {
+    if (isVertexModel(model)) {
+      const rawTools = Array.isArray(req.tools) ? (req.tools as Record<string, unknown>[]) : [];
+      const vertexTools = rawTools
+        .filter(t => { const type = t.type as string | undefined; return !type || (!COMPUTER_USE_TYPES.has(type) && type !== "web_search"); })
+        .map(toGoogleTool)
+        .filter((t): t is Record<string, unknown> => t !== null);
+      const res = await callVertex(account.apiKey ?? "", model, messages, cleanInstructions(instructions), true, signal, vertexTools);
+      if (!res.ok) throw new Error(`Vertex error ${res.status}: ${await res.text()}`);
+      yield* readGoogleSSEWithUsage(res, usage);
+    } else {
+      const res = await callVertexPartner(account.apiKey ?? "", model, messages, cleanInstructions(instructions), true, signal);
+      if (!res.ok) throw new Error(`Vertex Partner error ${res.status}: ${await res.text()}`);
+      yield* readOpenAISSEWithUsage(res, usage);
+    }
+    return;
+  }
+
+  if (account.provider === "opencode") {
+    const res = await callOpenCode(model, messages, cleanInstructions(instructions), true, signal);
+    if (!res.ok) throw new Error(`OpenCode error ${res.status}: ${await res.text()}`);
+    if (model === "big-pickle") {
+      yield* readAnthropicSSEWithUsage(res, usage);
+    } else {
+      yield* readOpenAISSEWithUsage(res, usage);
+    }
+    return;
+  }
+
+  if (isFreetierProvider(account.provider)) {
+    const res = await callFreetier(account.provider, account.apiKey ?? "", model, messages, cleanInstructions(instructions), true, signal);
+    if (!res.ok) throw new Error(`Free-tier provider ${account.provider} error ${res.status}: ${await res.text()}`);
+    const providerDef = FREETIER_PROVIDERS.find(p => p.id === account.provider);
+    if (providerDef?.format === "claude") {
+      yield* readAnthropicSSEWithUsage(res, usage);
+    } else {
+      yield* readOpenAISSEWithUsage(res, usage);
     }
     return;
   }

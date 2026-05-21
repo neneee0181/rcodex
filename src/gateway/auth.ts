@@ -17,7 +17,7 @@ export interface ModelSlot {
 // One authenticated account ??same provider can have multiple accounts
 export interface Account {
   id: string;
-  provider: "anthropic" | "openai" | "google" | "ollama" | "antigravity" | "copilot";
+  provider: "anthropic" | "openai" | "google" | "ollama" | "antigravity" | "copilot" | "kiro" | "vertex" | "opencode" | "freetier" | string;
   label: string;
   method: "apikey" | "oauth-official" | "oauth-unofficial" | "local";
   apiKey?: string;

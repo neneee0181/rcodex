@@ -26,6 +26,10 @@ import { getAnthropicModels } from "./providers/anthropic.js";
 import { getOpenAIModels } from "./providers/openai.js";
 import { getGoogleModels } from "./providers/google.js";
 import { getOllamaModels } from "./providers/ollama.js";
+import { getKiroModels } from "./providers/kiro.js";
+import { getVertexModels, getVertexPartnerModels } from "./providers/vertex.js";
+import { getOpenCodeModels } from "./providers/opencode.js";
+import { isFreetierProvider, getFreetierModels } from "./providers/freetier.js";
 import { accountToProviderAuth } from "./auth.js";
 import { getHTML } from "./ui.js";
 
@@ -47,6 +51,9 @@ function findFreePort(startPort: number, maxAttempts = 10): Promise<number> {
 async function loadModelsForAccount(account: Account, ollamaBaseUrl: string): Promise<string[]> {
   const auth = accountToProviderAuth(account);
   try {
+    if (isFreetierProvider(account.provider)) {
+      return getFreetierModels(account.provider);
+    }
     switch (account.provider) {
       case "anthropic":    return await getAnthropicModels(auth);
       case "openai":       return await getOpenAIModels(auth);
@@ -54,6 +61,9 @@ async function loadModelsForAccount(account: Account, ollamaBaseUrl: string): Pr
       case "ollama":       return await getOllamaModels(ollamaBaseUrl);
       case "antigravity":  return await getAntigravityModels(auth.oauthToken ?? "", account.projectId);
       case "copilot":      return await getCopilotModels(auth.oauthToken ?? "");
+      case "kiro":         return getKiroModels();
+      case "vertex":       return [...getVertexModels(), ...getVertexPartnerModels()];
+      case "opencode":     return getOpenCodeModels();
       default:             return [];
     }
   } catch { return []; }
