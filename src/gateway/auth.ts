@@ -5,6 +5,7 @@ import { homedir } from "os";
 const RCODEX_DIR = join(homedir(), ".rcodex");
 const CONFIG_PATH = join(RCODEX_DIR, "gateway.json");
 const GATEWAY_LOG_PATH = join(RCODEX_DIR, "gateway.log");
+export const DEFAULT_BODY_LIMIT_MIB = 64;
 
 // A single (account, model) slot in the active output routing chain
 export interface ModelSlot {
@@ -49,6 +50,7 @@ export interface ProviderAuth {
 
 export interface GatewayConfig {
   port: number;
+  bodyLimitMiB: number;
   pid?: number;
   accounts: Account[];
   ollamaBaseUrl: string;
@@ -70,6 +72,7 @@ export function accountToProviderAuth(account: Account): ProviderAuth {
 
 const DEFAULT_CONFIG: GatewayConfig = {
   port: 3141,
+  bodyLimitMiB: DEFAULT_BODY_LIMIT_MIB,
   accounts: [],
   ollamaBaseUrl: "http://localhost:11434",
 };
@@ -91,6 +94,12 @@ function appendGatewayLifecycleLog(message: string): void {
 
 function genId(prefix: string): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+}
+
+function normalizeBodyLimitMiB(value: unknown): number {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return DEFAULT_BODY_LIMIT_MIB;
+  return Math.min(1024, Math.max(1, Math.floor(n)));
 }
 
 // One-time migration from the old providers-map format
@@ -122,6 +131,7 @@ function migrateOldFormat(raw: Record<string, unknown>): GatewayConfig {
 
   return {
     port: (raw.port as number) || 3141,
+    bodyLimitMiB: normalizeBodyLimitMiB(raw.bodyLimitMiB),
     pid: raw.pid as number | undefined,
     accounts,
     ollamaBaseUrl: (old.ollama?.baseUrl as string) || "http://localhost:11434",
@@ -140,10 +150,15 @@ export function loadConfig(): GatewayConfig {
     }
     if (!raw.accounts) raw.accounts = [];
     if (!raw.ollamaBaseUrl) raw.ollamaBaseUrl = "http://localhost:11434";
+    let dirty = false;
+    const bodyLimitMiB = normalizeBodyLimitMiB(raw.bodyLimitMiB);
+    if (raw.bodyLimitMiB !== bodyLimitMiB) {
+      raw.bodyLimitMiB = bodyLimitMiB;
+      dirty = true;
+    }
     const config = raw as unknown as GatewayConfig;
 
     // Migration 1: assign connectedOrder to connected accounts that pre-date this field
-    let dirty = false;
     let next = Math.max(-1, ...config.accounts.map(a => a.connectedOrder ?? -1)) + 1;
     for (const account of config.accounts) {
       if (account.connectedToOut && account.connectedOrder === undefined) {

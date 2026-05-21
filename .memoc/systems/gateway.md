@@ -43,7 +43,7 @@ The gateway can route requests through OpenAI/Codex, Anthropic Claude, Google Ge
 - Codex config: `~/.codex/config.toml`
 - Managed Codex provider key: `rcodex`
 - Default gateway config port: `3141`; README/user-facing default may refer to the active runtime port and should be kept aligned when behavior changes.
-- `/v1/responses` requests are parsed by Fastify with a 64MiB body limit to tolerate large codebase/tool-result contexts.
+- `/v1/responses` requests are parsed by Fastify with `bodyLimitMiB` from `~/.rcodex/gateway.json`; default is 64MiB and values are clamped to 1-1024MiB.
 
 ## Commands
 

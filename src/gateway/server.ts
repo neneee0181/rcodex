@@ -14,7 +14,7 @@ import { migrateThreads } from "../commands/migrate.js";
 import {
   loadConfig, saveConfig, addAccount, removeAccount, setAccountNodeState, reorderConnectedAccounts,
   addModelSlot, removeModelSlot, reorderAllSlots, updateAccountProjectId,
-  saveGatewayPid, clearGatewayPid, type GatewayConfig, type Account,
+  saveGatewayPid, clearGatewayPid, DEFAULT_BODY_LIMIT_MIB, type GatewayConfig, type Account,
 } from "./auth.js";
 import { buildAuthUrl, waitForCallback, exchangeCode } from "./providers/openai-oauth-flow.js";
 import { buildClaudeAuthUrl, waitForClaudeCallback, exchangeClaudeCode } from "./providers/claude-oauth-flow.js";
@@ -31,7 +31,6 @@ import { getHTML } from "./ui.js";
 
 const execAsync = promisify(exec);
 const startTime = Date.now();
-const RESPONSES_BODY_LIMIT_BYTES = 64 * 1024 * 1024;
 
 function findFreePort(startPort: number, maxAttempts = 10): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -66,7 +65,9 @@ export interface GatewayServer {
 }
 
 export function createGatewayServer(): GatewayServer {
-  const fastify = Fastify({ logger: false, bodyLimit: RESPONSES_BODY_LIMIT_BYTES });
+  const initialConfig = loadConfig();
+  const bodyLimitMiB = initialConfig.bodyLimitMiB || DEFAULT_BODY_LIMIT_MIB;
+  const fastify = Fastify({ logger: false, bodyLimit: bodyLimitMiB * 1024 * 1024 });
   fastify.register(cors, { origin: "*" });
 
   let pendingOAuth: string | null = null;

@@ -3,22 +3,22 @@ memoc: true
 type: state
 scope: project-memory
 created: 2026-05-21T06:39:07
-updated: 2026-05-21T17:47:27+0900
+updated: 2026-05-21T17:52:16+0900
 status: active
 tags:
   - memoc
   - memoc/state
 ---
 # Session Summary
-Last: 2026-05-21T17:47:27+0900
+Last: 2026-05-21T17:52:16+0900
 Replace, do not append. Keep <800B. History: worklog. Resume risks: 04-handoff.md.
 
 ## Status
 - `rcodex` is a TypeScript Node CLI plus Fastify Responses-compatible multi-provider gateway.
-- Current package version is `0.0.15`; gateway accepts larger Responses request bodies.
+- Current package version is `0.0.16`; gateway body limit is configurable.
 
 ## Changed
-- Raised Fastify request body limit to 64MiB so large tool outputs/context do not fail locally with 413.
+- Added `~/.rcodex/gateway.json` `bodyLimitMiB` option, default 64 and clamped 1-1024.
 - Worklog/activity are the shared history path; `session-summary.md` stays compact/latest-only.
 
 ## Open Tasks

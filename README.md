@@ -119,6 +119,18 @@ Run `rcodex doctor` to diagnose supported setup issues.
 - Gateway logs are stored at `~/.rcodex/gateway.log`.
 - API keys and OAuth tokens stay local and are only sent to their corresponding provider APIs.
 
+## Gateway Config
+
+Advanced rcodex options live in `~/.rcodex/gateway.json`. Large codebase/tool-result turns can increase the local request body limit:
+
+```json
+{
+  "bodyLimitMiB": 128
+}
+```
+
+The default is `64`. Values are clamped to `1`-`1024` MiB.
+
 ## Publishing
 
 npm is the distribution channel for the `rcodex` command. GitHub Releases are useful for release notes and source archives, but users receive updates from npm because they install the package with `npm install -g @kevin0181/rcodex`.
@@ -128,7 +140,7 @@ For the current release:
 ```bash
 npm login
 npm run build
-git tag v0.0.14
+git tag v0.0.16
 git push origin main --tags
 npm publish --access public
 ```
