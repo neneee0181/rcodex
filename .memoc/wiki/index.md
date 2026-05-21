@@ -2,8 +2,8 @@
 memoc: true
 type: wiki
 scope: project-memory
-created: 2026-05-21T16:44:45
-updated: 2026-05-21T16:44:45
+created: 2026-05-21T17:12:48
+updated: 2026-05-21T17:12:48
 status: active
 confidence: medium
 tags:

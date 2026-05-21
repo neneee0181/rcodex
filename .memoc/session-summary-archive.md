@@ -117,3 +117,37 @@ History: worklog. Resume risks: 04-handoff.md.
 
 ## Resume
 - Test gateway functionality by running `npm run dev`.
+
+## [2026-05-21T17:12:48] archived summary (858B)
+
+---
+memoc: true
+type: state
+scope: project-memory
+created: 2026-05-21T16:44:10
+updated: 2026-05-22T01:55:00
+status: active
+tags:
+  - memoc
+  - memoc/state
+---
+# Session Summary
+Last: 2026-05-22T01:55:00
+Replace, do not append. Keep <800B.
+History: worklog. Resume risks: 04-handoff.md.
+
+## Status
+- rcodex CLI/Gateway comment repairs complete.
+- Build verified (npm run build succeeds).
+
+## Changed
+- Repaired corrupted comments and logging string literals (mojibake) in src/gateway/proxy.ts, src/commands/migrate.ts, and src/core/config.ts.
+- Preserved JS operators (??) while removing corrupted unicode sequences.
+- Updated project memory layouts via local memoc utility.
+
+## Open Tasks
+- Smoke-test first-install launch on Windows.
+- Smoke-test tool history fixes with Claude/Gemini/Ollama.
+
+## Resume
+- Test gateway functionality by running npm run dev.

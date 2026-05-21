@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+﻿import Database from "better-sqlite3";
 import { existsSync, copyFileSync, readFileSync, writeFileSync, readdirSync, statSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
@@ -11,7 +11,7 @@ const CODEX_DIR = join(homedir(), ".codex");
 const DB_PATH = join(CODEX_DIR, "state_5.sqlite");
 const SESSIONS_DIR = join(CODEX_DIR, "sessions");
 
-// rollout .jsonl ???뵬??筌?餓?session_meta)?癒?퐣 model_provider????ν뒄??뺣뼄.
+// rollout .jsonl 파일에서 (session_meta)의 model_provider를 업데이트한다.
 function patchRolloutFile(filePath: string, targetProvider: string, dryRun: boolean): boolean {
   try {
     const content = readFileSync(filePath, "utf-8");
@@ -36,7 +36,7 @@ function patchRolloutFile(filePath: string, targetProvider: string, dryRun: bool
   }
 }
 
-// sessions ??륁맄 筌뤴뫀諭?.jsonl ???뵬????? ?癒?퉳
+// sessions 디렉토리 내의 모든 .jsonl 파일 목록을 조회한다.
 function findRolloutFiles(dir: string): string[] {
   if (!existsSync(dir)) return [];
   const results: string[] = [];
@@ -87,7 +87,7 @@ export function hasUnmigratedThreads(targetProvider: string): boolean {
   return dbHasUnmigrated || hasUnmigratedRolloutFiles(targetProvider);
 }
 
-// Core migration logic ??moves all threads to targetProvider (SQLite + .jsonl)
+// Core migration logic: moves all threads to targetProvider (SQLite + .jsonl)
 // Caller must ensure Codex is not running before calling this.
 export async function migrateThreads(targetProvider: string, dryRun: boolean): Promise<void> {
   let dbChanged = 0;
@@ -95,7 +95,7 @@ export async function migrateThreads(targetProvider: string, dryRun: boolean): P
     logger.warn(`DB not found: ${displayPath(DB_PATH)}`);
     logger.info("Continuing with session file migration.");
   } else {
-    // ???? 1. SQLite ????????????????????????????????????????????????????????????????????????????????????????????????
+    // 단계 1. SQLite 마이그레이션
     if (!dryRun) {
       copyFileSync(DB_PATH, `${DB_PATH}.backup-${Date.now()}`);
     }
@@ -124,7 +124,7 @@ export async function migrateThreads(targetProvider: string, dryRun: boolean): P
     }
   }
 
-  // ???? 2. Rollout .jsonl ???뵬 ??ν뒄 ??????????????????????????????????????????????????????????
+  // 단계 2. Rollout .jsonl 마이그레이션
   const rolloutFiles = findRolloutFiles(SESSIONS_DIR);
   let fileChanged = 0;
   for (const f of rolloutFiles) {

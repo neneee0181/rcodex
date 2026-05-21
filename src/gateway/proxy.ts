@@ -44,7 +44,7 @@ export function glog(msg: string)  { console.log(`[${kst()}] ${msg}`); }
 export function gwarn(msg: string) { console.warn(`[${kst()}] ${msg}`); }
 export function gerr(msg: string)  { console.error(`[${kst()}] ${msg}`); }
 
-// ?Ä?Ä Responses API types ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- Responses API types ---
 export interface ResponsesRequest {
   model: string;
   input: string | InputItem[];
@@ -80,7 +80,7 @@ interface OutputItem {
   content: { type: "output_text"; text: string }[];
 }
 
-// ?Ä?Ä Stream chunk type ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- Stream chunk type ---
 export type StreamChunk =
   | { type: 'text'; content: string }
   | { type: 'reasoning'; content: string }
@@ -88,7 +88,7 @@ export type StreamChunk =
   | { type: 'tool_call_delta'; id: string; delta: string; index: number }
   | { type: 'tool_call_end'; id: string; name: string; arguments: string; index: number };
 
-// ?Ä?Ä Tool format conversion ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- Tool format conversion ---
 const COMPUTER_USE_TYPES = new Set(["computer_use", "computer-preview", "computer_20241022"]);
 
 function toAnthropicTool(tool: Record<string, unknown>): Record<string, unknown> {
@@ -272,7 +272,7 @@ function extractAfterInvokeBlock(text: string): string {
   return fcClose ? afterInvoke.slice(fcClose[0].length) : afterInvoke;
 }
 
-// Parse Codex exec_command output format ??extract just the actual output text
+// Parse Codex exec_command output format - extract just the actual output text
 function parseCodexToolOutput(output: unknown): string {
   const raw = typeof output === "string" ? output : JSON.stringify(output ?? "");
   const idx = raw.indexOf("\nOutput:\n");
@@ -280,8 +280,8 @@ function parseCodexToolOutput(output: unknown): string {
     const actual = raw.slice(idx + "\nOutput:\n".length).trim();
     const exitMatch = raw.match(/Process exited with code (\d+)/);
     const exitCode = exitMatch ? parseInt(exitMatch[1]) : 0;
-    if (!actual && exitCode === 0) return "(Îπ?Ï∂úÎ†• ??Í≤∞Í≥º ?ÜÏùå)";
-    if (!actual) return `(?§Î•ò: exit code ${exitCode} ???¥Îãπ Í≤ΩÎ°ú???åÏùº ?ÜÏùå)`;
+    if (!actual && exitCode === 0) return "(ÔøΩ?Ï∂úÎ†• ??Í≤∞Í≥º ?ÔøΩÏùå)";
+    if (!actual) return `(?ÔøΩÎ•ò: exit code ${exitCode} ???ÔøΩÎãπ Í≤ΩÎ°ú???ÔøΩÏùº ?ÔøΩÏùå)`;
     return actual;
   }
   return raw.trim();
@@ -289,13 +289,13 @@ function parseCodexToolOutput(output: unknown): string {
 
 function fallbackToolResultText(output: unknown): string {
   const text = parseCodexToolOutput(output);
-  if (!text || text === "(Ï∂úÎ†• ?ÜÏùå)") return "???§Ìñâ ?ÑÎ£å. Ï∂úÎ†• ?ÜÏùå.";
-  return `???§Ìñâ Í≤∞Í≥º:\n${text}`;
+  if (!text || text === "(Ï∂úÎ†• ?ÔøΩÏùå)") return "???ÔøΩÌñâ ?ÔøΩÎ£å. Ï∂úÎ†• ?ÔøΩÏùå.";
+  return `???ÔøΩÌñâ Í≤∞Í≥º:\n${text}`;
 }
 
 // Tools Codex actually executes when returned as function_call events.
 // read_file / write_file in req.tools are system-prompt markers, NOT callable tool names.
-// web_fetch is handled by the gateway itself (not Codex) ??see below.
+// web_fetch is handled by the gateway itself (not Codex) - see below.
 const CODEX_EXECUTABLE = new Set(["exec_command", "shell_exec"]);
 
 // Map Ollama tool names to real Codex-executable tools
@@ -306,7 +306,7 @@ function fileSearchCommand(target: string): string {
 }
 
 function remapOllamaTool(name: string, input: Record<string, unknown>): { name: string; input: Record<string, unknown> } {
-  // Gateway-handled and Codex-native web tools ??pass through unchanged
+  // Gateway-handled and Codex-native web tools - pass through unchanged
   if (name === "web_fetch" || name === "web_search") return { name, input };
   if (CODEX_EXECUTABLE.has(name)) {
     // Normalize field names: model may send "command" instead of "cmd"
@@ -335,13 +335,13 @@ function remapOllamaTool(name: string, input: Record<string, unknown>): { name: 
     if (!target) return { name: "exec_command", input: { cmd: `echo "No image path provided"` } };
     return { name: "exec_command", input: { cmd: fileSearchCommand(target) } };
   }
-  // read_file and similar ??cat
+  // read_file and similar - cat
   if (lc === "readfile" || lc === "read_file" || lc === "getfile" || lc === "openfile" || lc === "getfilecontent") {
     const filePath = path || query;
     if (!filePath) return { name: "exec_command", input: { cmd: `ls -la .` } };
     return { name: "exec_command", input: { cmd: `cat "${filePath}"` } };
   }
-  // write_file ??echo redirect (best-effort)
+  // write_file - echo redirect (best-effort)
   if (lc === "writefile" || lc === "write_file" || lc === "createfile") {
     const content = String(input.content ?? input.text ?? input.data ?? "");
     const filePath = path || query;
@@ -358,8 +358,8 @@ function remapOllamaTool(name: string, input: Record<string, unknown>): { name: 
   return { name: "exec_command", input: { cmd: fileSearchCommand(target) } };
 }
 
-// ?Ä?Ä Conversation state store (for multi-turn tool use) ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
-// Keyed by responseId we return to Codex ??looked up on next request via previous_response_id.
+  // --- Conversation state store (for multi-turn tool use) ---
+// Keyed by responseId we return to Codex - looked up on next request via previous_response_id.
 interface ConvState {
   provider: string;
   model: string;
@@ -378,7 +378,7 @@ setInterval(() => {
   for (const [id, s] of convStore) if (s.ts < cutoff) convStore.delete(id);
 }, 5 * 60 * 1000).unref();
 
-// ?Ä?Ä Request log ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- Request log ---
 export interface RequestLogEntry {
   ts: number;
   requestedModel: string;
@@ -431,7 +431,7 @@ export function flushLog(): void {
   } catch { /* ignore */ }
 }
 
-// ?Ä?Ä Input parsing ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- Input parsing ---
 // Normalize Responses API content types (input_text, output_text, input_image)
 // to Anthropic-compatible types (text, image).
 function normalizeContentType(type: string | undefined): string {
@@ -637,7 +637,7 @@ function buildAntigravityTextContentsFromInput(inputArr: Record<string, unknown>
   return contents;
 }
 
-// ?Ä?Ä Response format converters ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- Response format converters ---
 function chatToResponses(
   data: { id?: string; model: string; choices: { message: { content: string } }[]; usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number } },
   model: string
@@ -697,7 +697,7 @@ function googleToResponses(
   };
 }
 
-// ?Ä?Ä Codex request builder ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- Codex request builder ---
 function buildCodexBody(req: ResponsesRequest, model: string): Record<string, unknown> {
   const body: Record<string, unknown> = {
     model,
@@ -716,7 +716,7 @@ function buildCodexBody(req: ResponsesRequest, model: string): Record<string, un
   return body;
 }
 
-// ?Ä?Ä Codex OAuth transparent passthrough ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- Codex OAuth transparent passthrough ---
 // Forwards the FULL original request body (tools, previous_response_id, etc.)
 // so Codex-native models (gpt-5.5 etc.) can execute shell/file tools normally.
 export async function tryCodexPassthrough(
@@ -731,23 +731,23 @@ export async function tryCodexPassthrough(
   const first = candidates[0];
 
   const hasPrevId = !!rawBody.previous_response_id;
-  // If previous_response_id is in our convStore, we handled that turn ??don't
+  // If previous_response_id is in our convStore, we handled that turn - don't
   // passthrough, the follow-up also belongs to our proxy (e.g. Claude tool result)
   const prevIdIsOurs = hasPrevId && convStore.has(rawBody.previous_response_id as string);
 
   let codexCandidate: (typeof candidates)[0] | undefined;
   if (!prevIdIsOurs) {
     if (first?.account.method === "oauth-official" && first.account.provider === "openai") {
-      // Codex OAuth is slot 1 ??always passthrough
+      // Codex OAuth is slot 1 - always passthrough
       codexCandidate = first;
     } else if (hasPrevId) {
-      // previous_response_id not from our proxy ??may be a Codex-native multi-turn ID
+      // previous_response_id not from our proxy - may be a Codex-native multi-turn ID
       // Look for any Codex OAuth as fallback (only for hasPrevId, NOT hasTools alone)
       codexCandidate = candidates.find(
         c => c.account.method === "oauth-official" && c.account.provider === "openai"
       );
     }
-    // NOTE: hasTools alone no longer triggers passthrough ??Claude/Gemini/Ollama handle tools too
+    // NOTE: hasTools alone no longer triggers passthrough - Claude/Gemini/Ollama handle tools too
   }
   if (!codexCandidate) return null;
 
@@ -769,7 +769,7 @@ export async function tryCodexPassthrough(
   }
 }
 
-// ?Ä?Ä SSE stream reader ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- SSE stream reader ---
 async function* readSSE(
   res: Response,
   extract: (evt: Record<string, unknown>) => string | null
@@ -800,7 +800,7 @@ async function* readSSE(
   }
 }
 
-// ?Ä?Ä Codex (Responses API) SSE reader ??passes through reasoning + text ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- Codex (Responses API) SSE reader - passes through reasoning + text ---
 async function* readCodexSSEWithUsage(
   res: Response,
   usage: { inputTokens?: number; outputTokens?: number }
@@ -841,7 +841,7 @@ async function* readCodexSSEWithUsage(
   }
 }
 
-// ?Ä?Ä <think> tag parser (stateful, handles partial tags across chunks) ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- <think> tag parser (stateful, handles partial tags across chunks) ---
 function* parseThinkChunks(
   state: { buf: string; inThink: boolean },
   incoming: string,
@@ -874,7 +874,7 @@ function* parseThinkChunks(
   }
 }
 
-// ?Ä?Ä OpenAI-format SSE reader ??captures usage, <think> tags, and tool_calls ?Ä?Ä?Ä?Ä
+  // --- OpenAI-format SSE reader - captures usage, <think> tags, and tool_calls ---
 async function* readOpenAISSEWithUsage(
   res: Response,
   usage: { inputTokens?: number; outputTokens?: number },
@@ -907,7 +907,7 @@ async function* readOpenAISSEWithUsage(
     return match?.index === undefined ? null : { index: match.index, length: match[0].length };
   }
 
-  // Splits channel-markup buffer into thought segments (??reasoning) and visible segments (??text/tool).
+  // Splits channel-markup buffer into thought segments (reasoning) and visible segments (text/tool).
   // Gemma models emit: thought\n[thinking]\n<channel|>\n[visible response]
   function splitChannelMarkup(text: string, final: boolean): { kind: 'thought' | 'visible'; content: string }[] {
     channelBuf += text;
@@ -988,7 +988,7 @@ async function* readOpenAISSEWithUsage(
     const segs = splitChannelMarkup(text, final);
     for (const seg of segs) {
       if (seg.kind === 'thought') {
-        // Gemma thought channel ??show as reasoning (gray in Codex UI)
+        // Gemma thought channel - show as reasoning (gray in Codex UI)
         yield { type: 'reasoning', content: seg.content };
         continue;
       }
@@ -998,7 +998,7 @@ async function* readOpenAISSEWithUsage(
         yield* parseThinkChunks(thinkState, seg.content);
         continue;
       }
-      // Visible segment ??run through tool-markup detection and think-tag parser
+      // Visible segment - run through tool-markup detection and think-tag parser
       textBufForToolMarkup += seg.content;
       const parsedTool = parseGeminiTextToolCall(textBufForToolMarkup);
       if (parsedTool) {
@@ -1006,7 +1006,7 @@ async function* readOpenAISSEWithUsage(
         continue;
       }
       const markerStart = toolMarkupStart(textBufForToolMarkup);
-      if (markerStart >= 0) continue;  // hold back ??more chunks may complete the markup
+      if (markerStart >= 0) continue;  // hold back - more chunks may complete the markup
       const safe = Math.max(0, textBufForToolMarkup.length - 32);
       if (safe > 0) {
         const out = textBufForToolMarkup.slice(0, safe);
@@ -1072,15 +1072,15 @@ async function* readOpenAISSEWithUsage(
                 const id = tc.id ?? `call_${Date.now()}_${tc.index}`;
                 existing = { id, name: tc.function.name, args: "" };
                 toolCalls.set(tc.index, existing);
-                // Don't emit tool_call_start yet ??normalize name+args in flushToolCalls
+                // Don't emit tool_call_start yet - normalize name+args in flushToolCalls
               }
               if (existing && argsDelta) {
                 existing.args += argsDelta;
-                // Don't emit tool_call_delta yet ??emit normalized version in flushToolCalls
+                // Don't emit tool_call_delta yet - emit normalized version in flushToolCalls
               }
             }
           }
-          // On summarize turns (disableTextTools), skip native tool_calls too ??some models
+          // On summarize turns (disableTextTools), skip native tool_calls too - some models
           // (qwen3) emit tool_calls even when tools are absent; ignoring prevents infinite loops.
           if (choice?.finish_reason === "tool_calls" && !disableTextTools) yield* flushToolCalls();
           const u = evt.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined;
@@ -1097,7 +1097,7 @@ async function* readOpenAISSEWithUsage(
   }
 }
 
-// ?Ä?Ä Token refresh ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- Token refresh ---
 export async function ensureFreshToken(account: Account): Promise<Account> {
   if (account.method !== "oauth-official" || !account.oauthRefresh || !account.oauthExpiry) return account;
   if (Date.now() < account.oauthExpiry - 5 * 60 * 1000) return account;
@@ -1117,7 +1117,7 @@ export async function ensureFreshToken(account: Account): Promise<Account> {
   }
 }
 
-// ?Ä?Ä Anthropic SSE reader that also captures usage and tool_use blocks ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- Anthropic SSE reader that also captures usage and tool_use blocks ---
 async function* readAnthropicSSEWithUsage(
   res: Response,
   usage: { inputTokens?: number; outputTokens?: number },
@@ -1191,7 +1191,7 @@ async function* readAnthropicSSEWithUsage(
   }
 }
 
-// ?Ä?Ä Google / Antigravity SSE reader ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- Google / Antigravity SSE reader ---
 async function* readGoogleSSEWithUsage(
   res: Response,
   usage: { inputTokens?: number; outputTokens?: number },
@@ -1203,7 +1203,7 @@ async function* readGoogleSSEWithUsage(
   const decoder = new TextDecoder();
   let buf = "";
   let toolIdx = 0;
-  // thoughtSignature arrives on the thought part, not the functionCall part ??track across SSE events
+  // thoughtSignature arrives on the thought part, not the functionCall part - track across SSE events
   let pendingThoughtSig: string | undefined;
   type GPart = { text?: string; thought?: boolean; thoughtSignature?: string; functionCall?: { name?: string; args?: Record<string, unknown> } };
   type GEvt = { candidates?: { content?: { parts?: GPart[] } }[]; usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number }; response?: GEvt };
@@ -1255,7 +1255,7 @@ async function* readGoogleSSEWithUsage(
   }
 }
 
-// ?Ä?Ä SSE extractors ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- SSE extractors ---
 const chatExtract = (evt: Record<string, unknown>): string | null => {
   const choices = evt.choices as { delta?: { content?: string } }[] | undefined;
   return choices?.[0]?.delta?.content ?? null;
@@ -1268,7 +1268,7 @@ const anthropicExtract = (evt: Record<string, unknown>): string | null =>
   (evt.delta as Record<string, unknown>)?.type === "text_delta"
     ? (evt.delta as Record<string, string>).text ?? null : null;
 
-// ?Ä?Ä Account resolution: sorted by priority (slot order) ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- Account resolution: sorted by priority (slot order) ---
 function resolveAccounts(requestedModel: string, config: GatewayConfig): { account: Account; model: string }[] {
   const safeDefault: Record<string, string> = {
     anthropic: "claude-opus-4-7-20250514",
@@ -1308,7 +1308,7 @@ function resolveAccounts(requestedModel: string, config: GatewayConfig): { accou
     .map(({ account, model }) => ({ account, model }));
 }
 
-// ?Ä?Ä Strip Codex tool instructions for non-Codex providers ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- Strip Codex tool instructions for non-Codex providers ---
 // Codex always includes tool definitions (exec_command, shell_exec, etc.) in the
 // system prompt. Non-Codex providers (Claude, Gemini, Ollama) would try to output
 // tool calls in their own format (e.g., Claude's XML <function_calls> tags),
@@ -1344,7 +1344,7 @@ function copilotInstructions(req: ResponsesRequest, tools?: unknown[]): string |
   ].join("\n");
 }
 
-// ?Ä?Ä Single provider call (non-streaming) ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- Single provider call (non-streaming) ---
 async function callSingleProvider(
   rawAccount: Account,
   model: string,
@@ -1406,7 +1406,7 @@ async function callSingleProvider(
   return chatToResponses(await res.json() as Parameters<typeof chatToResponses>[0], model);
 }
 
-// ?Ä?Ä Single provider stream ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- Single provider stream ---
 async function* streamSingleProvider(
   rawAccount: Account,
   model: string,
@@ -1448,7 +1448,7 @@ async function* streamSingleProvider(
       anthropicMessages = messages;
     }
 
-    // Anthropic doesn't accept role "developer" (OpenAI inline system role) ??
+    // Anthropic doesn't accept role "developer" (OpenAI inline system role)
     // fold developer messages into the system prompt and drop them from the list.
     const developerContent = anthropicMessages
       .filter(m => m.role === "developer")
@@ -1549,7 +1549,7 @@ async function* streamSingleProvider(
   if (account.provider === "antigravity") {
     account = await ensureFreshToken(account);
     const accessToken = account.oauthToken;
-    if (!accessToken) throw new Error("Antigravity: no access token ??re-login required");
+    if (!accessToken) throw new Error("Antigravity: no access token - re-login required");
 
     // Fetch and persist projectId on first use if missing
     if (!account.projectId) {
@@ -1561,7 +1561,7 @@ async function* streamSingleProvider(
         if (stored) { stored.projectId = projectId; saveConfig(cfg); }
         glog(`[gateway] antigravity: fetched projectId=${projectId}`);
       } catch (e) {
-        gerr(`[gateway] antigravity: could not fetch projectId ??${(e as Error).message}`);
+        gerr(`[gateway] antigravity: could not fetch projectId - ${(e as Error).message}`);
       }
     }
 
@@ -1646,7 +1646,7 @@ async function* streamSingleProvider(
           }),
         };
       });
-      glog(`[gateway] antigravity context overflow ??retry ${attempt + 1} with tool outputs at ${Math.round(factor * 100)}%`);
+      glog(`[gateway] antigravity context overflow - retry ${attempt + 1} with tool outputs at ${Math.round(factor * 100)}%`);
     }
     if (!agRes!.ok) throw new Error(`Antigravity error ${agRes!.status}: context overflow after retries`);
     yield* readGoogleSSEWithUsage(agRes!, usage, agCapturedTools, agCapturedText);
@@ -1740,7 +1740,7 @@ async function* streamSingleProvider(
     } : undefined;
     glog(`[ollama] web_search: ${codexWebSearch ? "codex(enabled)" : "gateway-fetch(fallback)"}`);
 
-    // Multi-turn: Codex operates in stateless mode ??it sends the full conversation every turn
+    // Multi-turn: Codex operates in stateless mode - it sends the full conversation every turn
     // in req.input as an array of typed items (message, function_call, function_call_output).
     // We parse the full array and reconstruct OpenAI-format messages so the model sees tool results.
     let prebuiltMessages: unknown[] | undefined;
@@ -1759,7 +1759,7 @@ async function* streamSingleProvider(
       glog(`[ollama] stateless turn: depth=${currentToolDepth} items=${inputArr.length}`);
 
       if (currentToolDepth > MAX_TOOL_TURNS) {
-        // Too many rounds ??force text-only summarize
+        // Too many rounds - force text-only summarize
         isToolResultTurn = true;
         const origQ = inputArr.find(i => (i.type as string) === "message" && i.role === "user");
         const origQuestion = typeof origQ?.content === "string" ? origQ.content
@@ -1773,7 +1773,7 @@ async function* streamSingleProvider(
           { role: "user", content: `User question: ${origQuestion}\n\nTool results:\n${resultsText}\n\nBased on the above results, answer the user's question concisely.` },
         ];
       } else {
-        // Build OpenAI-format history: message ??function_call ??function_call_output ????
+        // Build OpenAI-format history: message -> function_call -> function_call_output
         const msgs: unknown[] = [{ role: "system", content: ollamaSystem }];
         let pendingToolCalls: unknown[] = [];
         let pendingText = "";
@@ -1832,8 +1832,8 @@ async function* streamSingleProvider(
     const MAX_WEB_FETCHES = 2;
     let gatewayFetchCount = 0;
 
-    // Don't offer tools in the summarize turn ??model must answer in text.
-    // Ollama always uses gateway web_fetch ??Codex web_search is unreliable for local models.
+    // Don't offer tools in the summarize turn - model must answer in text.
+    // Ollama always uses gateway web_fetch - Codex web_search is unreliable for local models.
     const turnTools = isToolResultTurn ? undefined : [...(ollamaTools ?? []), webFetchSchema];
 
     // Build initial conversation history for the gateway tool loop.
@@ -1920,7 +1920,7 @@ async function* streamSingleProvider(
             headers: { "User-Agent": "Mozilla/5.0 (compatible; rcodex-Gateway/1.0)" },
           });
           const text = await webRes.text();
-          // Extract title and meta description first ??most informative even on JS-heavy sites
+          // Extract title and meta description first - most informative even on JS-heavy sites
           const title = text.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1]?.trim() ?? "";
           const metaDesc = (
             text.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i)?.[1] ??
@@ -1928,7 +1928,7 @@ async function* streamSingleProvider(
             text.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i)?.[1] ??
             ""
           ).trim();
-          const header = [title && `?úÎ™©: ${title}`, metaDesc && `?§Î™Ö: ${metaDesc}`].filter(Boolean).join("\n");
+          const header = [title && `?ÔøΩÎ™©: ${title}`, metaDesc && `?ÔøΩÎ™Ö: ${metaDesc}`].filter(Boolean).join("\n");
           const body = text
             .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
             .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
@@ -1937,14 +1937,14 @@ async function* streamSingleProvider(
             .replace(/\s+/g, " ").trim()
             .slice(0, 12000);
           content = header ? `${header}\n\n${body}` : body;
-          if (text.length > 12000) content += "\n...(?¥Ïö© ?òÎ¶º)";
+          if (text.length > 12000) content += "\n...(?ÔøΩÏö© ?ÔøΩÎ¶º)";
         } catch (e) {
-          content = `Í∞Ä?∏Ïò§Í∏??§Ìå®: ${e instanceof Error ? e.message : String(e)}`;
+          content = `Í∞Ä?ÔøΩÏò§ÔøΩ??ÔøΩÌå®: ${e instanceof Error ? e.message : String(e)}`;
         }
         loopMsgs.push({ role: "tool", tool_call_id: call.id, content });
       }
 
-      if (codexToolCalls.length > 0) break; // Codex tools also called ??let Codex handle them
+  if (codexToolCalls.length > 0) break; // Codex tools also called - let Codex handle them
     }
 
     glog(`[ollama] turn done: tools=${capturedOllamaTools.filter(t => t.name !== "web_fetch").length} text=${capturedOllamaText.value.length}chars isResultTurn=${isToolResultTurn} preview="${capturedOllamaText.value.slice(0, 80).replace(/\n/g, ' ')}"`);
@@ -1952,17 +1952,17 @@ async function* streamSingleProvider(
     const currentToolOutputs = (Array.isArray(req.input) ? req.input as unknown as Record<string, unknown>[] : [])
       .filter(item => (item.type as string) === "function_call_output");
     if (capturedOllamaTools.length === 0 && capturedOllamaText.value.trim() === "" && currentToolOutputs.length > 0) {
-      // Model returned empty after tool result ??synthesize a brief summary from the output.
+      // Model returned empty after tool result - synthesize a brief summary from the output.
       const lastOutput = currentToolOutputs[currentToolOutputs.length - 1];
       const parsed = parseCodexToolOutput(lastOutput?.output);
       let fallbackText: string;
-      if (!parsed || parsed.includes("Í≤∞Í≥º ?ÜÏùå") || parsed.includes("?¥Îãπ ?åÏùº/??™©??Ï°¥Ïû¨?òÏ? ?äÏäµ?àÎã§")) {
-        fallbackText = parsed || "Î™ÖÎ†π???§Ìñâ?àÏ?Îß?Í≤∞Í≥ºÍ∞Ä ?ÜÏäµ?àÎã§.";
+      if (!parsed || parsed.includes("Í≤∞Í≥º ?ÔøΩÏùå") || parsed.includes("?ÔøΩÎãπ ?ÔøΩÏùº/??ÔøΩÔøΩ??Ï°¥Ïû¨?ÔøΩÔøΩ? ?ÔøΩÏäµ?ÔøΩÎã§")) {
+        fallbackText = parsed || "Î™ÖÎ†π???ÔøΩÌñâ?ÔøΩÔøΩ?ÔøΩ?Í≤∞Í≥ºÍ∞Ä ?ÔøΩÏäµ?ÔøΩÎã§.";
       } else {
-        // Trim long listings ??show first 20 lines so it's not a wall of text
+        // Trim long listings - show first 20 lines so it's not a wall of text
         const lines = parsed.split("\n");
         const preview = lines.slice(0, 20).join("\n");
-        const more = lines.length > 20 ? `\n... (${lines.length - 20}Ï§???` : "";
+        const more = lines.length > 20 ? `\n... (${lines.length - 20}ÔøΩ???` : "";
         fallbackText = preview + more;
       }
       capturedOllamaText.value += fallbackText;
@@ -2050,7 +2050,7 @@ async function* streamSingleProvider(
   yield* readOpenAISSEWithUsage(res, usage);
 }
 
-// ?Ä?Ä Streaming proxy with fallback ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- Streaming proxy with fallback ---
 export async function* streamProxyRequest(
   req: ResponsesRequest,
   config: GatewayConfig,
@@ -2102,7 +2102,7 @@ export async function* streamProxyRequest(
   throw lastError ?? new Error("All providers failed");
 }
 
-// ?Ä?Ä Non-streaming proxy with fallback ?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä?Ä
+  // --- Non-streaming proxy with fallback ---
 export async function proxyRequest(
   req: ResponsesRequest,
   config: GatewayConfig,

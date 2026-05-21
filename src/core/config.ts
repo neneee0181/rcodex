@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, copyFileSync, existsSync } from "fs";
+﻿import { readFileSync, writeFileSync, copyFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { mkdirSync } from "fs";
 import TOML from "@iarna/toml";
@@ -47,10 +47,10 @@ export function backupCodexConfig(configPath: string): string {
   return backupPath;
 }
 
-// ?�전 버전?�서 ?�못 ?�록??provider ?�들???�리?�다.
-// MANAGED_PROVIDER_KEY(rcodex)�??�기�??�머지 ?�거?????�거.
+// 이전 버전에서 잘못 등록된 provider들을 정리한다.
+// MANAGED_PROVIDER_KEY(rcodex)만 남기고 나머지는 제거.
 export function removeLegacyProviders(config: CodexConfig, keepKey: string): void {
-  // �?model_providers ???�거
+  // 각 model_providers 내 항목 제거
   if (config.model_providers) {
     const legacyKeys = ["ollama", "ollama-local", "pi"];
     for (const key of legacyKeys) {
@@ -60,7 +60,7 @@ export function removeLegacyProviders(config: CodexConfig, keepKey: string): voi
     }
   }
 
-  // �?provider�?참조?�는 profile??model_provider�?keepKey�??�데?�트
+  // 해당 provider를 참조하는 profile의 model_provider를 keepKey로 업데이트
   if (config.profiles && keepKey) {
     const legacyProviders = new Set(["ollama", "ollama-local", "pi"]);
     for (const profile of Object.values(config.profiles)) {
@@ -70,4 +70,3 @@ export function removeLegacyProviders(config: CodexConfig, keepKey: string): voi
     }
   }
 }
-
