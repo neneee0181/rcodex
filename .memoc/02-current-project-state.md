@@ -1,6 +1,6 @@
 # Current Project State
 
-Last synced: 2026-05-21T02:45:20+0900
+Last synced: 2026-05-21T12:14:08+0900
 
 ## Current Status
 
@@ -9,6 +9,7 @@ Last synced: 2026-05-21T02:45:20+0900
 - The gateway UI/API manages accounts, OAuth/API-key flows, model slots, provider ordering/fallback, monitor logs/requests/usage, quota checks, duplicate account labels, hidden canvas slots, and Codex provider switching.
 - Gateway runtime logs now avoid emoji/mojibake prefixes in active log lines, and Ollama tool fallback file search uses a Node-based command instead of Unix `find ... 2>/dev/null`.
 - OpenAI quota refresh treats ChatGPT usage API 401/403 as unavailable for the Codex OAuth token rather than a fatal UI error.
+- Copilot requests sanitize OpenAI-format chat history before calling GitHub Copilot, dropping dangling assistant tool calls and orphan tool outputs that can appear after interrupted tool turns.
 
 ## Project Snapshot
 
@@ -41,7 +42,7 @@ Last synced: 2026-05-21T02:45:20+0900
 ## Open Tasks
 
 - No automated test script exists; use `npm run build` as the baseline verification for source edits.
-- Copilot real GitHub device OAuth and provider API calls have not been smoke-tested.
+- Copilot real GitHub device OAuth and provider API calls have not been smoke-tested after the strict tool-history fix.
 - Current package version is `0.0.14`; publish with `npm publish --access public` after review.
 
 ## Completed Tasks
@@ -72,6 +73,7 @@ See `.memoc/log.md` for full history.
 - Usage monitor includes Anthropic, OpenAI, and Antigravity OAuth accounts; output-node disconnect now removes the local canvas node and marks it hidden so browser refresh does not resurrect it.
 - Antigravity provider subtitle is `Google Code Assist`; the old `Google (Daily)` wording came from Google's daily-cloudcode internal endpoint naming.
 - Dynamic Windows Codex App Detection searches `%LOCALAPPDATA%\OpenAI\Codex\bin\*\codex.exe` dynamically to cover dynamic hash/version subfolders from local app installations.
+- Copilot GPT-5 mini can reject histories with `assistant.tool_calls` lacking matching `tool` responses; `src/gateway/proxy.ts` now sanitizes those histories before both streaming and non-streaming Copilot calls.
 
 ## Change Log
 

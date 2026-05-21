@@ -1,5 +1,5 @@
 # Session Summary
-Last: 2026-05-21T02:45:20+0900
+Last: 2026-05-21T12:14:08+0900
 Keep each section <=3 bullets. Agent-owned; updated by you, not by `memoc update`.
 
 ## Status
@@ -32,9 +32,10 @@ Keep each section <=3 bullets. Agent-owned; updated by you, not by `memoc update
 - Changed Antigravity model discovery from hardcoded probe-only to `fetchAvailableModels`, added `ag/gemini-3.5-flash` fallback, and surfaced per-model Antigravity quota rows in the usage monitor.
 - Fixed usage monitor account filter to include Antigravity, made OpenAI/Claude OAuth model loading attempt dynamic fetch before fallback, and made output disconnect remove/hide the canvas node persistently.
 - Made OpenAI quota 401/403 show as unavailable instead of a red refresh error, and renamed the Antigravity provider subtitle from `Google (Daily)` to `Google Code Assist`.
+- Fixed Copilot chat history sanitization so dangling `assistant.tool_calls` from interrupted GPT-5 mini/Copilot tool turns are removed before sending requests to GitHub Copilot.
 
 ## Open Tasks
-- Copilot real OAuth login/API flow has not been smoke-tested.
+- Copilot real OAuth login/API flow has not been smoke-tested after the strict tool-history fix.
 - No automated test script exists; use `npm run build` as the baseline verification for source edits.
 - Current package version is `0.0.14`; next npm publish can use `npm publish --access public`.
 

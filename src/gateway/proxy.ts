@@ -516,6 +516,82 @@ function toOpenAIChatMessages(input: string | InputItem[], fallback: Message[]):
   return msgs;
 }
 
+type OpenAIChatMessage = Record<string, unknown>;
+type OpenAIToolCall = { id?: unknown };
+
+function isOpenAIChatMessage(value: unknown): value is OpenAIChatMessage {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function toolCallIds(message: OpenAIChatMessage): string[] {
+  const toolCalls = message.tool_calls;
+  if (!Array.isArray(toolCalls)) return [];
+  return toolCalls
+    .map(tc => isOpenAIChatMessage(tc) ? (tc as OpenAIToolCall).id : undefined)
+    .filter((id): id is string => typeof id === "string" && id.length > 0);
+}
+
+function filterToolCalls(message: OpenAIChatMessage, keepIds: Set<string>): OpenAIChatMessage | undefined {
+  const toolCalls = message.tool_calls;
+  if (!Array.isArray(toolCalls)) return message;
+  const keptToolCalls = toolCalls.filter(tc => {
+    if (!isOpenAIChatMessage(tc)) return false;
+    return typeof tc.id === "string" && keepIds.has(tc.id);
+  });
+  if (keptToolCalls.length === 0 && (message.content == null || message.content === "")) return undefined;
+  return keptToolCalls.length > 0
+    ? { ...message, tool_calls: keptToolCalls }
+    : Object.fromEntries(Object.entries(message).filter(([key]) => key !== "tool_calls"));
+}
+
+function sanitizeOpenAIChatHistoryForStrictTools(messages: unknown[]): unknown[] {
+  const out: unknown[] = [];
+  let pendingAssistantIndex: number | undefined;
+  let pendingToolIds = new Set<string>();
+  let seenToolIds = new Set<string>();
+
+  const closePendingAssistant = () => {
+    if (pendingAssistantIndex === undefined) return;
+    const assistant = out[pendingAssistantIndex];
+    if (!isOpenAIChatMessage(assistant)) return;
+    const fixed = filterToolCalls(assistant, seenToolIds);
+    if (fixed) out[pendingAssistantIndex] = fixed;
+    else out.splice(pendingAssistantIndex, 1);
+    pendingAssistantIndex = undefined;
+    pendingToolIds = new Set();
+    seenToolIds = new Set();
+  };
+
+  for (const message of messages) {
+    if (!isOpenAIChatMessage(message)) {
+      closePendingAssistant();
+      out.push(message);
+      continue;
+    }
+
+    if (message.role === "tool") {
+      const id = message.tool_call_id;
+      if (typeof id === "string" && pendingToolIds.has(id)) {
+        seenToolIds.add(id);
+        out.push(message);
+      }
+      continue;
+    }
+
+    closePendingAssistant();
+    const ids = toolCallIds(message);
+    out.push(message);
+    if (message.role === "assistant" && ids.length > 0) {
+      pendingAssistantIndex = out.length - 1;
+      pendingToolIds = new Set(ids);
+      seenToolIds = new Set();
+    }
+  }
+
+  closePendingAssistant();
+  return out;
+}
+
 // ?€?€ Response format converters ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
 function chatToResponses(
   data: { id?: string; model: string; choices: { message: { content: string } }[]; usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number } },
@@ -1259,7 +1335,8 @@ async function callSingleProvider(
   if (account.provider === "copilot") {
     const openaiMessages = toOpenAIChatMessages(req.input, messages);
     const tools = buildOpenAIToolsForProvider(req, COMPUTER_USE_TYPES);
-    const res = await callCopilot(account.oauthToken ?? "", model, openaiMessages, copilotInstructions(req, tools), false, signal, tools);
+    const copilotMessages = sanitizeOpenAIChatHistoryForStrictTools(openaiMessages);
+    const res = await callCopilot(account.oauthToken ?? "", model, copilotMessages, copilotInstructions(req, tools), false, signal, tools);
     if (!res.ok) throw new Error(`Copilot error ${res.status}: ${await res.text()}`);
     return chatToResponses(await res.json() as Parameters<typeof chatToResponses>[0], model);
   }
@@ -1899,7 +1976,8 @@ async function* streamSingleProvider(
     const tools = buildOpenAIToolsForProvider(req, COMPUTER_USE_TYPES);
     const capturedCopilotTools: { id: string; name: string; input: Record<string, unknown>; rawArgs?: string }[] = [];
     const capturedCopilotText = { value: "" };
-    const res = await callCopilot(account.oauthToken ?? "", model, openaiMessages, copilotInstructions(req, tools), true, signal, tools);
+    const copilotMessages = sanitizeOpenAIChatHistoryForStrictTools(openaiMessages);
+    const res = await callCopilot(account.oauthToken ?? "", model, copilotMessages, copilotInstructions(req, tools), true, signal, tools);
     if (!res.ok) throw new Error(`Copilot error ${res.status}: ${await res.text()}`);
     yield* readOpenAISSEWithUsage(res, usage, capturedCopilotTools, capturedCopilotText);
     if (responseId && capturedCopilotTools.length > 0) {
