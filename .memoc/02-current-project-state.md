@@ -11,7 +11,7 @@ tags:
 ---
 # Current Project State
 
-Last synced: 2026-05-21T12:18:54+0900
+Last synced: 2026-05-21T15:46:04+0900
 
 ## Current Status
 
@@ -26,7 +26,7 @@ Last synced: 2026-05-21T12:18:54+0900
 ## Project Snapshot
 
 <!-- memoc:snapshot:start -->
-- Last synced: 2026-05-21T06:39:07
+- Last synced: 2026-05-21T06:44:49
 - Detected stack: Node.js, Fastify, TypeScript
 
 ### Config Files
@@ -56,7 +56,7 @@ Last synced: 2026-05-21T12:18:54+0900
 - No automated test script exists; use `npm run build` as the baseline verification for source edits.
 - Copilot real GitHub device OAuth and provider API calls have not been smoke-tested after the strict tool-history fix.
 - Antigravity strict tool-history fix has only been build-verified; smoke-test with a real Flash Lite account/model.
-- Current package version is `0.0.14`; publish with `npm publish --access public` after review.
+- Current package version is `0.0.15`; publish with `npm publish --access public` after review.
 
 ## Completed Tasks
 
@@ -76,7 +76,7 @@ See `.memoc/worklog/` for full shared activity history.
 - Main runtime config: `~/.rcodex/gateway.json`; logs: `~/.rcodex/gateway.log`; request history: `~/.rcodex/requests.jsonl`.
 - Default gateway port is `3141`; Codex provider key managed by this project is `rcodex`; base URL is `http://localhost:<port>/v1` with `wire_api = "responses"`.
 - Package dependencies include Fastify/CORS for the gateway, Commander for CLI commands, `@iarna/toml` for Codex config edits, and `better-sqlite3` for Codex thread migration support.
-- Current package version is `0.0.14`; npm package name is `@kevin0181/rcodex`, binary/runtime directory/README/provider key are `rcodex`.
+- Current package version is `0.0.15`; npm package name is `@kevin0181/rcodex`, binary/runtime directory/README/provider key are `rcodex`.
 - Ollama can now receive image payloads when Codex sends `input_image` parts or text containing local image paths; those are converted into OpenAI-compatible `image_url` data URLs. A vision-capable Ollama model is still required.
 - If Ollama returns `missing data required for image input`, the stream now completes with a clear text error instead of surfacing a protocol error that makes Codex reconnect repeatedly.
 - If an Ollama model returns `does not support tools` (for example `llama3.2-vision`), rcodex retries that stream without function tools instead of failing the stream.

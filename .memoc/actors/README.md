@@ -2,8 +2,8 @@
 memoc: true
 type: actor
 scope: project-memory
-created: 2026-05-21T06:39:51
-updated: 2026-05-21T06:39:51
+created: 2026-05-21T06:46:53
+updated: 2026-05-21T06:46:53
 status: active
 tags:
   - memoc
@@ -25,4 +25,4 @@ Generated actor index for this shared repo.
 
 ## Actors
 
-_None yet. Use `memoc actor set <name>` or `memoc work "<title>"`._
+- [neneee0181](neneee0181.md)

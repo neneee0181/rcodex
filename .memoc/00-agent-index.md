@@ -2,8 +2,8 @@
 memoc: true
 type: core
 scope: project-memory
-created: 2026-05-21T06:39:07
-updated: 2026-05-21T06:39:07
+created: 2026-05-21T06:44:49
+updated: 2026-05-21T06:44:49
 status: active
 tags:
   - memoc
@@ -22,7 +22,7 @@ This is the fast entry map for agents. Start here, then open only the docs relev
 ## Project Snapshot
 
 <!-- memoc:snapshot:start -->
-- Last synced: 2026-05-21T06:39:07
+- Last synced: 2026-05-21T06:44:49
 - Detected stack: Node.js, Fastify, TypeScript
 
 ### Config Files

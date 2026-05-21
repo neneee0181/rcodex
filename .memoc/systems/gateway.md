@@ -13,7 +13,7 @@ tags:
 
 ## Purpose
 
-`rcodex` ships the `rcodex` / `rcodex` binary. It lets Codex use a local Responses-compatible gateway instead of talking directly only to the built-in OpenAI provider.
+`rcodex` ships the `rcodex` binary. It lets Codex use a local Responses-compatible gateway instead of talking directly only to the built-in OpenAI provider.
 
 The gateway can route requests through OpenAI/Codex, Anthropic Claude, Google Gemini, local Ollama, Antigravity, and WIP GitHub Copilot accounts. The browser UI lets the user add accounts, choose models, create active model slots, and order slots as a fallback chain.
 
@@ -28,8 +28,8 @@ The gateway can route requests through OpenAI/Codex, Anthropic Claude, Google Ge
 - `src/gateway/proxy.ts`: normalizes Responses API input, tracks conversation state, forwards or converts requests to provider APIs, logs request outcomes, and handles fallback.
 - `src/gateway/auth.ts`: owns `~/.rcodex/gateway.json`, account records, model slot state, migration from older config formats, PID handling, and provider auth conversion.
 - `src/gateway/providers/*.ts`: provider-specific model listing and request/OAuth helpers.
-- `src/gateway/providers/antigravity*.ts`: Google/Antigravity OAuth and Gemini/Cloud Code provider helpers, including project-id loading and thoughtSignature preservation across tool turns.
-- `src/gateway/providers/copilot.ts`: uncommitted WIP helper for GitHub device-code OAuth, Copilot token exchange/cache, model listing, and chat completions calls.
+- `src/gateway/providers/antigravity*.ts`: Google/Antigravity OAuth and Gemini/Cloud Code provider helpers, including project-id loading, dynamic model discovery, quota checks, and thoughtSignature preservation across tool turns.
+- `src/gateway/providers/copilot.ts`: GitHub device-code OAuth, Copilot token exchange/cache, model listing, and chat completions calls.
 - `src/gateway/ui.ts`: Copilot device OAuth shows a sidebar code screen with copy/open actions while polling `/api/accounts`.
 - Provider model discovery should fail closed where possible: do not show static fallback models after API discovery errors, except for backends with no discovery API and known constrained support.
 - `src/core/config.ts`: reads/writes/backups Codex TOML config and removes legacy provider keys.
@@ -47,7 +47,7 @@ The gateway can route requests through OpenAI/Codex, Anthropic Claude, Google Ge
 ## Commands
 
 - `npm run dev`: run the CLI through `tsx src/index.ts`.
-- `npm run build`: compile TypeScript into `dist/`, chmod `dist/index.js`, and warn if bundled Antigravity credentials are missing; this is the baseline verification command because no test script is defined.
+- `npm run build`: compile TypeScript into `dist/` and chmod `dist/index.js`; this is the baseline verification command because no test script is defined.
 - `npm start`: run the built CLI from `dist/index.js`.
 - `rcodex`: start gateway + launch Codex when installed/built.
 - `rcodex stop`: stop the background gateway.
@@ -63,4 +63,4 @@ The gateway can route requests through OpenAI/Codex, Anthropic Claude, Google Ge
 - Provider credentials are local runtime data and must not be copied into docs, tests, or commits.
 - After changing CLI command behavior or provider support, update README and this file together; README currently mentions Antigravity and WIP Copilot.
 - After changing TypeScript source, run `npm run build`; add tests only after introducing a test framework/script.
-- Antigravity model discovery has no list endpoint found; current implementation probes `ANTIGRAVITY_DEFAULT_MODELS` with minimal `generateContent` and caches results for 10 minutes.
+- Antigravity model discovery attempts `cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels` first, then falls back to default/probed model support and caches results for 10 minutes.
