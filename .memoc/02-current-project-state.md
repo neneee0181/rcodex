@@ -11,7 +11,7 @@ tags:
 ---
 # Current Project State
 
-Last synced: 2026-05-21T15:46:04+0900
+Last synced: 2026-05-21T17:39:24+0900
 
 ## Current Status
 
@@ -22,6 +22,7 @@ Last synced: 2026-05-21T15:46:04+0900
 - OpenAI quota refresh treats ChatGPT usage API 401/403 as unavailable for the Codex OAuth token rather than a fatal UI error.
 - Copilot requests sanitize OpenAI-format chat history before calling GitHub Copilot, dropping dangling assistant tool calls and orphan tool outputs that can appear after interrupted tool turns.
 - Antigravity requests avoid replaying unsigned Gemini `functionCall` history; stateless/interrupted tool turns without `thoughtSignature` are sent back as text transcript.
+- First-launch thread migration checks both Codex SQLite state and `.codex/sessions/**/*.jsonl`, and continues session-file migration even if the SQLite DB is absent or unreadable.
 
 ## Project Snapshot
 
@@ -56,6 +57,7 @@ Last synced: 2026-05-21T15:46:04+0900
 - No automated test script exists; use `npm run build` as the baseline verification for source edits.
 - Copilot real GitHub device OAuth and provider API calls have not been smoke-tested after the strict tool-history fix.
 - Antigravity strict tool-history fix has only been build-verified; smoke-test with a real Flash Lite account/model.
+- Windows first-install `rcodex` launch should be smoke-tested with pre-existing Codex conversations to confirm auto-migration into the gateway provider.
 - Current package version is `0.0.15`; publish with `npm publish --access public` after review.
 
 ## Completed Tasks
@@ -88,6 +90,7 @@ See `.memoc/worklog/` for full shared activity history.
 - Dynamic Windows Codex App Detection searches `%LOCALAPPDATA%\OpenAI\Codex\bin\*\codex.exe` dynamically to cover dynamic hash/version subfolders from local app installations.
 - Copilot GPT-5 mini can reject histories with `assistant.tool_calls` lacking matching `tool` responses; `src/gateway/proxy.ts` now sanitizes those histories before both streaming and non-streaming Copilot calls.
 - Antigravity/Gemini can reject `functionCall` history missing `thoughtSignature`; `src/gateway/proxy.ts` now preserves signed calls only and downgrades unsigned/interrupted turns to text.
+- `src/commands/launch.ts` already calls migration on first launch; the important guard is `hasUnmigratedThreads()`, which now detects DB rows, null providers, and session JSONL metadata instead of only SQLite rows.
 
 ## Change Log
 

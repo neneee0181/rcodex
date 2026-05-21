@@ -2,8 +2,8 @@
 memoc: true
 type: worklog
 scope: project-memory
-created: 2026-05-21T06:46:53
-updated: 2026-05-21T06:46:53
+created: 2026-05-21T08:40:22
+updated: 2026-05-21T08:40:22
 status: active
 tags:
   - memoc
@@ -13,7 +13,7 @@ tags:
 
 Generated index of conflict-light per-actor work records.
 
-Last generated: 2026-05-21T06:46:53
+Last generated: 2026-05-21T08:40:22
 
 ## Layout
 
@@ -28,4 +28,5 @@ worklog/<actor>/YYYY-MM/YYYYMMDDTHHMM-title.md
 
 ## Recent Work
 
+- [Fix first-launch thread migration](neneee0181/2026-05/20260521T0839-fix-first-launch-thread-migration.md) — neneee0181 active.
 - [Refresh memoc project memory](neneee0181/2026-05/20260521T0645-refresh-memoc-project-memory.md) — neneee0181 active.

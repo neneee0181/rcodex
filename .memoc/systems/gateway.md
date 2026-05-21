@@ -23,7 +23,7 @@ The gateway can route requests through OpenAI/Codex, Anthropic Claude, Google Ge
 - `src/commands/launch.ts`: normal `rcodex` flow; starts/restarts the detached gateway daemon, waits for health, syncs Codex config port, migrates threads if needed, launches Codex, and opens the UI.
 - `src/commands/sync.ts`: registers the gateway provider in `~/.codex/config.toml`, backs up config, removes legacy provider keys, and runs thread migration.
 - `src/commands/switch.ts`: switches Codex between rcodex gateway mode and native OpenAI mode.
-- `src/commands/migrate.ts`: updates existing Codex threads to the target provider key.
+- `src/commands/migrate.ts`: updates existing Codex threads to the target provider key in both `state_5.sqlite` and `.codex/sessions/**/*.jsonl`; launch uses its detector before opening Codex.
 - `src/gateway/server.ts`: Fastify HTTP server for UI, status, logs, request history, quota, account/model management, OAuth callbacks, provider switching, and `/v1/responses` proxy endpoints.
 - `src/gateway/proxy.ts`: normalizes Responses API input, tracks conversation state, forwards or converts requests to provider APIs, logs request outcomes, and handles fallback.
 - `src/gateway/auth.ts`: owns `~/.rcodex/gateway.json`, account records, model slot state, migration from older config formats, PID handling, and provider auth conversion.
@@ -64,3 +64,4 @@ The gateway can route requests through OpenAI/Codex, Anthropic Claude, Google Ge
 - After changing CLI command behavior or provider support, update README and this file together; README currently mentions Antigravity and WIP Copilot.
 - After changing TypeScript source, run `npm run build`; add tests only after introducing a test framework/script.
 - Antigravity model discovery attempts `cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels` first, then falls back to default/probed model support and caches results for 10 minutes.
+- First `rcodex` launch should auto-migrate existing conversations. Do not rely only on SQLite presence for this path; JSONL session metadata may be the only migration source on some installs.
