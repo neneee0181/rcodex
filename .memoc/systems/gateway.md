@@ -43,6 +43,7 @@ The gateway can route requests through OpenAI/Codex, Anthropic Claude, Google Ge
 - Codex config: `~/.codex/config.toml`
 - Managed Codex provider key: `rcodex`
 - Default gateway config port: `3141`; README/user-facing default may refer to the active runtime port and should be kept aligned when behavior changes.
+- `/v1/responses` requests are parsed by Fastify with a 64MiB body limit to tolerate large codebase/tool-result contexts.
 
 ## Commands
 
@@ -65,3 +66,4 @@ The gateway can route requests through OpenAI/Codex, Anthropic Claude, Google Ge
 - After changing TypeScript source, run `npm run build`; add tests only after introducing a test framework/script.
 - Antigravity model discovery attempts `cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels` first, then falls back to default/probed model support and caches results for 10 minutes.
 - First `rcodex` launch should auto-migrate existing conversations. Do not rely only on SQLite presence for this path; JSONL session metadata may be the only migration source on some installs.
+- A local `413 Payload Too Large` at `http://localhost:<port>/v1/responses` means the gateway body parser rejected the request before any upstream provider call.

@@ -11,7 +11,7 @@ tags:
 ---
 # Current Project State
 
-Last synced: 2026-05-21T17:39:24+0900
+Last synced: 2026-05-21T17:47:27+0900
 
 ## Current Status
 
@@ -23,6 +23,7 @@ Last synced: 2026-05-21T17:39:24+0900
 - Copilot requests sanitize OpenAI-format chat history before calling GitHub Copilot, dropping dangling assistant tool calls and orphan tool outputs that can appear after interrupted tool turns.
 - Antigravity requests avoid replaying unsigned Gemini `functionCall` history; stateless/interrupted tool turns without `thoughtSignature` are sent back as text transcript.
 - First-launch thread migration checks both Codex SQLite state and `.codex/sessions/**/*.jsonl`, and continues session-file migration even if the SQLite DB is absent or unreadable.
+- Gateway Fastify body limit is 64MiB so large `/v1/responses` payloads from codebase/tool-result turns do not fail locally at the default 1MiB parser limit.
 
 ## Project Snapshot
 
@@ -58,6 +59,7 @@ Last synced: 2026-05-21T17:39:24+0900
 - Copilot real GitHub device OAuth and provider API calls have not been smoke-tested after the strict tool-history fix.
 - Antigravity strict tool-history fix has only been build-verified; smoke-test with a real Flash Lite account/model.
 - Windows first-install `rcodex` launch should be smoke-tested with pre-existing Codex conversations to confirm auto-migration into the gateway provider.
+- Large Unreal/codebase investigation turns should be smoke-tested through Claude/Gemini after the gateway body-limit increase.
 - Current package version is `0.0.15`; publish with `npm publish --access public` after review.
 
 ## Completed Tasks

@@ -31,6 +31,7 @@ import { getHTML } from "./ui.js";
 
 const execAsync = promisify(exec);
 const startTime = Date.now();
+const RESPONSES_BODY_LIMIT_BYTES = 64 * 1024 * 1024;
 
 function findFreePort(startPort: number, maxAttempts = 10): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -65,7 +66,7 @@ export interface GatewayServer {
 }
 
 export function createGatewayServer(): GatewayServer {
-  const fastify = Fastify({ logger: false });
+  const fastify = Fastify({ logger: false, bodyLimit: RESPONSES_BODY_LIMIT_BYTES });
   fastify.register(cors, { origin: "*" });
 
   let pendingOAuth: string | null = null;
