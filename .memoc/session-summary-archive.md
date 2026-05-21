@@ -50,3 +50,70 @@ Keep each section <=3 bullets. Agent-owned; updated by you, not by `memoc update
 ## Resume
 - If git metadata is restored, inspect `git status` and recent commits first.
 - For provider work, inspect `src/gateway/proxy.ts`, `src/gateway/server.ts`, `src/gateway/auth.ts`, `src/gateway/ui.ts`, and relevant `src/gateway/providers/*.ts`.
+
+## [2026-05-21T16:43:30] archived summary (1049B)
+
+---
+memoc: true
+type: state
+scope: project-memory
+created: 2026-05-21T06:39:07
+updated: 2026-05-21T17:52:16+0900
+status: active
+tags:
+  - memoc
+  - memoc/state
+---
+# Session Summary
+Last: 2026-05-21T17:52:16+0900
+Replace, do not append. Keep <800B. History: worklog. Resume risks: 04-handoff.md.
+
+## Status
+- `rcodex` is a TypeScript Node CLI plus Fastify Responses-compatible multi-provider gateway.
+- Current package version is `0.0.16`; gateway body limit is configurable.
+
+## Changed
+- Added `~/.rcodex/gateway.json` `bodyLimitMiB` option, default 64 and clamped 1-1024.
+- Worklog/activity are the shared history path; `session-summary.md` stays compact/latest-only.
+
+## Open Tasks
+- Smoke-test Windows first-install `rcodex` launch with existing Codex sessions.
+- Smoke-test large Unreal/codebase tool-result turns through Claude/Gemini providers.
+- Baseline verification for source edits remains `npm run build`.
+
+## Resume
+- Start with `memoc summary` or `.memoc/bin/memoc summary`; wrapper is working on macOS.
+
+## [2026-05-21T16:44:10] archived summary (874B)
+
+---
+memoc: true
+type: state
+scope: project-memory
+created: 2026-05-21T16:43:30
+updated: 2026-05-21T16:43:30
+status: active
+tags:
+  - memoc
+  - memoc/state
+---
+# Session Summary
+Last: 2026-05-22T01:45:00+0900
+Replace, do not append. Keep <800B.
+History: worklog. Resume risks: 04-handoff.md.
+
+## Status
+- `rcodex` is a TypeScript Node CLI plus Fastify Responses-compatible multi-provider gateway.
+- Current package version is `0.0.16`; node dependencies installed and builds successfully on Windows.
+
+## Changed
+- Installed npm packages and verified build (`npm run build`) succeeds on Windows.
+- Initial memory structure synced using `memoc update`.
+
+## Open Tasks
+- Smoke-test first-install launch on Windows.
+- Smoke-test tool history fixes with Claude/Gemini.
+- Baseline verification via `npm run build`.
+
+## Resume
+- Test gateway functionality by running `npm run dev`.

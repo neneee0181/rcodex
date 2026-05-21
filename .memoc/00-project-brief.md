@@ -2,8 +2,8 @@
 memoc: true
 type: core
 scope: project-memory
-created: 2026-05-21T06:44:49
-updated: 2026-05-21T06:44:49
+created: 2026-05-21T16:44:45
+updated: 2026-05-21T16:44:45
 status: active
 tags:
   - memoc
@@ -27,7 +27,7 @@ _Not set yet._
 ## How To Approach
 
 - Start from `session-summary.md`; search before opening more files.
-- Open status, handoff, rules, map, systems, or wiki docs only when the task needs them.
+- Open status, handoff, rules, map, project wiki, or knowledge wiki only when the task needs them.
 - After durable work, update the smallest relevant memory set.
 - Do not treat generated output folders as source unless the user explicitly asks.
 

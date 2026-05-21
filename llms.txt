@@ -17,28 +17,30 @@ This file is a map, not a startup read. Start from the entry-file protocol and o
 - [Project Brief](.memoc/00-project-brief.md): short identity and direction.
 - [Workflow](.memoc/01-agent-workflow.md): update trigger matrix.
 - [Decisions](.memoc/03-decisions.md): durable decisions.
-- [Systems](.memoc/systems/README.md): subsystem docs.
+- [Project Wiki](.memoc/wiki/project/README.md): repo implementation docs.
+- [Knowledge Wiki](.memoc/wiki/knowledge/README.md): external sources, concepts, glossary.
 - [Activity](.memoc/activity.md): generated worklog index.
 - [Raw Sources](.memoc/raw/README.md): immutable source material; do not read by default.
-- [Wiki](.memoc/wiki/index.md): synthesized knowledge.
+- [Wiki](.memoc/wiki/index.md): project/knowledge wiki hub.
 <!-- memoc:core:end -->
 
 ## Systems
 
 <!-- memoc:systems:start -->
-- [gateway](.memoc/systems/gateway.md): subsystem context.
+_None yet._
 <!-- memoc:systems:end -->
 
 ## Wiki
 
 <!-- memoc:wiki:start -->
-- [glossary](.memoc/wiki/glossary.md): wiki page.
-- [lint](.memoc/wiki/lint.md): wiki page.
-- [questions](.memoc/wiki/questions.md): wiki page.
-- [sources](.memoc/wiki/sources.md): wiki page.
-- [README](.memoc/wiki/sources/README.md): wiki page.
-- [README](.memoc/wiki/topics/README.md): wiki page.
-- [README](.memoc/wiki/global/README.md): wiki page.
+- [knowledge/README](.memoc/wiki/knowledge/README.md): knowledge wiki page.
+- [knowledge/sources](.memoc/wiki/knowledge/sources.md): knowledge wiki page.
+- [knowledge/glossary](.memoc/wiki/knowledge/glossary.md): knowledge wiki page.
+- [knowledge/questions](.memoc/wiki/knowledge/questions.md): knowledge wiki page.
+- [knowledge/lint](.memoc/wiki/knowledge/lint.md): knowledge wiki page.
+- [knowledge/sources/README](.memoc/wiki/knowledge/sources/README.md): knowledge wiki page.
+- [knowledge/topics/README](.memoc/wiki/knowledge/topics/README.md): knowledge wiki page.
+- [knowledge/global/README](.memoc/wiki/knowledge/global/README.md): knowledge wiki page.
 <!-- memoc:wiki:end -->
 
 ## Optional

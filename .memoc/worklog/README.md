@@ -2,8 +2,8 @@
 memoc: true
 type: worklog
 scope: project-memory
-created: 2026-05-21T08:52:50
-updated: 2026-05-21T08:52:50
+created: 2026-05-21T16:44:40
+updated: 2026-05-21T16:44:40
 status: active
 tags:
   - memoc
@@ -13,7 +13,7 @@ tags:
 
 Generated index of conflict-light per-actor work records.
 
-Last generated: 2026-05-21T08:52:50
+Last generated: 2026-05-21T16:44:40
 
 ## Layout
 
@@ -28,6 +28,7 @@ worklog/<actor>/YYYY-MM/YYYYMMDDTHHMM-title.md
 
 ## Recent Work
 
+- [Verify Windows environment setup and compile clean](neneee0181/2026-05/20260521T1644-verify-windows-environment-setup-and-compile-clean.md) — neneee0181 active.
 - [Configure gateway body limit](neneee0181/2026-05/20260521T0852-configure-gateway-body-limit.md) — neneee0181 active.
 - [Raise gateway request body limit](neneee0181/2026-05/20260521T0847-raise-gateway-request-body-limit.md) — neneee0181 active.
 - [Fix first-launch thread migration](neneee0181/2026-05/20260521T0839-fix-first-launch-thread-migration.md) — neneee0181 active.

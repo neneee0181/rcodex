@@ -2,8 +2,8 @@
 memoc: true
 type: core
 scope: project-memory
-created: 2026-05-21T06:44:49
-updated: 2026-05-21T06:44:49
+created: 2026-05-21T16:44:45
+updated: 2026-05-21T16:44:45
 status: active
 tags:
   - memoc
@@ -25,8 +25,8 @@ On-demand reference only. The entry-file managed block is authoritative.
 | `.memoc/05-done-checklist.md` | Before finishing substantial work |
 | `.memoc/03-decisions.md` | When a durable decision was made |
 | `.memoc/memoc-usage.md` | For command details |
-| `.memoc/systems/*.md` | Before touching a specific subsystem |
-| `.memoc/wiki/*.md` | For synthesized project knowledge |
+| `.memoc/wiki/project/*.md` | Before touching a specific subsystem |
+| `.memoc/wiki/knowledge/*.md` | For source-backed concepts and external knowledge |
 | `llms.txt` | For full project file map |
 
 ## Search First

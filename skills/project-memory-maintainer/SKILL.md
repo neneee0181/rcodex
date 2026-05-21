@@ -4,8 +4,8 @@ description: Maintain this project's LLM-wiki memory files after durable context
 memoc: true
 type: skill
 scope: project-memory
-updated: 2026-05-21T06:44:49
-created: 2026-05-21T06:44:49
+updated: 2026-05-21T16:44:45
+created: 2026-05-21T16:44:45
 status: active
 tags:
   - memoc
@@ -33,11 +33,11 @@ Use this local skill after meaningful project work so future agents can continue
 - Check `.memoc/05-done-checklist.md` before saying substantial work is complete.
 - Update `.memoc/06-project-rules.md` when the user gives durable preferences.
 - Create a short actor worklog with `memoc work "<title>" --from-git` for meaningful changes, decisions, and handoffs.
-- Create or update `.memoc/systems/*.md` when a subsystem needs durable explanation.
-- Create or update `.memoc/wiki/*.md` when synthesized knowledge should compound over time.
+- Create or update `.memoc/wiki/project/*.md` when a subsystem needs durable implementation explanation.
+- Create or update `.memoc/wiki/knowledge/*.md` when source-backed concepts should compound over time.
 - Use `memoc ingest <path-or-url>` for source material and `memoc note "<title>"` for durable query results or analysis.
 - Use `memoc work "<title>" --from-git` for meaningful shared-repo work so details are saved in actor-scoped worklog files instead of causing shared-file conflicts.
-- Keep the wiki graph connected: update `.memoc/wiki/index.md`, add relative Markdown links between related pages, and include a `## Related` section on every new wiki page.
+- Keep the wiki graph connected: update `.memoc/wiki/index.md`, link project pages under `.memoc/wiki/project/`, link knowledge pages under `.memoc/wiki/knowledge/`, and include a `## Related` section on every new wiki page.
 - Run `memoc lint-wiki` after wiki/source/topic edits and address broken links before finishing.
 - Keep completed history in actor worklogs; keep current-state files short.
 - Move completed session details out of `session-summary.md` into `.memoc/worklog/<actor>/YYYY-MM/`; move incomplete/risky resume details into `04-handoff.md`.
@@ -46,12 +46,12 @@ Use this local skill after meaningful project work so future agents can continue
 
 ## Wiki Link Rules
 
-- Use relative Markdown links that Obsidian can follow, for example `[Glossary](glossary.md)` or `[Topics](topics/README.md)`.
-- Every wiki page must have at least one inbound link from `wiki/index.md`, a directory README, a source page, or a related topic.
+- Use relative Markdown links that Obsidian can follow, for example `[Project Wiki](project/README.md)` or `[Topics](knowledge/topics/README.md)`.
+- Every wiki page must have at least one inbound link from `wiki/index.md`, a directory README, a source page, project page, or related topic.
 - Every wiki page must link outward to its parent hub plus 1-5 genuinely related pages when they exist.
 - Prefer links in normal prose when the connection is meaningful; use `## Related` for compact navigation.
 - When a concept appears in multiple pages, create or update a topic/glossary page and link all mentions to it.
-- After wiki edits, check `.memoc/wiki/lint.md` and note orphan pages, missing backlinks, contradictions, or stale claims.
+- After wiki edits, check `.memoc/wiki/knowledge/lint.md` and note orphan pages, missing backlinks, contradictions, or stale claims.
 
 ## Concrete Triggers
 

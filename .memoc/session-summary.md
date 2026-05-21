@@ -2,29 +2,29 @@
 memoc: true
 type: state
 scope: project-memory
-created: 2026-05-21T06:39:07
-updated: 2026-05-21T17:52:16+0900
+created: 2026-05-21T16:44:10
+updated: 2026-05-21T16:44:10
 status: active
 tags:
   - memoc
   - memoc/state
 ---
 # Session Summary
-Last: 2026-05-21T17:52:16+0900
-Replace, do not append. Keep <800B. History: worklog. Resume risks: 04-handoff.md.
+Last: 2026-05-21T16:44:10
+Replace, do not append. Keep <800B.
+History: worklog. Resume risks: 04-handoff.md.
 
 ## Status
-- `rcodex` is a TypeScript Node CLI plus Fastify Responses-compatible multi-provider gateway.
-- Current package version is `0.0.16`; gateway body limit is configurable.
+- rcodex is a TypeScript Node CLI plus Fastify ...
+- Current package version is 0.0.16; node depen...
 
 ## Changed
-- Added `~/.rcodex/gateway.json` `bodyLimitMiB` option, default 64 and clamped 1-1024.
-- Worklog/activity are the shared history path; `session-summary.md` stays compact/latest-only.
+- Installed npm packages and verified build (np...
+- Initial memory structure synced using memoc u...
 
 ## Open Tasks
-- Smoke-test Windows first-install `rcodex` launch with existing Codex sessions.
-- Smoke-test large Unreal/codebase tool-result turns through Claude/Gemini providers.
-- Baseline verification for source edits remains `npm run build`.
+- Smoke-test first-install launch on Windows.
+- Smoke-test tool history fixes with Claude/Gem...
 
 ## Resume
-- Start with `memoc summary` or `.memoc/bin/memoc summary`; wrapper is working on macOS.
+- Test gateway functionality by running npm run...

@@ -2,8 +2,8 @@
 memoc: true
 type: core
 scope: project-memory
-created: 2026-05-21T06:44:49
-updated: 2026-05-21T06:44:49
+created: 2026-05-21T16:44:45
+updated: 2026-05-21T16:44:45
 status: active
 tags:
   - memoc
@@ -86,23 +86,25 @@ Use `memoc update` or `skills/project-memory-maintainer/SKILL.md` when:
 - Architecture, data flow, routing, auth, or deployment behavior changed.
 - A decision was made that future agents should not revisit blindly.
 - Work is partial, multi-step, blocked, or likely to be resumed by another agent.
-- New durable knowledge belongs in `.memoc/wiki/` or a subsystem doc.
+- New implementation knowledge belongs in `.memoc/wiki/project/`.
+- Source-backed concept knowledge belongs in `.memoc/wiki/knowledge/`.
 - Shared work should be traceable without causing conflicts.
 
 Usually skip for pure Q&A, throwaway exploration, or tiny edits with no future impact.
 
-When the user asks for a general memoc/project-memory refresh, run `memoc update` first. It refreshes managed sections, reconnects default wiki scaffold links, and applies Obsidian frontmatter tags. Then update only the agent-owned files whose content actually changed, such as `.memoc/session-summary.md`, `.memoc/02-current-project-state.md`, `.memoc/04-handoff.md`, `.memoc/wiki/index.md`, or actor worklogs.
+When the user asks for a general memoc/project-memory refresh, run `memoc update` first. It refreshes managed sections, reconnects default wiki scaffold links, and applies Obsidian frontmatter tags. Then update only the agent-owned files whose content actually changed, such as `.memoc/session-summary.md`, `.memoc/02-current-project-state.md`, `.memoc/04-handoff.md`, `.memoc/wiki/index.md`, project/knowledge wiki pages, or actor worklogs.
 
 `.memoc/session-summary.md` is a startup snapshot, not a timeline. Rewrite it in place, do not append old work. If it exceeds 800B, run `memoc trim-summary`; it archives the previous summary and rewrites a compact version. Put completed history in actor worklogs, and put unfinished/risky resume detail in `.memoc/04-handoff.md`.
 
 ## Updating The Wiki
 
-Create a new Markdown file under `.memoc/wiki/` when synthesized knowledge should compound across sessions.
+Create wiki pages under the right layer when knowledge should compound across sessions.
 
 - `.memoc/raw/`: immutable source material copied or referenced by `memoc ingest`.
-- `.memoc/wiki/sources/`: provenance records.
-- `.memoc/wiki/topics/`: synthesized topic pages.
-- `.memoc/wiki/global/`: project-wide principles.
+- `.memoc/wiki/project/`: implementation docs for this repo.
+- `.memoc/wiki/knowledge/sources/`: provenance records.
+- `.memoc/wiki/knowledge/topics/`: synthesized topic pages.
+- `.memoc/wiki/knowledge/global/`: broader source-backed principles.
 
 After creating or editing wiki pages:
 1. Update `.memoc/wiki/index.md`.
@@ -120,6 +122,6 @@ memoc lint-wiki
 
 ## Updating System Docs
 
-Create or update `.memoc/systems/*.md` when a subsystem needs durable detail.
+Create or update `.memoc/wiki/project/*.md` when a subsystem needs durable implementation detail.
 
 Examples: `frontend.md`, `deployment.md`, `data-sources.md`, `auth.md`
