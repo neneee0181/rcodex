@@ -1880,8 +1880,8 @@ function renderUsage(){
   }
   if(ok.length){
     var piReqs=ok.filter(function(r){return r.source==='pi';});
-    var codexReqs=ok.filter(function(r){return r.source==='codex';});
-    var hasBreakdown=piReqs.length>0||codexReqs.length>0;
+    var codexReqs=ok.filter(function(r){return r.source!=='pi';});
+    var hasBreakdown=piReqs.length>0&&codexReqs.length>0;
     var sections='';
     if(hasBreakdown){
       sections+=buildTokenSection(ok,'Total (24h)','');
