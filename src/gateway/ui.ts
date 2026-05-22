@@ -2056,7 +2056,7 @@ function fitAll(){
   const world=document.getElementById('world');
   if(!world)return;
   // Iterate 3×: each applyVp() forces reflow so next getBoundingClientRect() sees updated layout
-  for(var iter=0;iter<3;iter++){
+  for(var iter=0;iter<6;iter++){
     const wr=ws.getBoundingClientRect();
     const ndEls=world.querySelectorAll('.nd');
     let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
