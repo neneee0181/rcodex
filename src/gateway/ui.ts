@@ -1180,7 +1180,8 @@ let piMaximized = false;
 let piMaxTimer = null; // cancel pending resize on rapid ⛶ toggle
 function savePiConns(){ localStorage.setItem('rcodex-pi-conns', JSON.stringify([...piConns])); }
 
-function piCmd(){ return 'pi'; }
+let piResolvedPath = 'pi'; // updated by initPiBackground / initPiTerminal after status check
+function piCmd(){ return piResolvedPath; }
 
 function fitPi(){
   if(!piFit || !piTerm) return;
@@ -1208,6 +1209,7 @@ async function initPiBackground(){
     const r = await api('GET', '/api/pi/status');
     const d = await r.json();
     if(!d.installed) return; // not installed — loading UI handles install on first open
+    if(d.piPath) piResolvedPath = d.piPath;
   }catch{ return; }
   try{ await api('POST', '/api/pi/sync-models'); }catch{}
   // Create off-screen xterm container so terminal is connected before user opens it
@@ -1237,33 +1239,52 @@ async function initPiTerminal(){
   loading.style.display = 'flex';
 
   msg.textContent = 'Checking Pi installation…';
-  let installed = false;
+  let statusData = null;
   try{
     const r = await api('GET', '/api/pi/status');
-    const d = await r.json();
-    installed = d.installed;
+    statusData = await r.json();
   }catch{}
 
-  if(!installed){
-    msg.textContent = 'Installing Pi… (npm install -g @earendil-works/pi-coding-agent)';
+  if(statusData && statusData.installed && statusData.piPath){
+    piResolvedPath = statusData.piPath;
+  } else {
+    // Need to install — stream progress from /api/pi/install
+    msg.textContent = statusData && !statusData.npmAvailable
+      ? 'npm not found. Installing Node.js…'
+      : 'Installing Pi…';
     try{
-      const r = await api('POST', '/api/terminal/exec', { cmd: 'npm install -g @earendil-works/pi-coding-agent' });
-      const d = await r.json();
-      if(d.stderr && !d.stdout){ msg.textContent = 'Install failed: ' + d.stderr.slice(0,120); return; }
-    }catch(e){ msg.textContent = 'Install error: ' + (e.message||e); return; }
-
-    // Re-verify: npm bin dir may not be in PATH even after successful install
-    msg.textContent = 'Verifying Pi installation…';
-    let verified = false;
-    try{
-      const vr = await api('GET', '/api/pi/status');
-      const vd = await vr.json();
-      verified = vd.installed;
-    }catch{}
-    if(!verified){
-      msg.textContent = 'Pi installed but "pi" command not found in PATH. Run "npm config get prefix" to find the npm global bin directory and add it to your PATH, then restart rcodex.';
-      return;
-    }
+      const res = await fetch('/api/pi/install');
+      if(!res.body){ msg.textContent = 'Install request failed'; return; }
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+      while(true){
+        const {done, value} = await reader.read();
+        if(done) break;
+        buf += dec.decode(value, {stream:true});
+        const lines = buf.split('\n');
+        buf = lines.pop()||'';
+        for(const line of lines){
+          if(!line.startsWith('data:')) continue;
+          let evt;
+          try{ evt = JSON.parse(line.slice(5).trim()); }catch{ continue; }
+          if(evt.msg && evt.msg.startsWith('__ok__:')){
+            piResolvedPath = evt.msg.slice(7);
+          } else if(evt.msg){
+            msg.textContent = evt.msg;
+          }
+        }
+      }
+      if(piResolvedPath === 'pi'){
+        // final re-check
+        try{
+          const vr = await api('GET', '/api/pi/status');
+          const vd = await vr.json();
+          if(vd.installed && vd.piPath) piResolvedPath = vd.piPath;
+          else{ return; } // message already set by server stream
+        }catch{ return; }
+      }
+    }catch(e){ msg.textContent = 'Install error: '+(e.message||e); return; }
   }
 
   try{ await api('POST', '/api/pi/sync-models'); }catch{}
