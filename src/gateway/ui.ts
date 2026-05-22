@@ -1180,6 +1180,7 @@ if(!NP.piSize) NP.piSize = { w: 780, h: 480 };
 let piConns = new Set(JSON.parse(localStorage.getItem('rcodex-pi-conns')||'[]'));
 let piMaximized = false;
 let piMaxTimer = null; // cancel pending resize on rapid ⛶ toggle
+let piPreloaded = false; // set after background status check so first open skips loading
 function savePiConns(){ localStorage.setItem('rcodex-pi-conns', JSON.stringify([...piConns])); }
 
 function piCmd(){ return 'pi'; }
@@ -1203,25 +1204,26 @@ function togglePi(){
 }
 
 async function initPiBackground(){
-  if(piTerm || piTermWrap) return; // already started or done
-  // Create off-screen container so xterm initializes with correct char metrics
-  const wrap = document.createElement('div');
-  wrap.id = 'pi-term-wrap';
-  wrap.className = 'pi-term-wrap';
-  wrap.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:780px;height:444px;overflow:hidden;visibility:hidden;pointer-events:none;';
-  document.body.appendChild(wrap);
-  piTermWrap = wrap;
+  // Pre-check only — no PTY spawned, no xterm created.
+  // Just verify Pi is installed and sync models so the first ▸ click skips loading.
+  if(piPreloaded || piTerm) return;
   try{
     const r = await api('GET', '/api/pi/status');
     const d = await r.json();
-    if(!d.installed) return; // not installed — leave for explicit open with loading UI
+    if(!d.installed) return; // not installed — loading UI handles install on first open
   }catch{ return; }
   try{ await api('POST', '/api/pi/sync-models'); }catch{}
-  connectPiPty(piCmd());
+  piPreloaded = true;
 }
 
 async function initPiTerminal(){
-  // Ensure pi-loading is in DOM (built by buildPiNode → render above)
+  // Fast path: background pre-check confirmed Pi is installed — skip loading UI
+  if(piPreloaded){
+    connectPiPty(piCmd());
+    return;
+  }
+
+  // Slow path: show loading UI, check install, sync, then connect
   let loading = document.getElementById('pi-loading');
   if(!loading){
     loading = document.createElement('div');
@@ -1944,9 +1946,9 @@ function render(){
   const savedLogs=document.getElementById('mn-logs-body')?.innerHTML;
   const savedStat=document.getElementById('mn-status-body')?.innerHTML;
   const piLoadEl = document.getElementById('pi-loading');
-  // Always park piTermWrap on body during world rebuild (keeps xterm DOM-connected
-  // for background init). Off-screen/hidden when piOpen=false so it never floats
-  // on the canvas; normal position/visibility is restored when re-inserted below.
+  // Park piTermWrap on body during world rebuild to keep xterm DOM-connected.
+  // When piOpen=false, park off-screen/hidden so the terminal never floats on canvas.
+  // When piOpen=true, styles are cleared below before re-inserting into the slot.
   if(piTermWrap && !piMaximized){
     if(!piOpen){
       piTermWrap.style.position='fixed';
