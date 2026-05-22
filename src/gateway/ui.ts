@@ -2530,6 +2530,18 @@ async function fetchStatus(){
       }
     });
 
+    // Reconcile: config may have stale connectedToPi entries not reflected in piConns.
+    // Clear any account that config thinks is Pi-connected but UI has no piConn for.
+    const piConnAccIds=new Set([...piConns].map(id=>nodeSlots[id]?.accountId).filter(Boolean));
+    let needSync=false;
+    for(const acc of ST.accounts){
+      if(acc.connectedToPi && !piConnAccIds.has(acc.id)){
+        needSync=true;
+        api('DELETE','/api/pi/connect/'+acc.id).catch(()=>{});
+      }
+    }
+    if(needSync) api('POST','/api/pi/sync-models').catch(()=>{});
+
     saveLS();
     render();
     if(sbOpen)renderSb();
