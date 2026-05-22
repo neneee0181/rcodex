@@ -446,6 +446,9 @@ export function createGatewayServer(): GatewayServer {
         name: "xterm-256color",
         cols, rows,
         cwd: resolvedCwd,
+        // Force ConPTY on Windows — the gateway daemon runs detached (no console),
+        // so node-pty would otherwise fall back to winpty which flashes conhost.exe.
+        ...(process.platform === "win32" ? { useConpty: true } : {}),
         env: (()=>{
           const e: Record<string,string> = {};
           for(const [k,v] of Object.entries(process.env)){
