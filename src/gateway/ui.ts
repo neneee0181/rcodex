@@ -1280,8 +1280,9 @@ async function initPiTerminal(){
     if(!npmReady){ return; }
   }
 
-  // npm is available — install pi interactively via PTY so the user can respond to prompts
-  connectPiPty('npm install -g @earendil-works/pi-coding-agent', true);
+  // npm is available — install pi via PTY (interactive, user can see progress)
+  // "; exit" closes the shell automatically when install finishes → onclose fires → auto-connect
+  connectPiPty('npm install -g @earendil-works/pi-coding-agent; exit', true);
 }
 
 function connectPiPty(initialCmd, isInstall){
