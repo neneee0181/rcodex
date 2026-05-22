@@ -403,63 +403,43 @@ export function createGatewayServer(): GatewayServer {
     return { installed: piPath !== null, piPath, npmAvailable };
   });
 
-  // Install Node.js (via winget) if needed, then install pi
-  fastify.post("/api/pi/install", async (_req, reply) => {
+  // Ensure npm/Node.js is available (SSE). Pi itself is installed interactively via PTY.
+  fastify.get("/api/pi/install", async (_req, reply) => {
     reply.header("content-type", "text/event-stream; charset=utf-8");
     reply.header("cache-control", "no-cache");
     reply.raw.flushHeaders();
     const send = (msg: string) => { try { reply.raw.write(`data: ${JSON.stringify({ msg })}\n\n`); } catch {} };
 
     const npmOk = await isNpmAvailable();
-    if (!npmOk) {
-      if (process.platform === "win32") {
-        send("npm/Node.js not found. Installing via winget…");
-        try {
-          await execAsync(
-            "winget install OpenJS.NodeJS.LTS --silent --accept-package-agreements --accept-source-agreements",
-            { timeout: 120_000, windowsHide: true }
-          );
-          send("Node.js installed. Refreshing environment…");
-          // Refresh PATH from registry so npm is available in same process
-          try {
-            const { stdout } = await execAsync(
-              `powershell -Command "[System.Environment]::GetEnvironmentVariable('PATH','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('PATH','User')"`,
-              { timeout: 5000, windowsHide: true }
-            );
-            process.env.PATH = stdout.trim();
-          } catch {}
-        } catch (e) {
-          send("winget failed: " + String(e).slice(0, 200) + ". Please install Node.js from https://nodejs.org then restart rcodex.");
-          reply.raw.end();
-          return reply;
-        }
-      } else {
-        send("npm not found. Please install Node.js from https://nodejs.org then restart rcodex.");
-        reply.raw.end();
-        return reply;
-      }
-    }
-
-    send("Installing pi… (npm install -g @earendil-works/pi-coding-agent)");
-    try {
-      const { stderr, stdout } = await execAsync(
-        "npm install -g @earendil-works/pi-coding-agent",
-        { timeout: 120_000, windowsHide: true }
-      );
-      if (stderr && !stdout) { send("npm install failed: " + stderr.slice(0, 200)); reply.raw.end(); return reply; }
-      send("npm install done. Verifying…");
-    } catch (e) {
-      send("npm install error: " + String(e).slice(0, 200));
+    if (npmOk) {
+      send("__ready__");
       reply.raw.end();
       return reply;
     }
 
-    const piPath = await resolvePiPath();
-    if (piPath) {
-      send("__ok__:" + piPath);
+    if (process.platform === "win32") {
+      send("npm/Node.js not found. Installing via winget…");
+      try {
+        await execAsync(
+          "winget install OpenJS.NodeJS.LTS --silent --accept-package-agreements --accept-source-agreements",
+          { timeout: 120_000, windowsHide: true }
+        );
+        send("Node.js installed. Refreshing environment…");
+        try {
+          const { stdout } = await execAsync(
+            `powershell -Command "[System.Environment]::GetEnvironmentVariable('PATH','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('PATH','User')"`,
+            { timeout: 5000, windowsHide: true }
+          );
+          process.env.PATH = stdout.trim();
+        } catch {}
+        send("__ready__");
+      } catch (e) {
+        send("winget failed: " + String(e).slice(0, 200) + ". Please install Node.js from nodejs.org then restart rcodex.");
+      }
     } else {
-      send("Pi installed but not found. Add npm global bin to PATH and restart rcodex. Run: npm config get prefix");
+      send("npm not found. Please install Node.js from nodejs.org then restart rcodex.");
     }
+
     reply.raw.end();
     return reply;
   });

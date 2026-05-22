@@ -1226,19 +1226,7 @@ async function initPiTerminal(){
   // If background init already connected a terminal, just show it (fitPi runs via render)
   if(piTerm) return;
 
-  // Slow path: show loading UI, check install, sync, then connect
-  let loading = document.getElementById('pi-loading');
-  if(!loading){
-    loading = document.createElement('div');
-    loading.id = 'pi-loading';
-    loading.className = 'pi-loading';
-    loading.innerHTML = '<div class="pi-spin"></div><div id="pi-loading-msg" style="font-size:12px;color:#6b7280">Checking Pi installation…</div>';
-    document.getElementById('nd-pi')?.appendChild(loading);
-  }
-  const msg = loading.querySelector('#pi-loading-msg') || loading.lastElementChild;
-  loading.style.display = 'flex';
-
-  msg.textContent = 'Checking Pi installation…';
+  // Check status first
   let statusData = null;
   try{
     const r = await api('GET', '/api/pi/status');
@@ -1246,53 +1234,57 @@ async function initPiTerminal(){
   }catch{}
 
   if(statusData && statusData.installed && statusData.piPath){
+    // Already installed — connect directly
     piResolvedPath = statusData.piPath;
-  } else {
-    // Need to install — stream progress from /api/pi/install
-    msg.textContent = statusData && !statusData.npmAvailable
-      ? 'npm not found. Installing Node.js…'
-      : 'Installing Pi…';
+    try{ await api('POST', '/api/pi/sync-models'); }catch{}
+    connectPiPty(piCmd());
+    return;
+  }
+
+  // Pi not installed. If npm is also missing, install Node.js first via SSE (non-interactive).
+  if(statusData && !statusData.npmAvailable){
+    let loading = document.getElementById('pi-loading');
+    if(!loading){
+      loading = document.createElement('div');
+      loading.id = 'pi-loading';
+      loading.className = 'pi-loading';
+      loading.innerHTML = '<div class="pi-spin"></div><div id="pi-loading-msg" style="font-size:12px;color:#6b7280">Checking…</div>';
+      document.getElementById('nd-pi')?.appendChild(loading);
+    }
+    const msg = loading.querySelector('#pi-loading-msg') || loading.lastElementChild;
+    loading.style.display = 'flex';
+    msg.textContent = 'npm not found. Installing Node.js…';
+    let npmReady = false;
     try{
       const res = await fetch('/api/pi/install');
-      if(!res.body){ msg.textContent = 'Install request failed'; return; }
-      const reader = res.body.getReader();
-      const dec = new TextDecoder();
-      let buf = '';
-      while(true){
-        const {done, value} = await reader.read();
-        if(done) break;
-        buf += dec.decode(value, {stream:true});
-        const lines = buf.split('\\n');
-        buf = lines.pop()||'';
-        for(const line of lines){
-          if(!line.startsWith('data:')) continue;
-          let evt;
-          try{ evt = JSON.parse(line.slice(5).trim()); }catch{ continue; }
-          if(evt.msg && evt.msg.startsWith('__ok__:')){
-            piResolvedPath = evt.msg.slice(7);
-          } else if(evt.msg){
-            msg.textContent = evt.msg;
+      if(res.body){
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        let buf = '';
+        while(true){
+          const {done, value} = await reader.read();
+          if(done) break;
+          buf += dec.decode(value, {stream:true});
+          const lines = buf.split('\\n');
+          buf = lines.pop()||'';
+          for(const line of lines){
+            if(!line.startsWith('data:')) continue;
+            let evt; try{ evt = JSON.parse(line.slice(5).trim()); }catch{ continue; }
+            if(evt.msg === '__ready__'){ npmReady = true; }
+            else if(evt.msg){ msg.textContent = evt.msg; }
           }
         }
       }
-      if(piResolvedPath === 'pi'){
-        // final re-check
-        try{
-          const vr = await api('GET', '/api/pi/status');
-          const vd = await vr.json();
-          if(vd.installed && vd.piPath) piResolvedPath = vd.piPath;
-          else{ return; } // message already set by server stream
-        }catch{ return; }
-      }
-    }catch(e){ msg.textContent = 'Install error: '+(e.message||e); return; }
+    }catch(e){ msg.textContent = 'Error: '+(e.message||e); return; }
+    loading.style.display = 'none';
+    if(!npmReady){ return; }
   }
 
-  try{ await api('POST', '/api/pi/sync-models'); }catch{}
-  loading.style.display = 'none';
-  connectPiPty(piCmd());
+  // npm is available — install pi interactively via PTY so the user can respond to prompts
+  connectPiPty('npm install -g @earendil-works/pi-coding-agent', true);
 }
 
-function connectPiPty(initialCmd){
+function connectPiPty(initialCmd, isInstall){
   // Use persistent ref first — wrap may be detached from DOM (collapsed state)
   let wrap = piTermWrap || document.getElementById('pi-term-wrap');
   if(!wrap){
@@ -1321,7 +1313,25 @@ function connectPiPty(initialCmd){
   const ws = new WebSocket(wsUrl);
   piWs = ws;
   ws.onmessage = e => term.write(typeof e.data === 'string' ? e.data : new Uint8Array(e.data));
-  ws.onclose = () => { term.write('\\r\\n\\x1b[90m[session ended]\\x1b[0m\\r\\n'); render(); };
+  ws.onclose = () => {
+    term.write('\\r\\n\\x1b[90m[session ended]\\x1b[0m\\r\\n');
+    if(isInstall){
+      term.write('\\x1b[90mChecking Pi installation…\\x1b[0m\\r\\n');
+      api('GET', '/api/pi/status').then(r=>r.json()).then(function(d){
+        if(d.installed && d.piPath){
+          piResolvedPath = d.piPath;
+          term.write('\\x1b[32mPi ready. Connecting…\\x1b[0m\\r\\n');
+          api('POST', '/api/pi/sync-models').catch(function(){});
+          setTimeout(function(){ connectPiPty(piCmd()); }, 800);
+        } else {
+          term.write('\\x1b[33mPi not found in PATH. Click ↺ to retry.\\x1b[0m\\r\\n');
+          render();
+        }
+      }).catch(function(){ render(); });
+    } else {
+      render();
+    }
+  };
   ws.onerror = () => { term.write('\\r\\n\\x1b[31m[connection error]\\x1b[0m\\r\\n'); };
   term.onData(d => { if(ws.readyState === WebSocket.OPEN) ws.send(d); });
   term.onResize(({cols,rows}) => { if(ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({type:'resize',cols,rows})); });
