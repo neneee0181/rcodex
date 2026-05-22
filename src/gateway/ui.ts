@@ -388,10 +388,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
 .pi-nd-port{position:absolute;left:-11px;top:50%;transform:translateY(-50%);
   width:22px;height:22px;border-radius:50%;background:var(--s1);
   border:2px solid var(--b2);z-index:15;
-  display:flex;align-items:center;justify-content:center;transition:all .15s;pointer-events:all}
+  display:flex;align-items:center;justify-content:center;transition:opacity .15s,border-color .15s,box-shadow .15s;
+  pointer-events:none;opacity:0}
 .pi-nd-port::after{content:'';width:8px;height:8px;border-radius:50%;background:var(--b2);transition:background .15s}
-.pi-nd-port.live{border-color:#818cf8}.pi-nd-port.live::after{background:#818cf8}
-.pi-nd-port.acc{border-color:var(--bl);box-shadow:0 0 0 4px rgba(99,102,241,.2)}.pi-nd-port.acc::after{background:var(--bl)}
+.pi-nd-port.live{border-color:#818cf8;opacity:1;pointer-events:all}.pi-nd-port.live::after{background:#818cf8}
+.pi-nd-port.acc{border-color:var(--bl);box-shadow:0 0 0 4px rgba(99,102,241,.2);opacity:1;pointer-events:all}.pi-nd-port.acc::after{background:var(--bl)}
+body.conn-dragging .pi-nd-port{opacity:1;pointer-events:all}
 </style>
 </head>
 <body style="display:flex;flex-direction:column;height:100vh">
@@ -1311,6 +1313,7 @@ function buildPiNode(){
       <div style="font-size:11px;font-weight:600;color:#e0e0f0;display:flex;align-items:center">\${dot}Pi Agent</div>
       <div style="font-size:9px;color:#606080">\${running?'Running':'Stopped'}</div>
     </div>
+    <button class="nd-rm" onclick="restartPi()" title="Restart Pi" style="font-size:13px">↺</button>
     <button class="nd-rm" onclick="togglePi()" title="Open terminal" style="font-size:13px">▸</button>
   </div>
   <div class="nb">\${modelsHtml}</div>
@@ -1333,6 +1336,7 @@ function buildPiNode(){
       <div style="font-size:11px;font-weight:600;color:#e0e0f0;display:flex;align-items:center">\${dot}Pi Agent</div>
       <div style="font-size:9px;margin-top:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">\${connHtml}</div>
     </div>
+    <button class="nd-rm" onclick="restartPi()" title="Restart Pi" style="font-size:13px">↺</button>
     <button class="nd-rm" style="font-size:14px;width:22px;height:22px" onclick="togglePiMax()" title="Fullscreen">⛶</button>
     <button class="nd-rm" onclick="togglePi()" title="Collapse" style="font-size:13px">▾</button>
   </div>
@@ -2143,6 +2147,7 @@ function startConn(e,fromId){
   if(!pe)return;
   pe.classList.add('dragging');
   connD={fromId};
+  document.body.classList.add('conn-dragging');
   const sp=portPos(pe);
   const svg=document.getElementById('svgl');
   const tmp=document.createElementNS('http://www.w3.org/2000/svg','path');
@@ -2225,6 +2230,7 @@ window.addEventListener('pointerup',async e=>{
     document.getElementById('ctmp')?.remove();
     document.getElementById('pi')?.classList.remove('acc');
     document.getElementById('pi-nd-port')?.classList.remove('acc');
+    document.body.classList.remove('conn-dragging');
     let handled = false;
     const pi=document.getElementById('pi');
     if(pi){
