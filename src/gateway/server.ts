@@ -104,8 +104,9 @@ export function createGatewayServer(): GatewayServer {
   let pendingOAuth: string | null = null;
   let oauthError: string | null = null;
 
-  // Quota cache ??keyed by account.id, TTL 90s to avoid rate-limiting upstream APIs
+  // Quota cache — keyed by account.id, TTL 90s for success, 10min for unavailable (401/403)
   const QUOTA_TTL = 90_000;
+  const QUOTA_UNAVAILABLE_TTL = 600_000;
   type QuotaEntry = {
     provider: string; label: string; id: string;
     five_hour?: { utilization: number; resets_at: string | number | null };
@@ -255,7 +256,11 @@ export function createGatewayServer(): GatewayServer {
         } catch (e) {
           entry = { provider: "openai", label: account.label, id: account.id, error: String(e) };
         }
-        if (!entry.error) quotaCache.set(account.id, { entry, ts: Date.now() });
+        if (!entry.error) {
+          // Unavailable (401/403): cache with extended TTL so we don't spam the log every 90s
+          const ts = entry.unavailable ? Date.now() - QUOTA_TTL + QUOTA_UNAVAILABLE_TTL : Date.now();
+          quotaCache.set(account.id, { entry, ts });
+        }
         results.push(entry);
       }
 

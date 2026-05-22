@@ -1837,45 +1837,60 @@ function renderUsage(){
     </div>\`;
   }
 
-  // ?�?� Token usage section ??built from lastReqData ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
+  // ── Token usage section – built from lastReqData ──
   const reqs=(lastReqData?.requests||[]);
-  const ok=reqs.filter(r=>r.status==='ok'&&r.usedModel);
+  const ok=reqs.filter(function(r){return r.status==='ok'&&r.usedModel;});
   let tokenHtml='';
-  if(ok.length){
-    let totIn=0,totOut=0,totCost=0,hasCost=false;
-    const byModel={};
-    for(const r of ok){
-      const inT=r.inputTokens||0,outT=r.outputTokens||0;
+  function buildTokenSection(subset,label,accent){
+    if(!subset.length)return'';
+    var totIn=0,totOut=0,totCost=0,hasCost=false,byModel={};
+    for(var i=0;i<subset.length;i++){
+      var r=subset[i],inT=r.inputTokens||0,outT=r.outputTokens||0;
       totIn+=inT;totOut+=outT;
-      const p=getPrice(r.usedModel);
-      const cost=p&&(inT||outT)?(inT*p[0]+outT*p[1])/1e6:null;
+      var p=getPrice(r.usedModel);
+      var cost=p&&(inT||outT)?(inT*p[0]+outT*p[1])/1e6:null;
       if(cost!=null){totCost+=cost;hasCost=true;}
       if(!byModel[r.usedModel])byModel[r.usedModel]={provider:r.provider,reqs:0,inT:0,outT:0,cost:0,hasCost:false};
       byModel[r.usedModel].reqs++;byModel[r.usedModel].inT+=inT;byModel[r.usedModel].outT+=outT;
       if(cost!=null){byModel[r.usedModel].cost+=cost;byModel[r.usedModel].hasCost=true;}
     }
-    const cards=\`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
-      <div class="usg-card"><div class="usg-val">\${fmtTok(totIn)}</div><div class="usg-lbl">Input tokens</div></div>
-      <div class="usg-card"><div class="usg-val">\${fmtTok(totOut)}</div><div class="usg-lbl">Output tokens</div></div>
-      <div class="usg-card"><div class="usg-val" style="color:var(--gr)">\${hasCost?fmtCost(totCost):'-'}</div><div class="usg-lbl">Est. cost</div></div>
-    </div>\`;
-    const hdr=\`<div class="usg-row usg-hdr"><span>Model</span><span>Reqs</span><span>In</span><span>Out</span><span>Cost</span></div>\`;
-    const rows=Object.entries(byModel).sort((a,b)=>b[1].inT+b[1].outT-(a[1].inT+a[1].outT)).map(([model,m])=>{
-      const col=COL[m.provider]||'#888';
-      return\`<div class="usg-row">
-        <span style="display:flex;align-items:center;gap:5px;min-width:0">
-          <span style="width:6px;height:6px;border-radius:50%;background:\${col};flex-shrink:0"></span>
-          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\${model}</span>
-        </span>
-        <span>\${m.reqs}</span><span>\${fmtTok(m.inT)||'-'}</span><span>\${fmtTok(m.outT)||'-'}</span>
-        <span>\${m.hasCost?fmtCost(m.cost):'-'}</span>
-      </div>\`;
+    var acStyle=accent?'border-left:2px solid '+accent+';padding-left:8px':'';
+    var cards='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:6px">'+
+      '<div class="usg-card"><div class="usg-val">'+fmtTok(totIn)+'</div><div class="usg-lbl">Input</div></div>'+
+      '<div class="usg-card"><div class="usg-val">'+fmtTok(totOut)+'</div><div class="usg-lbl">Output</div></div>'+
+      '<div class="usg-card"><div class="usg-val" style="color:var(--gr)">'+(hasCost?fmtCost(totCost):'-')+'</div><div class="usg-lbl">Cost</div></div>'+
+    '</div>';
+    var hdr='<div class="usg-row usg-hdr"><span>Model</span><span>Reqs</span><span>In</span><span>Out</span><span>Cost</span></div>';
+    var rows=Object.entries(byModel).sort(function(a,b){return b[1].inT+b[1].outT-(a[1].inT+a[1].outT);}).map(function(e){
+      var model=e[0],m=e[1],col=COL[m.provider]||'#888';
+      return'<div class="usg-row">'+
+        '<span style="display:flex;align-items:center;gap:5px;min-width:0">'+
+          '<span style="width:6px;height:6px;border-radius:50%;background:'+col+';flex-shrink:0"></span>'+
+          '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+model+'</span>'+
+        '</span>'+
+        '<span>'+m.reqs+'</span><span>'+(fmtTok(m.inT)||'-')+'</span><span>'+(fmtTok(m.outT)||'-')+'</span>'+
+        '<span>'+(m.hasCost?fmtCost(m.cost):'-')+'</span>'+
+      '</div>';
     }).join('');
-    tokenHtml=\`<div style="padding:10px 10px 0">
-      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mu);margin-bottom:6px">Token Usage <span style="font-weight:400;opacity:.5">(24h)</span></div>
-      \${cards}
-      <div style="margin-top:6px;background:var(--s2);border-radius:8px;overflow:hidden">\${hdr}\${rows}</div>
-    </div>\`;
+    return'<div style="'+acStyle+'">'+
+      '<div style="font-size:9px;font-weight:700;color:'+(accent||'var(--mu)')+';margin-bottom:4px">'+label+'</div>'+
+      cards+
+      '<div style="background:var(--s2);border-radius:6px;overflow:hidden">'+hdr+rows+'</div>'+
+    '</div>';
+  }
+  if(ok.length){
+    var piReqs=ok.filter(function(r){return r.source==='pi';});
+    var codexReqs=ok.filter(function(r){return r.source==='codex';});
+    var hasBreakdown=piReqs.length>0||codexReqs.length>0;
+    var sections='';
+    if(hasBreakdown){
+      sections+=buildTokenSection(ok,'Total (24h)','');
+      if(codexReqs.length)sections+='<div style="margin-top:10px">'+buildTokenSection(codexReqs,'rcodex','#6366f1')+'</div>';
+      if(piReqs.length)sections+='<div style="margin-top:10px">'+buildTokenSection(piReqs,'Pi','#22c55e')+'</div>';
+    }else{
+      sections=buildTokenSection(ok,'Token Usage (24h)','');
+    }
+    tokenHtml=\`<div style="padding:10px 10px 0">\${sections}</div>\`;
   }else if(!quotaHtml){
     body.innerHTML='<div class="mn-empty">No usage data yet.</div>';return;
   }
