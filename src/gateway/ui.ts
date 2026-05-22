@@ -413,6 +413,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:5px">
+    <button class="icon-btn" id="hb-mon" onclick="toggleMonitor(monitorTab||'status')" title="Monitor">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="7.5" y="1" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="7.5" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="7.5" y="7.5" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
+    </button>
     <button class="icon-btn" id="hb-pi" onclick="togglePi()" title="Pi Agent">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 11V3l4 5 4-5v8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
@@ -1897,9 +1900,16 @@ function render(){
   if(savedLogs){const el=document.getElementById('mn-logs-body');if(el)el.innerHTML=savedLogs;}
   if(savedStat){const el=document.getElementById('mn-status-body');if(el)el.innerHTML=savedStat;}
   if(savedScroll>0){const mb=document.getElementById('mn-body');if(mb)mb.scrollTop=savedScroll;}
-  // Re-attach Pi terminal only when expanded (not in small/collapsed node)
+  // Re-attach Pi terminal only when expanded
   if(piOpen && !piMaximized){
-    if(piTermEl){const slot=document.getElementById('pi-term-slot');if(slot){slot.replaceWith(piTermEl);if(piFit)setTimeout(()=>piFit.fit(),40);}}
+    if(piTermEl){
+      const slot=document.getElementById('pi-term-slot');
+      if(slot){
+        slot.replaceWith(piTermEl);
+        // Force xterm repaint after DOM reattach (canvas goes blank otherwise)
+        if(piFit && piTerm) setTimeout(()=>{ piFit.fit(); piTerm.refresh(0, piTerm.rows-1); }, 60);
+      }
+    }
     if(piLoadEl){const slot=document.getElementById('pi-loading-slot');if(slot)slot.replaceWith(piLoadEl);}
   }
 
