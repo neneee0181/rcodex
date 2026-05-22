@@ -248,7 +248,6 @@ export function createGatewayServer(): GatewayServer {
                 id: account.id,
                 unavailable: `ChatGPT usage API rejected this Codex OAuth token (${res.status}). Request token totals still work below.`,
               };
-              gwarn(`[quota] openai usage unavailable: ${res.status}`);
             } else {
               entry = { provider: "openai", label: account.label, id: account.id, error: `${res.status}` };
             }
