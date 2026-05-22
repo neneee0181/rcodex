@@ -1541,7 +1541,7 @@ function toggleCgpt(){
 // Monitor node
 function toggleMonitor(tab){
   if(monitorOpen && monitorTab===tab){ monitorOpen=false; }
-  else{ monitorOpen=true; monitorTab=tab; if(!NP.monitor) NP.monitor=findBestPos(); }
+  else{ monitorOpen=true; monitorTab=tab; NP.monitor=findBestPos(); }
   document.getElementById('hb-mon')?.classList.toggle('on', monitorOpen);
   render();
   if(monitorOpen) startMonitorRefresh();
@@ -1969,10 +1969,16 @@ function findBestPos(){
   var wr=wsEl?wsEl.getBoundingClientRect():{width:1200,height:700};
   var x0=Math.round(-vp.x/vp.s), y0=Math.round(-vp.y/vp.s);
   var x1=Math.round((wr.width-vp.x)/vp.s), y1=Math.round((wr.height-vp.y)/vp.s);
-  var GAP=30, FW=320, FH=220;
+  var GAP=20;
+  // Node CSS width is fixed 260px; sample height from a rendered provider node
+  var FW=260, FH=100;
+  var world=document.getElementById('world');
+  if(world){
+    var sample=world.querySelector('.nd:not(#nd-out):not(#nd-monitor):not(#nd-pi)');
+    if(sample&&sample.offsetHeight>0) FH=sample.offsetHeight;
+  }
   // Build existing rects from DOM (actual sizes) + NP (pre-render nodes not yet in DOM)
   var rects=[];
-  var world=document.getElementById('world');
   if(world){
     var ndEls=world.querySelectorAll('.nd');
     for(var i=0;i<ndEls.length;i++){
@@ -1992,8 +1998,7 @@ function findBestPos(){
     if(!inDom)rects.push({x:p.x,y:p.y,w:FW,h:FH});
   }
   if(!rects.length){
-    return{x:Math.max(GAP,Math.round((x0+x1)/2-FW/2)),
-           y:Math.max(GAP,Math.round((y0+y1)/2-FH/2))};
+    return{x:Math.round((x0+x1)/2-FW/2),y:Math.round((y0+y1)/2-FH/2)};
   }
   function hits(x,y){
     for(var i=0;i<rects.length;i++){
