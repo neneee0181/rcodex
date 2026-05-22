@@ -1170,7 +1170,6 @@ let piTerm = null;
 let piWs = null;
 let piFit = null;
 let piTermWrap = null; // persists #pi-term-wrap across renders (detached DOM survives collapse)
-let piRo = null;      // ResizeObserver — stored so we can disconnect during world rebuilds
 if(!NP.piNode) NP.piNode = { x: 60, y: 60 };
 if(!NP.piSize) NP.piSize = { w: 780, h: 480 };
 let piConns = new Set(JSON.parse(localStorage.getItem('rcodex-pi-conns')||'[]'));
@@ -1178,6 +1177,13 @@ let piMaximized = false;
 function savePiConns(){ localStorage.setItem('rcodex-pi-conns', JSON.stringify([...piConns])); }
 
 function piCmd(){ return 'pi'; }
+
+function fitPi(){
+  if(!piFit || !piTerm) return;
+  piFit.fit();
+  piTerm.refresh(0, piTerm.rows-1);
+  piTerm.scrollToBottom();
+}
 
 function togglePi(){
   piOpen = !piOpen;
@@ -1260,9 +1266,6 @@ function connectPiPty(initialCmd){
   term.onResize(({cols,rows}) => { if(ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({type:'resize',cols,rows})); });
 
   wrap.addEventListener('wheel', e => e.stopPropagation());
-  if(piRo) piRo.disconnect();
-  piRo = new ResizeObserver(() => { if(piFit){ piFit.fit(); if(piTerm) piTerm.refresh(0, piTerm.rows-1); } });
-  piRo.observe(wrap);
 }
 
 function sendToPi(cmd){
@@ -1401,9 +1404,6 @@ function togglePiMax(){
     // Reset flex before render rebuilds the node
     const sz = NP.piSize || { w:780, h:480 };
     const termEl = piTermWrap || document.getElementById('pi-term-slot');
-    // Disconnect ResizeObserver before style + render changes to prevent
-    // spurious fit(size=0) that corrupts xterm scrollback
-    if(piRo) piRo.disconnect();
     if(termEl){ termEl.style.flex = ''; termEl.style.height = sz.h + 'px'; }
     nd.style.position = '';
     nd.style.inset = '';
@@ -1418,11 +1418,7 @@ function togglePiMax(){
     document.getElementById('world').appendChild(nd);
     render();
   }
-  if(piFit) setTimeout(()=>{
-    piFit.fit();
-    if(piTerm) piTerm.refresh(0, piTerm.rows-1);
-    if(piRo && piTermWrap) piRo.observe(piTermWrap); // re-arm after intentional fit
-  }, 80);
+  setTimeout(fitPi, 80);
 }
 
 function startPiResize(e,dir){
@@ -1921,9 +1917,6 @@ function render(){
   // returns null when wrap is detached, which breaks the 2nd expand cycle)
   const piTermEl = piTermWrap;
   const piLoadEl = document.getElementById('pi-loading');
-  // Disconnect ResizeObserver before innerHTML wipe — detach fires it with size=0
-  // which corrupts xterm's scrollback (resize to 0 rows dumps all content)
-  if(piRo) piRo.disconnect();
   const slotNodes=[...onCanvas]
     .filter(id=>id!=='out'&&id!=='monitor')
     .map(slotId=>buildAccNode(slotId))
@@ -1940,11 +1933,7 @@ function render(){
       const slot=document.getElementById('pi-term-slot');
       if(slot){
         slot.replaceWith(piTermEl);
-        // Fit + repaint, then re-arm ResizeObserver (only after intentional fit)
-        if(piFit && piTerm) setTimeout(()=>{
-          piFit.fit(); piTerm.refresh(0, piTerm.rows-1);
-          if(piRo && piTermWrap) piRo.observe(piTermWrap);
-        }, 60);
+        setTimeout(fitPi, 60);
       }
     }
     if(piLoadEl){const slot=document.getElementById('pi-loading-slot');if(slot)slot.replaceWith(piLoadEl);}
@@ -2202,7 +2191,7 @@ window.addEventListener('pointermove',e=>{
     if(nd) nd.style.width=sz.w+'px';
     const slot=document.getElementById('pi-term-wrap')||document.getElementById('pi-term-slot');
     if(slot) slot.style.height=sz.h+'px';
-    if(piFit){ piFit.fit(); if(piTerm) piTerm.refresh(0, piTerm.rows-1); }
+    fitPi();
     return;
   }
   if(nodeD){
