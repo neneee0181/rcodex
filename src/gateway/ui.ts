@@ -1427,16 +1427,16 @@ function togglePiMax(){
     nd.style.zIndex = '200';
     nd.style.display = 'flex';
     nd.style.flexDirection = 'column';
-    // Terminal must flex-fill remaining height instead of using fixed px
+    // Terminal must flex-fill remaining height/width instead of using fixed px
     const termEl = piTermWrap || document.getElementById('pi-term-slot');
-    if(termEl){ termEl.style.flex = '1'; termEl.style.height = 'auto'; }
+    if(termEl){ termEl.style.flex = '1'; termEl.style.width = ''; termEl.style.height = 'auto'; }
     document.body.appendChild(nd);
     piMaxTimer = setTimeout(() => { piMaxTimer = null; fitPi(); }, 80);
   } else {
     // Reset flex before render rebuilds the node
     const sz = NP.piSize || { w:780, h:480 };
     const termEl = piTermWrap || document.getElementById('pi-term-slot');
-    if(termEl){ termEl.style.flex = ''; termEl.style.height = sz.h + 'px'; }
+    if(termEl){ termEl.style.flex = ''; termEl.style.width = sz.w + 'px'; termEl.style.height = sz.h + 'px'; }
     nd.style.position = '';
     nd.style.inset = '';
     nd.style.width = sz.w + 'px';
