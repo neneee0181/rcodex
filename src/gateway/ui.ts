@@ -380,17 +380,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
   font-size:11px;box-shadow:0 8px 32px rgba(0,0,0,.45);z-index:300;
   animation:tIn .2s ease;white-space:nowrap;pointer-events:none}
 @keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(6px)}}
-/* Pi node */
-.pi-panel{display:flex;flex-direction:column;overflow:hidden;z-index:40;width:780px;height:480px}
-.pi-term-wrap{flex:1;overflow:hidden;padding:4px 0}
+/* Pi node (canvas) */
+.pi-term-wrap{flex:1;overflow:hidden;padding:4px 0;background:#0d0d0f;border-radius:0 0 12px 12px}
 .pi-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0d0d0f;z-index:10;gap:10px;border-radius:0 0 12px 12px}
 .pi-spin{width:24px;height:24px;border:2px solid #333;border-top-color:#818cf8;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-/* Pi canvas status node */
-.pi-nd{position:absolute;background:var(--s1);border:1px solid #2a2a3a;border-radius:12px;padding:0;min-width:160px;cursor:default;user-select:none}
-.pi-nd.live{border-color:#818cf8;box-shadow:0 0 0 1px #818cf8}
-.pi-nd-hdr{display:flex;align-items:center;gap:7px;padding:8px 10px 6px;cursor:grab;border-radius:12px 12px 0 0}
-.pi-nd-body{padding:4px 10px 8px;font-size:11px;color:var(--fg2)}
 .pi-nd-port{position:absolute;left:-11px;top:50%;transform:translateY(-50%);
   width:22px;height:22px;border-radius:50%;background:var(--s1);
   border:2px solid var(--b2);z-index:15;
@@ -398,7 +392,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
 .pi-nd-port::after{content:'';width:8px;height:8px;border-radius:50%;background:var(--b2);transition:background .15s}
 .pi-nd-port.live{border-color:#818cf8}.pi-nd-port.live::after{background:#818cf8}
 .pi-nd-port.acc{border-color:var(--bl);box-shadow:0 0 0 4px rgba(99,102,241,.2)}.pi-nd-port.acc::after{background:var(--bl)}
-.pi-panel.maximized{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;border-radius:0!important;z-index:200!important;left:0!important;top:0!important}
 </style>
 </head>
 <body style="display:flex;flex-direction:column;height:100vh">
@@ -458,29 +451,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
       <button class="zbtn" onclick="fitAll()" title="Fit to view"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 9h6v6H9z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
     </div>
     <div class="hint">Scroll to zoom / Drag to pan / Drag ports to connect</div>
-  </div>
-
-  <!-- Pi node (overlay on canvas) -->
-  <div class="pi-panel mn" id="pi-panel" style="display:none;position:absolute;right:24px;bottom:24px">
-    <div class="nh" id="pi-bar" onpointerdown="startPiDrag(event)" style="border-radius:13px 13px 0 0;cursor:grab">
-      <div class="nic" style="background:rgba(129,140,248,.15)">
-        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 11V3l4 5 4-5v8" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;color:#e4e4f7">Pi Agent</div>
-        <div style="font-size:10px;color:#6b7280">via rcodex</div>
-      </div>
-      <button class="nd-rm" id="pi-max-btn" onclick="togglePiMax()" title="Toggle fullscreen" style="font-size:14px;width:22px;height:22px">⛶</button>
-      <button class="nd-rm" onclick="togglePi()" title="Close">×</button>
-    </div>
-    <div id="pi-term-wrap" class="pi-term-wrap" style="background:#0d0d0f;border-radius:0 0 12px 12px"></div>
-    <div class="pi-loading" id="pi-loading" style="border-radius:0 0 12px 12px">
-      <div class="pi-spin"></div>
-      <div id="pi-loading-msg" style="font-size:12px;color:#6b7280">Checking Pi installation…</div>
-    </div>
-    <div class="mn-rs-e" onpointerdown="startPiResize(event,'e')"></div>
-    <div class="mn-rs-s" onpointerdown="startPiResize(event,'s')"></div>
-    <div class="mn-rs-se" onpointerdown="startPiResize(event,'se')"></div>
   </div>
 
   <!-- ChatGPT panel -->
@@ -1192,8 +1162,6 @@ let piOpen = false;
 let piTerm = null;
 let piWs = null;
 let piFit = null;
-let piDrag = null;
-if(!NP.pi) NP.pi = { x: null, y: null, w: 780, h: 480 };
 if(!NP.piNode) NP.piNode = { x: 60, y: 60 };
 if(!NP.piSize) NP.piSize = { w: 780, h: 480 };
 let piConns = new Set(JSON.parse(localStorage.getItem('rcodex-pi-conns')||'[]'));
@@ -1204,34 +1172,26 @@ function piCmd(){ return 'pi'; }
 
 function togglePi(){
   piOpen = !piOpen;
-  const panel = document.getElementById('pi-panel');
-  const btn = document.getElementById('hb-pi');
-  if(piOpen){
-    if(!NP.pi.x){
-      const ws = document.getElementById('ws');
-      const rect = ws.getBoundingClientRect();
-      // init in world coords: bottom-right area of current viewport
-      NP.pi.x = Math.round((rect.width  - NP.piSize.w - 30 - vp.x) / vp.s);
-      NP.pi.y = Math.round((rect.height - NP.piSize.h - 30 - vp.y) / vp.s);
-    }
-    panel.style.display = 'flex';
-    panel.style.width  = NP.piSize.w + 'px';
-    panel.style.height = NP.piSize.h + 'px';
-    positionPiPanel();
-    btn?.classList.add('on');
-    if(!piTerm) initPiTerminal();
-    render();
-  } else {
-    if(piMaximized){ piMaximized = false; panel.classList.remove('maximized'); }
-    panel.style.display = 'none';
-    btn?.classList.remove('on');
-    render();
+  document.getElementById('hb-pi')?.classList.toggle('on', piOpen);
+  if(!piOpen && piMaximized){
+    piMaximized = false;
+    document.getElementById('nd-pi')?.remove();
   }
+  render();
+  if(piOpen && !piTerm) initPiTerminal();
 }
 
 async function initPiTerminal(){
-  const loading = document.getElementById('pi-loading');
-  const msg = document.getElementById('pi-loading-msg');
+  // Ensure pi-loading is in DOM (built by buildPiNode → render above)
+  let loading = document.getElementById('pi-loading');
+  if(!loading){
+    loading = document.createElement('div');
+    loading.id = 'pi-loading';
+    loading.className = 'pi-loading';
+    loading.innerHTML = '<div class="pi-spin"></div><div id="pi-loading-msg" style="font-size:12px;color:#6b7280">Checking Pi installation…</div>';
+    document.getElementById('nd-pi')?.appendChild(loading);
+  }
+  const msg = loading.querySelector('#pi-loading-msg') || loading.lastElementChild;
   loading.style.display = 'flex';
 
   msg.textContent = 'Checking Pi installation…';
@@ -1251,14 +1211,21 @@ async function initPiTerminal(){
     }catch(e){ msg.textContent = 'Install error: ' + e.message; return; }
   }
 
-  // Write ~/.pi/agent/models.json with piConns models before starting Pi
   try{ await api('POST', '/api/pi/sync-models'); }catch{}
   loading.style.display = 'none';
   connectPiPty(piCmd());
 }
 
 function connectPiPty(initialCmd){
-  const wrap = document.getElementById('pi-term-wrap');
+  // Reuse existing #pi-term-wrap element or find the slot placeholder
+  let wrap = document.getElementById('pi-term-wrap');
+  if(!wrap){
+    wrap = document.createElement('div');
+    wrap.id = 'pi-term-wrap';
+    wrap.className = 'pi-term-wrap';
+    const slot = document.getElementById('pi-term-slot');
+    if(slot) slot.replaceWith(wrap); else document.getElementById('nd-pi')?.appendChild(wrap);
+  }
   if(piTerm){ piTerm.dispose(); piTerm = null; }
   if(piWs){ try{ piWs.close(); }catch{} piWs = null; }
 
@@ -1293,7 +1260,8 @@ function sendToPi(cmd){
 function restartPi(){
   if(piTerm){ piTerm.dispose(); piTerm = null; }
   if(piWs){ try{ piWs.close(); }catch{} piWs = null; }
-  document.getElementById('pi-loading').style.display = 'none';
+  const l = document.getElementById('pi-loading');
+  if(l) l.style.display = 'none';
   connectPiPty(piCmd());
 }
 
@@ -1306,29 +1274,15 @@ async function resetPi(){
   restartPi();
 }
 
-// Pi panel drag (operates in world coords so panel stays with canvas)
-function startPiDrag(e){
-  if(e.target.closest('button')) return;
-  e.preventDefault();
-  const sx=e.clientX,sy=e.clientY,nx=NP.pi.x||0,ny=NP.pi.y||0;
-  function onMove(ev){
-    NP.pi.x=Math.round(nx+(ev.clientX-sx)/vp.s);
-    NP.pi.y=Math.round(ny+(ev.clientY-sy)/vp.s);
-    positionPiPanel();
-  }
-  function onUp(){ saveLS(); document.removeEventListener('pointermove',onMove); document.removeEventListener('pointerup',onUp); }
-  document.addEventListener('pointermove',onMove);
-  document.addEventListener('pointerup',onUp);
-}
-
-// Pi canvas status node
+// Pi canvas node (full terminal node inside #world)
 function buildPiNode(){
+  if(!piOpen || piMaximized) return '';
   const pos = NP.piNode || { x:60, y:60 };
+  const sz  = NP.piSize  || { w:780, h:480 };
   const running = piWs && piWs.readyState === WebSocket.OPEN;
   const dot = running
-    ? \`<span style="width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;margin-right:4px"></span>\`
-    : \`<span style="width:7px;height:7px;border-radius:50%;background:#6b7280;display:inline-block;margin-right:4px"></span>\`;
-  const statusTxt = running ? 'Running' : 'Stopped';
+    ? \`<span style="width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;margin-right:5px;flex-shrink:0"></span>\`
+    : \`<span style="width:7px;height:7px;border-radius:50%;background:#6b7280;display:inline-block;margin-right:5px;flex-shrink:0"></span>\`;
   const connSlots = [...piConns].map(slotId=>{
     const info = nodeSlots[slotId];
     if(!info) return null;
@@ -1336,28 +1290,31 @@ function buildPiNode(){
     return acc ? {slotId, model: info.model, acc} : null;
   }).filter(Boolean);
   const hasConns = connSlots.length > 0;
-  const modelsHtml = hasConns
-    ? connSlots.map(({slotId,model,acc})=>\`<div style="display:flex;align-items:center;gap:4px;margin-top:2px">
-        <span style="width:6px;height:6px;border-radius:50%;background:\${COL[acc.provider]||'#818cf8'};flex-shrink:0"></span>
-        <span style="color:#b0b0d0;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px">\${model||'(auto)'}</span>
-        <button onclick="removePiConn('\${slotId}')" style="margin-left:auto;background:none;border:none;color:#555;cursor:pointer;font-size:10px;padding:0 2px;line-height:1">✕</button>
-      </div>\`).join('')
-    : \`<div style="color:#555;font-size:10px">Drag node here to connect</div>\`;
   const portLive = hasConns ? ' live' : '';
-  return \`<div class="pi-nd\${running?' live':''}" id="nd-pi" style="left:\${pos.x}px;top:\${pos.y}px">
+  const connHtml = hasConns
+    ? connSlots.map(({slotId,model,acc})=>\`<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(0,0,0,.25);border-radius:5px;padding:1px 5px 1px 3px;font-size:9px;color:#9090b0;margin-right:3px">
+        <span style="width:5px;height:5px;border-radius:50%;background:\${COL[acc.provider]||'#818cf8'};flex-shrink:0"></span>\${model||'(auto)'}
+        <button onclick="removePiConn('\${slotId}')" style="background:none;border:none;color:#555;cursor:pointer;font-size:9px;padding:0;line-height:1;margin-left:1px">✕</button>
+      </span>\`).join('')
+    : \`<span style="color:#444;font-size:9px">Drop node to connect</span>\`;
+  return \`<div class="nd mn" id="nd-pi" style="left:\${pos.x}px;top:\${pos.y}px;width:\${sz.w}px">
   <div class="pi-nd-port\${portLive}" id="pi-nd-port" title="Drop account node here"></div>
-  <div class="pi-nd-hdr" id="pi-nd-hdr">
-    <div style="width:22px;height:22px;border-radius:6px;background:rgba(129,140,248,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+  <div class="nh" id="pi-nd-hdr" style="cursor:grab">
+    <div class="nic" style="background:rgba(129,140,248,.15)">
       <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 11V3l4 5 4-5v8" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
-    <div>
-      <div style="font-size:12px;font-weight:600;color:#e0e0f0">Pi Agent</div>
-      <div style="font-size:10px;color:#606080;display:flex;align-items:center">\${dot}\${statusTxt}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:11px;font-weight:600;color:#e0e0f0;display:flex;align-items:center">\${dot}Pi Agent</div>
+      <div style="font-size:9px;margin-top:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">\${connHtml}</div>
     </div>
-    <div style="flex:1"></div>
-    <button class="zbtn" onclick="togglePi()" title="\${piOpen?'Hide':'Show'} Pi terminal" style="padding:2px 5px;font-size:10px">\${piOpen?'▾':'▸'}</button>
+    <button class="nd-rm" style="font-size:14px;width:22px;height:22px" onclick="togglePiMax()" title="Fullscreen">⛶</button>
+    <button class="nd-rm" onclick="togglePi()" title="Close">×</button>
   </div>
-  <div class="pi-nd-body">\${modelsHtml}</div>
+  <div id="pi-term-slot" style="height:\${sz.h}px;overflow:hidden;background:#0d0d0f;border-radius:0 0 12px 12px"></div>
+  <div id="pi-loading-slot"></div>
+  <div class="mn-rs-e" onpointerdown="startPiResize(event,'e')"></div>
+  <div class="mn-rs-s" onpointerdown="startPiResize(event,'s')"></div>
+  <div class="mn-rs-se" onpointerdown="startPiResize(event,'se')"></div>
 </div>\`;
 }
 
@@ -1386,17 +1343,32 @@ async function removePiConn(slotId){
 
 function togglePiMax(){
   piMaximized = !piMaximized;
-  const panel = document.getElementById('pi-panel');
-  if(!panel) return;
+  const nd = document.getElementById('nd-pi');
+  if(!nd) return;
   if(piMaximized){
-    panel.classList.add('maximized');
+    // Move out of #world so position:fixed works correctly (bypasses CSS zoom)
+    nd.style.position = 'fixed';
+    nd.style.inset = '0';
+    nd.style.width = '100vw';
+    nd.style.height = '100vh';
+    nd.style.borderRadius = '0';
+    nd.style.zIndex = '200';
+    document.body.appendChild(nd);
   } else {
-    panel.classList.remove('maximized');
-    panel.style.width  = NP.piSize.w + 'px';
-    panel.style.height = NP.piSize.h + 'px';
-    positionPiPanel();
+    // Move back into #world
+    nd.style.position = '';
+    nd.style.inset = '';
+    nd.style.width = NP.piSize.w + 'px';
+    nd.style.height = '';
+    nd.style.borderRadius = '';
+    nd.style.zIndex = '';
+    nd.style.left = NP.piNode.x + 'px';
+    nd.style.top  = NP.piNode.y + 'px';
+    document.getElementById('world').appendChild(nd);
+    // Restore term slot ← wrap preserved, re-slot via render
+    render();
   }
-  if(piTerm && piFit) setTimeout(()=>piFit.fit(), 60);
+  if(piFit) setTimeout(()=>piFit.fit(), 80);
 }
 
 function startPiResize(e,dir){
@@ -1841,14 +1813,6 @@ async function refreshQuota(accountId){
   renderUsage();
 }
 
-// Pi panel: position in screen space from world coords so it moves with canvas pan/zoom
-function positionPiPanel(){
-  const panel=document.getElementById('pi-panel');
-  if(!panel||panel.style.display==='none'||piMaximized) return;
-  panel.style.left=Math.round(NP.pi.x*vp.s+vp.x)+'px';
-  panel.style.top =Math.round(NP.pi.y*vp.s+vp.y)+'px';
-}
-
 // Canvas viewport
 function applyVp(){
   // Use CSS zoom for scaling so the browser re-renders content at the exact zoom level
@@ -1862,7 +1826,6 @@ function applyVp(){
   ws.style.backgroundPosition=\`\${rx}px \${ry}px\`;
   document.getElementById('zpct').textContent=Math.round(vp.s*100)+'%';
   drawLines();
-  positionPiPanel();
 }
 function zoomAt(f,cx,cy){
   const r=document.getElementById('ws').getBoundingClientRect();
@@ -1896,20 +1859,26 @@ function fitAll(){
 function render(){
   const world=document.getElementById('world');
   const savedScroll=document.getElementById('mn-body')?.scrollTop??0;
-  // Snapshot current monitor content so rebuild doesn't flash "Loading
+  // Snapshot monitor content so rebuild doesn't flash "Loading"
   const savedReqs=document.getElementById('mn-reqs-body')?.innerHTML;
   const savedLogs=document.getElementById('mn-logs-body')?.innerHTML;
   const savedStat=document.getElementById('mn-status-body')?.innerHTML;
+  // Preserve xterm Pi terminal and loading overlay across world rebuilds
+  const piTermEl   = piOpen && !piMaximized ? document.getElementById('pi-term-wrap')  : null;
+  const piLoadEl   = piOpen && !piMaximized ? document.getElementById('pi-loading')     : null;
   const slotNodes=[...onCanvas]
     .filter(id=>id!=='out'&&id!=='monitor')
     .map(slotId=>buildAccNode(slotId))
     .join('');
   world.innerHTML=slotNodes+buildOutNode()+(monitorOpen?buildMonitorNode():'')+buildPiNode();
-  // Restore content immediately before async refresh fires
+  // Restore monitor content
   if(savedReqs){const el=document.getElementById('mn-reqs-body');if(el)el.innerHTML=savedReqs;}
   if(savedLogs){const el=document.getElementById('mn-logs-body');if(el)el.innerHTML=savedLogs;}
   if(savedStat){const el=document.getElementById('mn-status-body');if(el)el.innerHTML=savedStat;}
   if(savedScroll>0){const mb=document.getElementById('mn-body');if(mb)mb.scrollTop=savedScroll;}
+  // Re-attach preserved Pi terminal elements
+  if(piTermEl){const slot=document.getElementById('pi-term-slot');if(slot)slot.replaceWith(piTermEl);}
+  if(piLoadEl){const slot=document.getElementById('pi-loading-slot');if(slot)slot.replaceWith(piLoadEl);}
 
   [...onCanvas].filter(id=>id!=='out'&&id!=='monitor').forEach(slotId=>{
     const port=document.getElementById('po-'+slotId);
@@ -2096,12 +2065,12 @@ function startPiNodeDrag(e){
   const pos=NP.piNode||{x:60,y:60};
   const sx=e.clientX,sy=e.clientY,nx=pos.x,ny=pos.y;
   function onMove(ev){
-    NP.piNode={x:nx+(ev.clientX-sx),y:ny+(ev.clientY-sy)};
+    NP.piNode={x:Math.round(nx+(ev.clientX-sx)/vp.s),y:Math.round(ny+(ev.clientY-sy)/vp.s)};
     const nd=document.getElementById('nd-pi');
     if(nd){nd.style.left=NP.piNode.x+'px';nd.style.top=NP.piNode.y+'px';}
     drawLines();
   }
-  function onUp(){document.removeEventListener('pointermove',onMove);document.removeEventListener('pointerup',onUp);}
+  function onUp(){saveLS();document.removeEventListener('pointermove',onMove);document.removeEventListener('pointerup',onUp);}
   document.addEventListener('pointermove',onMove);
   document.addEventListener('pointerup',onUp);
 }
@@ -2153,13 +2122,15 @@ window.addEventListener('pointermove',e=>{
     return;
   }
   if(piResizeD){
-    const dx=e.clientX-piResizeD.sx,dy=e.clientY-piResizeD.sy;
+    const dx=(e.clientX-piResizeD.sx)/vp.s,dy=(e.clientY-piResizeD.sy)/vp.s;
     const sz=NP.piSize||{w:780,h:480};
     if(piResizeD.dir==='e'||piResizeD.dir==='se') sz.w=Math.max(320,piResizeD.w0+dx);
     if(piResizeD.dir==='s'||piResizeD.dir==='se') sz.h=Math.max(160,piResizeD.h0+dy);
     NP.piSize=sz;
-    const pp=document.getElementById('pi-panel');
-    if(pp){pp.style.width=sz.w+'px';pp.style.height=sz.h+'px';}
+    const nd=document.getElementById('nd-pi');
+    if(nd) nd.style.width=sz.w+'px';
+    const slot=document.getElementById('pi-term-wrap')||document.getElementById('pi-term-slot');
+    if(slot) slot.style.height=sz.h+'px';
     if(piFit) piFit.fit();
     return;
   }
