@@ -1202,6 +1202,24 @@ function togglePi(){
   if(piOpen && !piTerm) initPiTerminal();
 }
 
+async function initPiBackground(){
+  if(piTerm || piTermWrap) return; // already started or done
+  // Create off-screen container so xterm initializes with correct char metrics
+  const wrap = document.createElement('div');
+  wrap.id = 'pi-term-wrap';
+  wrap.className = 'pi-term-wrap';
+  wrap.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:780px;height:444px;overflow:hidden;visibility:hidden;pointer-events:none;';
+  document.body.appendChild(wrap);
+  piTermWrap = wrap;
+  try{
+    const r = await api('GET', '/api/pi/status');
+    const d = await r.json();
+    if(!d.installed) return; // not installed — leave for explicit open with loading UI
+  }catch{ return; }
+  try{ await api('POST', '/api/pi/sync-models'); }catch{}
+  connectPiPty(piCmd());
+}
+
 async function initPiTerminal(){
   // Ensure pi-loading is in DOM (built by buildPiNode → render above)
   let loading = document.getElementById('pi-loading');
@@ -1926,11 +1944,19 @@ function render(){
   const savedLogs=document.getElementById('mn-logs-body')?.innerHTML;
   const savedStat=document.getElementById('mn-status-body')?.innerHTML;
   const piLoadEl = document.getElementById('pi-loading');
-  // Keep piTermWrap connected to document during world rebuild — only when it
-  // will actually be re-inserted (piOpen=true). When collapsing (piOpen=false)
-  // we do NOT park on body; world.innerHTML detaches it safely as a JS object.
-  // Parking on body when piOpen=false leaves the terminal floating on screen.
-  if(piTermWrap && piOpen && !piMaximized) document.body.appendChild(piTermWrap);
+  // Always park piTermWrap on body during world rebuild (keeps xterm DOM-connected
+  // for background init). Off-screen/hidden when piOpen=false so it never floats
+  // on the canvas; normal position/visibility is restored when re-inserted below.
+  if(piTermWrap && !piMaximized){
+    if(!piOpen){
+      piTermWrap.style.position='fixed';
+      piTermWrap.style.left='-9999px';
+      piTermWrap.style.top='-9999px';
+      piTermWrap.style.visibility='hidden';
+      piTermWrap.style.pointerEvents='none';
+    }
+    document.body.appendChild(piTermWrap);
+  }
   const slotNodes=[...onCanvas]
     .filter(id=>id!=='out'&&id!=='monitor')
     .map(slotId=>buildAccNode(slotId))
@@ -1946,6 +1972,12 @@ function render(){
     if(piTermWrap){
       const slot=document.getElementById('pi-term-slot');
       if(slot){
+        // Clear off-screen styles set while parked on body
+        piTermWrap.style.position='';
+        piTermWrap.style.left='';
+        piTermWrap.style.top='';
+        piTermWrap.style.visibility='';
+        piTermWrap.style.pointerEvents='';
         slot.replaceWith(piTermWrap);
         setTimeout(fitPi, 60);
       }
@@ -2396,6 +2428,7 @@ async function init(){
   try{const d=await fetch('/api/codex-provider').then(r=>r.json());codexMode=d.mode||'rcodex';updateModeUI();}catch{}
   setTimeout(()=>{applyVp();if([...onCanvas].length>0||NP.out)fitAll();},120);
   setInterval(fetchStatus,10000);
+  initPiBackground(); // start Pi PTY in background so first open is instant
 }
 init();
 </script>
