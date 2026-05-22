@@ -2066,8 +2066,8 @@ function fitAll(){
   }
   if(!isFinite(x0))return;
   const pad=60;
-  const cw=x1-x0+pad*2, ch=y1-y0+pad*2;
-  vp.s=Math.max(0.08,Math.min(wr.width/cw,wr.height/ch));
+  const sx=(wr.width-pad*2)/(x1-x0), sy=(wr.height-pad*2)/(y1-y0);
+  vp.s=Math.max(0.08,Math.min(sx,sy));
   vp.x=Math.round(wr.width/2-(x0+x1)/2*vp.s);
   vp.y=Math.round(wr.height/2-(y0+y1)/2*vp.s);
   applyVp();
