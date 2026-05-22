@@ -1432,6 +1432,7 @@ function togglePiMax(){
     if(termEl){ termEl.style.flex = '1'; termEl.style.width = ''; termEl.style.height = 'auto'; }
     const port = nd.querySelector('#pi-nd-port') as HTMLElement;
     if(port) port.style.display = 'none';
+    nd.querySelectorAll<HTMLElement>('.mn-rs-e,.mn-rs-s,.mn-rs-se').forEach(el => el.style.display = 'none');
     document.body.appendChild(nd);
     piMaxTimer = setTimeout(() => { piMaxTimer = null; fitPi(); }, 80);
   } else {
@@ -1441,6 +1442,7 @@ function togglePiMax(){
     if(termEl){ termEl.style.flex = ''; termEl.style.width = sz.w + 'px'; termEl.style.height = sz.h + 'px'; }
     const port = nd.querySelector('#pi-nd-port') as HTMLElement;
     if(port) port.style.display = '';
+    nd.querySelectorAll<HTMLElement>('.mn-rs-e,.mn-rs-s,.mn-rs-se').forEach(el => el.style.display = '');
     nd.style.position = '';
     nd.style.inset = '';
     nd.style.width = sz.w + 'px';
@@ -2174,6 +2176,7 @@ function drawLines(){
 
 // Node drag
 function startPiNodeDrag(e){
+  if(piMaximized) return;  // fullscreen: no drag, don't preventDefault (would suppress button clicks)
   if(e.target.tagName==='BUTTON')return;
   e.preventDefault();e.stopPropagation();
   const pos=NP.piNode||{x:60,y:60};
