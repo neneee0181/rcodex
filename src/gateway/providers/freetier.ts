@@ -250,7 +250,15 @@ export const FREETIER_PROVIDERS: FreetierProviderDef[] = [
     name: "OpenRouter",
     baseUrl: "https://openrouter.ai/api/v1/chat/completions",
     format: "openai",
-    models: [],
+    models: [
+      m("anthropic/claude-opus-4"),
+      m("google/gemini-2.5-pro-preview"),
+      m("meta-llama/llama-4-maverick"),
+      m("deepseek/deepseek-r1"),
+      m("qwen/qwen3-235b-a22b"),
+      m("openai/gpt-4o"),
+      m("x-ai/grok-4"),
+    ],
   },
   {
     id: "deepseek",

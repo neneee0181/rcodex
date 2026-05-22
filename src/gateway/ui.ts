@@ -103,6 +103,43 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
   cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0}
 .add-btn:hover{background:rgba(99,102,241,.22);border-color:var(--bl)}
 
+/* Wide sidebar for providers screen */
+.sb.wide{width:560px}
+/* Provider grid — entry tier (3 cols) */
+.pg-entry{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:6px 12px 10px}
+.pc-e{border:1px solid var(--b1);border-radius:9px;padding:9px 10px;cursor:pointer;
+  transition:all .15s;background:var(--s2);display:flex;flex-direction:column;gap:5px}
+.pc-e:hover{border-color:var(--bl);background:rgba(99,102,241,.06)}
+.pc-e-hd{display:flex;align-items:center;gap:7px}
+.pc-e-ic{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0}
+.pc-e-nm{font-size:11px;font-weight:600;flex:1;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.pc-e-ft{display:flex;align-items:center;justify-content:space-between}
+.pc-e-sb{font-size:9px;color:var(--mu)}
+.pc-e-add{padding:3px 9px;border-radius:5px;border:1px solid rgba(99,102,241,.3);
+  background:rgba(99,102,241,.1);color:var(--bl2);font-size:9px;font-weight:600;
+  cursor:pointer;transition:all .15s;white-space:nowrap}
+.pc-e-add:hover{background:rgba(99,102,241,.22)}
+/* Provider grid — compact (free tier, auto-fill) */
+.pg-sm{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));
+  gap:5px;padding:6px 12px 10px}
+.pc-sm{border:1px solid var(--b1);border-radius:7px;padding:7px 8px;cursor:pointer;
+  transition:all .15s;background:var(--s2);display:flex;align-items:center;gap:6px}
+.pc-sm:hover{border-color:var(--bl);background:rgba(99,102,241,.06)}
+.pc-sm-ic{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;
+  justify-content:center;font-size:10px;flex-shrink:0}
+.pc-sm-nm{font-size:10px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Connected accounts grid */
+.acc-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px 12px 10px}
+.acc-card{border:1px solid var(--b1);border-radius:9px;padding:9px 10px;
+  background:var(--s2);display:flex;flex-direction:column;gap:6px}
+.acc-card-hd{display:flex;align-items:center;gap:8px}
+.acc-card-info{flex:1;min-width:0}
+.acc-card-nm{font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acc-card-sb{font-size:9px;color:var(--mu);margin-top:1px}
+.acc-card-ft{display:flex;gap:5px;align-items:center}
+
 /* Connected accounts */
 .sb-section{font-size:9px;font-weight:700;text-transform:uppercase;
   letter-spacing:.1em;color:var(--mu);padding:12px 16px 6px}
@@ -426,81 +463,91 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
 <script>
 // Provider definitions
 const FREETIER_LIST = [
-  {id:'agentrouter',name:'AgentRouter',sub:'Free Tier (Claude format)',noAuth:false},
-  {id:'aimlapi',name:'AIML API',sub:'Free Tier',noAuth:false},
-  {id:'novita',name:'Novita AI',sub:'Free Tier',noAuth:false},
-  {id:'sambanova',name:'SambaNova',sub:'Free Tier',noAuth:false},
-  {id:'deepinfra',name:'DeepInfra',sub:'Free Tier',noAuth:false},
-  {id:'scaleway',name:'Scaleway',sub:'Free Tier',noAuth:false},
-  {id:'cerebras',name:'Cerebras',sub:'Free Tier',noAuth:false},
-  {id:'kluster',name:'Kluster AI',sub:'Free Tier',noAuth:false},
-  {id:'glhf',name:'GLHF',sub:'Free Tier',noAuth:false},
-  {id:'morph',name:'Morph',sub:'Free Tier',noAuth:false},
-  {id:'longcat',name:'LongCat',sub:'Free Tier',noAuth:false},
-  {id:'puter',name:'Puter',sub:'Free Tier',noAuth:false},
-  {id:'uncloseai',name:'UncloseAI',sub:'Free Tier (no auth)',noAuth:true},
-  {id:'nscale',name:'Nscale',sub:'Free Tier',noAuth:false},
-  {id:'baseten',name:'Baseten',sub:'Free Tier',noAuth:false},
-  {id:'publicai',name:'PublicAI',sub:'Free Tier',noAuth:false},
-  {id:'nous-research',name:'Nous Research',sub:'Free Tier',noAuth:false},
-  {id:'groq',name:'Groq',sub:'Free Tier',noAuth:false},
-  {id:'together',name:'Together AI',sub:'Free Tier',noAuth:false},
-  {id:'fireworks',name:'Fireworks AI',sub:'Free Tier',noAuth:false},
-  {id:'openrouter',name:'OpenRouter',sub:'API Key',noAuth:false},
-  {id:'deepseek',name:'DeepSeek',sub:'API Key',noAuth:false},
-  {id:'mistral',name:'Mistral',sub:'API Key',noAuth:false},
-  {id:'xai',name:'xAI',sub:'API Key',noAuth:false},
-  {id:'perplexity',name:'Perplexity',sub:'API Key',noAuth:false},
-  {id:'cohere',name:'Cohere',sub:'API Key',noAuth:false},
-  {id:'nebius',name:'Nebius',sub:'Free Tier',noAuth:false},
-  {id:'siliconflow',name:'SiliconFlow',sub:'Free Tier',noAuth:false},
-  {id:'hyperbolic',name:'Hyperbolic',sub:'Free Tier',noAuth:false},
-  {id:'nvidia',name:'NVIDIA',sub:'Free Tier',noAuth:false},
-  {id:'enally',name:'Enally',sub:'Free Tier',noAuth:false},
+  {id:'agentrouter',name:'AgentRouter',sub:'Free Tier (Claude format)',noAuth:false,apiKeyUrl:'https://agentrouter.ai'},
+  {id:'aimlapi',name:'AIML API',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://aimlapi.com/app/keys'},
+  {id:'novita',name:'Novita AI',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://novita.ai/settings/key-management'},
+  {id:'sambanova',name:'SambaNova',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://cloud.sambanova.ai/apis'},
+  {id:'deepinfra',name:'DeepInfra',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://deepinfra.com/dash/api_keys'},
+  {id:'scaleway',name:'Scaleway',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://console.scaleway.com/iam/api-keys'},
+  {id:'cerebras',name:'Cerebras',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://cloud.cerebras.ai/platform/api-keys'},
+  {id:'kluster',name:'Kluster AI',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://kluster.ai/dashboard'},
+  {id:'glhf',name:'GLHF',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://glhf.chat/user/api'},
+  {id:'morph',name:'Morph',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://morph.so'},
+  {id:'longcat',name:'LongCat',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://longcat.ai'},
+  {id:'puter',name:'Puter',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://puter.com'},
+  {id:'uncloseai',name:'UncloseAI',sub:'Free Tier (no auth)',noAuth:true,apiKeyUrl:null},
+  {id:'nscale',name:'Nscale',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://nscale.com'},
+  {id:'baseten',name:'Baseten',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://app.baseten.co/settings/api_keys'},
+  {id:'publicai',name:'PublicAI',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://public.ai'},
+  {id:'nous-research',name:'Nous Research',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://nousresearch.com'},
+  {id:'groq',name:'Groq',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://console.groq.com/keys'},
+  {id:'together',name:'Together AI',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://api.together.xyz/settings/api-keys'},
+  {id:'fireworks',name:'Fireworks AI',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://fireworks.ai/account/api-keys'},
+  {id:'openrouter',name:'OpenRouter',sub:'API Key',noAuth:false,apiKeyUrl:'https://openrouter.ai/keys'},
+  {id:'deepseek',name:'DeepSeek',sub:'API Key',noAuth:false,apiKeyUrl:'https://platform.deepseek.com/api_keys'},
+  {id:'mistral',name:'Mistral',sub:'API Key',noAuth:false,apiKeyUrl:'https://console.mistral.ai/api-keys/'},
+  {id:'xai',name:'xAI',sub:'API Key',noAuth:false,apiKeyUrl:'https://console.x.ai/'},
+  {id:'perplexity',name:'Perplexity',sub:'API Key',noAuth:false,apiKeyUrl:'https://www.perplexity.ai/settings/api'},
+  {id:'cohere',name:'Cohere',sub:'API Key',noAuth:false,apiKeyUrl:'https://dashboard.cohere.com/api-keys'},
+  {id:'nebius',name:'Nebius',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://studio.nebius.ai/settings/api-keys'},
+  {id:'siliconflow',name:'SiliconFlow',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://cloud.siliconflow.cn/account/ak'},
+  {id:'hyperbolic',name:'Hyperbolic',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://app.hyperbolic.xyz/settings'},
+  {id:'nvidia',name:'NVIDIA',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://build.nvidia.com'},
+  {id:'enally',name:'Enally',sub:'Free Tier',noAuth:false,apiKeyUrl:'https://enally.ai'},
 ];
 const PDEFS = [
   {id:'anthropic',name:'Claude',sub:'Anthropic',icon:'C',ibg:'rgba(249,115,22,.15)',color:'#f97316',
+   apiKeyUrl:'https://console.anthropic.com/settings/keys',
    methods:[
      {id:'oauth',icon:'Auth',name:'Login with Claude Code',desc:'OAuth login uses your Claude Pro/Max subscription',warn:null},
      {id:'apikey',icon:'Key',name:'API Key',desc:'Use Anthropic API key from console.anthropic.com',warn:null},
    ]},
   {id:'openai',name:'ChatGPT / Codex',sub:'OpenAI',icon:'O',ibg:'rgba(16,163,127,.15)',color:'#10a37f',
+   apiKeyUrl:'https://platform.openai.com/api-keys',
    methods:[
      {id:'oauth',icon:'Auth',name:'Login with ChatGPT',desc:'OAuth login uses your ChatGPT subscription',warn:null},
      {id:'apikey',icon:'Key',name:'API Key',desc:'Use OpenAI API key from platform.openai.com',warn:null},
      {id:'session',icon:'Cookie',name:'Session Token',desc:'Use chatgpt.com browser cookie (unofficial)',warn:'Unofficial; may break. Against ToS.'},
    ]},
   {id:'google',name:'Gemini',sub:'Google',icon:'G',ibg:'rgba(66,133,244,.15)',color:'#4285f4',
+   apiKeyUrl:'https://aistudio.google.com/apikey',
    methods:[
      {id:'apikey',icon:'Key',name:'API Key',desc:'Use Google AI Studio key from aistudio.google.com',warn:null},
    ]},
   {id:'ollama',name:'Ollama',sub:'Local models',icon:'L',ibg:'rgba(168,85,247,.15)',color:'#a855f7',
+   apiKeyUrl:null,
    methods:[
      {id:'local',icon:'Local',name:'Connect Local',desc:'Use locally running Ollama (localhost:11434)',warn:null},
    ]},
   {id:'antigravity',name:'Antigravity',sub:'Google Code Assist',icon:'A',ibg:'rgba(52,211,153,.15)',color:'#34d399',
+   apiKeyUrl:null,
    methods:[
      {id:'oauth',icon:'Auth',name:'Login with Google',desc:'OAuth login uses your Google Cloud / Gemini Code Assist account',warn:null},
    ]},
   {id:'copilot',name:'Copilot',sub:'GitHub',icon:'P',ibg:'rgba(31,111,235,.15)',color:'#2f81f7',
+   apiKeyUrl:null,
    methods:[
      {id:'oauth',icon:'Auth',name:'Login with GitHub',desc:'OAuth device login uses your GitHub Copilot subscription',warn:null},
    ]},
   {id:'kiro',name:'Kiro',sub:'AWS CodeWhisperer',icon:'K',ibg:'rgba(255,153,0,.15)',color:'#ff9900',
+   apiKeyUrl:'https://aws.amazon.com/q/kiro/',
    methods:[
      {id:'apikey',icon:'Key',name:'Session Token',desc:'Use AWS Kiro session token for CodeWhisperer models',warn:null},
    ]},
   {id:'vertex',name:'Vertex AI',sub:'Google Cloud',icon:'V',ibg:'rgba(26,115,232,.15)',color:'#1a73e8',
+   apiKeyUrl:'https://console.cloud.google.com/iam-admin/serviceaccounts',
    methods:[
      {id:'apikey',icon:'Key',name:'Service Account JSON',desc:'Paste Google Cloud service account JSON key for Vertex AI',warn:null},
    ]},
   {id:'opencode',name:'OpenCode',sub:'Free models',icon:'X',ibg:'rgba(139,92,246,.15)',color:'#8b5cf6',
+   apiKeyUrl:null,
    methods:[
      {id:'local',icon:'Local',name:'Connect (No Auth)',desc:'OpenCode.ai free models — no API key needed',warn:null},
    ]},
   ...FREETIER_LIST.map(ft=>({
     id:ft.id, name:ft.name, sub:ft.sub, icon:ft.name[0].toUpperCase(),
     ibg:'rgba(100,116,139,.15)', color:'#64748b',
+    apiKeyUrl: ft.apiKeyUrl||null,
     methods: ft.noAuth
       ? [{id:'local',icon:'Local',name:'Connect (No Auth)',desc:'Connect to ' + ft.name + ' — no API key needed',warn:null}]
       : [{id:'apikey',icon:'Key',name:'API Key',desc:'Use ' + ft.name + ' API key',warn:null}],
@@ -515,6 +562,39 @@ const IBGS=(()=>{const b={anthropic:'rgba(249,115,22,.15)',openai:'rgba(16,163,1
   ollama:'data:image/png;base64,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',
   antigravity:'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBwgHBgkIBwgKCgkLDRYPDQwMDRsUFRAWIB0iIiAdHx8kKDQsJCYxJx8fLT0tMTU3Ojo6Iys/RD84QzQ5OjcBCgoKDQwNGg8PGjclHyU3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3N//AABEIAJQAoQMBEQACEQEDEQH/xAAbAAEAAQUBAAAAAAAAAAAAAAAABwECAwUGBP/EADwQAAEDAwEEBwQJAgcAAAAAAAEAAgMEBRExBiFBURIiYXGBkaETFCOxBxUyUmJywdHhQvAWJDNDU1SS/8QAGgEBAAIDAQAAAAAAAAAAAAAAAAQFAgMGAf/EADQRAAICAQMDAgIIBgMBAAAAAAABAgMEERIxEyFBBVGB0SIyYXGhscHxFSNDYuHwQlKRFP/aAAwDAQACEQMRAD8AnFAEAQBAEAQBAYqioip4jLM8MYNSVrtthVDfN6I9UXJ6I5W5bRVEpLaT4LPvauP7Lnsn1W2b0q+ivxLKjFgu8+5ztVPLMelNK955ucSoO6c3rJtltVtitIo8Jlkjd0opHsPNji0+ikQ1j3RLW2S0a1Nlbdq7lQPAmf71AP6JNR3O188qypy7I890Rr/TMe5axW1/Z8jvLNd6S7Uvt6V5yNz2O+0w8iFa12xsWqOcycWzGnssXx8M2K2EcIAgCAIAgCAIAgCAIAgCAICyR7Y2Oe8hrWjJJ4BYykorVg4u8XN9dOcEiFpwxv6ntXLZmRLJn/b4X6kqpqJqJHqPGslwsPLI5b4wJcLDyyLfGJMhM871tSJcJGW13KptVayppnYI3OaTue3kVuqm65bkZX0V5Fbrn+xLNquENzoYqunOY5BpxB4g9xVxCSnHVHF30zosdc+UexZGoIAgCAIAgCAIAgCAIAgCA53auv8AZxto4z1n9aTu4D++Sq/Ube3SXxMXLQ5N71VRrMlYYHvW1VG6Nh55HLaqiVC0wvK2dMnV2HncsthOrsMbk2kyEzpdgrt7ncvcZnfAqj1eTX43eenkpONPbLa+GV/q+MrauquY/l/jkkoHKsDlwgCAIAgCAIAgCAIAgCAsmkbFG6R5w1oJJ7F43otWG9CObhVuq6mWd+r3ZxyHAKilrZNyZClZqzxPetsajzqGB71ujUbY2GFzltVRJhaYnOysukTa7TGVi6ywrsLHLFwJ9dhaHOY8PY4tc05a4ag8FrcWuCZGSa0fBMNhrxc7VT1Yx0ntw8Dg4bj6qxhLdFM47JodF0q/b8jYLM0BAEAQBAEAQBAEAQBAaPa2rEFs9k09aZ3R8NT/AH2qNlS0ht9zRkT2x0OEkfnKiQrK5zPO96lwqMd5gc9SY1GamYy5bVSb4WFpcsukS67S0la5VFhVaWrTKssarS0rTKsn12HbfRvX4fVW5xOCPbR+gd+nqsqe3YrvV69yjavuO8Gi3lKEAQBAEAQBAEAQBAEBwe2NX7a6exBy2Bob4nef0UW1bplZl2az0Xg5t71urqITkYHvU2FRjuMTndqkxqPVIs6WVuVRsjMple9IlQsKZWuVRNrtC0SqLCq0KNKssK7TYbPVpt96pKjPUEga/wDK7cfnnwWjbtepuv0tpcSYVkc+EAQBAEAQBAEAQBAWSvbHG97yA1oJJPABDxvRET1tU6pqJZn7jI4uPiV5CvVnPznuk37nie5Ta6zU2YnOUyFZjqYycqVGsalMraqzNSKL3YbozKha5VkqEyq0TrJ1dgUedROrtK47/BRZ1k+u4l7Z6s9+s1HOTl5jDX/mG4+oUWS0ehW2x2zaRsl4awgCAIAgCAIAgCA0m11WaSxz9E9aUiJvjr6ZXsVqyLl2bKWRm96mV1lFqYXOU2FZjqYyVLhA8ZapEYAplbFEyQTaZplVi4G+Mi4LVKBJhYVCjzgTK7C4BRpVk2u0776Oqvp0dTRuOTE8Pb3H+R6quyIbXqe2vc9TsFHNQQBAEAQBAEAQBAcL9IlZmelo2n7LTI7x3D5FSseGurKn1KzvGHxOMc5WNdZVmMlS4QPNSwqTGIKcFtSPUUCzUT0qvdp6VCxaNiZcFraNsZFwWqUSTCZkatEoEqFh0GxNV7rfomE9SdpjPfqPUeqr8ur+Xr7EmM9exJiqTMIAgCAIAgCAIChKAiXaet99vtZKDljX+zZ3N3fv5q4xqtII5vKs33Sf+9jUkqfCBoLSVIjEFpK3JAoVmkeoujjkk/043v8AyNJ+S9corlmSi3wi58MsY+JDKz87CPmvFOL4YcWuUWg50XoRcFi0bEy5q1tG2MjIFqcTfGZmp5n088c0f243Bze8FaLK1JNMkws0Jip5WzwsljOWPaHNPYVzLTT0ZOXcyLw9CAIAgCAIAgPDe6wUFqqqrjHE4tHN2gHnhbKoOc1FGq6zp1uXsQ25xO8nJOpXRwicv95TKkxielFtSPT12q2VV3qxT0ceXaucdzWDmSsMjIrx4bp/ubaqZWy2xJFs2x1st7WvnYKuoGr5R1QexunzXO5HqV1r0i9qLqnCrrWr7s6JkbI2hrGhrRoGjAUBtt6slpJcFSARg7wvD00112YtdxYS+mbFLwliHRd+x8VMozr6eHqvZke3Fqs5Xcj2/wBhqrJMBL8SnccMmaNx7COBXQ4mbXkrt2fsVF+PKl9+Pc1QKlaGpMyArBo2RkXha3E3RkSXsTV+82ONjj16dxjPdqPQjyXOZ9Wy5vw+5aUT3QN+oRuCAIAgCAIAgOM+kmvEdFTULD1pn9N4/C3+SPJWXptW6bn7FX6nZpBQ9/0I9yr2MSmGVtSPTPQUc1wrIqWmb0pZHYHIdp7AvbbI0wc5cI2V1yskoxJdsdpgs9C2mgaM6yP4vdzK5HIyJ3z3yOiopjTDajYrQbggCAIDBW0sVbTvp6iMSRSDDmlZQnKuSlF6NGM4qa2vgia/2mWy3B1O/rRu60Mn3m/uOP8AK6zDyY5FakufJQ30umej+B4AVJNaZeCsWjYmdXsBWeyuM1I49WdmW/mb/GfJVHqtOtamvH6k7Dn9La/JIA0VCiyKoAgCAIAgKO0QER7X3D6xv1RIx2Y4j7Jh7G6+uV0uFT06Uny+5zeZarb21wuxplPSI4WxI9JI2BsooqL6wqGf5ioHUz/THqPPXyXN+qZXVs6cX9FfmXeBj7I75cv8jrlVlgEAQBAEAQGn2nszbxbHxNA94Z14XHg7l3FSsLJePbu8Pkj5NCuhp58ETEOY4tcC1zTgg6grrk01qih7rsy4FDJM9VBVuoq2CqZnpRPDsDiOI8srTdWrIOD8m2ue2Sl7ExQSMmhZLGcse0OaeYK46UXFuL8F8mmtUXrw9CAIAgCA1G1Fz+qrNUTsPxSOhF+Y7vTXwUjEp61qj48kfKu6VTkufBEHn4rq0jmkFtSMjc7J2f64urGSNzTQ9ebtHBvifTKh5+V/89Xbl9kSsSjrWd+FyS40YaBjRcmdCVQBAEAQBAEBQ7wgI62/s5pa1tyhbiGd2JMf0v5+I9R2rofSsnfDoy5XH3f4KfPp2y6i4ZyYKuNCDqXgrxoyTJG2CuXvVsdSPdmSldgD8B0/ULmvVaNl29cS/MuMK3dDa/B1KrCYEAQBAEBGG3t2FfdBSROzDSZGeDnnXy0810PpmP0698uZfkUPqF3Us2riJzCtUiCVY1z3tYxpc5xwGt1J5LNtRWrPUtexLmy1mbZrW2B2DO/rzOHF3LuGi5HNyXkWuXjwdHjU9GvTz5NyohICAIAgCAIAgCA8lzoorjRS0k4zHK3HaDwI7QtlVsqpqceUYWQVkXF+SH7jRzW+tlpKhuJI3YJ4EcCOwrsabY21qceGc7ZCVcnGRgBWzQxTNps5dDabtDUnPsj1JR+A6+Wvgombj9epx8+CRj3dKal4JcY8PaHNILSMgjiuRL8uQBAEBz+199bZ7eRE4GrmBbEPu83eHzU3BxevZ3+qufkQ8zJ6Nfbl8EUkkklxJPEk5yupSXg58LNaHp2/0f2HpvbdqtnVG6naeP4/2VJ6rmf0IfH5Fp6fja/zZfA79UJbhAEAQBAEAQBAEAQHLbb2E3Kl97pI81cA0H+4zl3jUKz9NzOjPZL6r/BkHNx+pHdHlEaNOQCF05Slcpoekg7A3wT0/wBV1LvixD4JJ+2zl4fJc56pibJdaPD5+8tsG/cum/HB2SqCxCA116u9NaKJ1RUnsYwHe93ILdRRO+eyP7Gm66NUdZES3W41F0rpKupOXu3AcGN4NHYF1VFEKYKEf3OettlbPfI8ikGs6DZPZyS81AnqGltDG7rHT2h+6P1Kr8/OWPHbH6z/AA+35E3ExXc9ZcEpxxtjY1jGhrWgBrRoByXLttvVl6kktEXoehAEAQBAEAQBAEAQA6ICP9ttmTC99zt7CY3HM8TR9k/eHZzV/wCm5+ulNj7+H+hU5uLprZD4nF6q8Kwvglkp5mTQvLJWHpMeNQVjOEZx2y4MoycXqiVNmNoYbzS9F3RZVxj4kedfxDs+S5PNw5Y0v7Xwy+xslXR+03qhEkh7aS7SXe6SzF3wWksgbwDRx8dV1uFjKipLz5ObybnbY5ePBqu9TOCOdNsxsnNdCyprg+Gj1wRh0vdyHb5KrzfUY0/Qr7y/BFhi4UrPpS7Ikungip4WwwRtjiYMNY0YAC5uUnKW6XJdqKitEZV4ehAEAQBAEAQBAEAQBAEBQgEYIygOC2r2Pc0vrbPH1dZKZvDtZ+3lyV9g+p/07n9z+fzKrKwv+dX/AJ8jiT9otwcjs0V4mmtSrM9BWTW+siqqZ3RkiORv15g9hWq6qNsHCXDM67HXJSRIn+NKL/jeuc/hdvuW38Qh7HKbWWalt9y6NN0wyV2eiTkNzv3K1wMmy2rWXKIOZTGuf0fJ0ezWy9sZFHWSxvqJcgt9sctbpwAA81XZufc5OtPRfYTsTEq+u1qzr27sYVST0XIehAEAQBAEAQBAEAQBAEAQBAUOiA0F+2bttzD6iaJ0c+N8sR6JPfwKm4uddS1CL7ezIt+JVbrJrucvadmaGouBhmkqHRtOnSA6XfgfJWmRn2wr3RS1/wB+0gVYsOpo22dz9XUP/Ui/8qi69n/YtejX7H//2Q==',
   copilot:'data:image/png;base64,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',
+  kiro:'https://www.google.com/s2/favicons?domain=kiro.aws&sz=64',
+  vertex:'https://www.google.com/s2/favicons?domain=cloud.google.com&sz=64',
+  opencode:'https://www.google.com/s2/favicons?domain=opencode.ai&sz=64',
+  agentrouter:'https://www.google.com/s2/favicons?domain=agentrouter.ai&sz=64',
+  aimlapi:'https://www.google.com/s2/favicons?domain=aimlapi.com&sz=64',
+  novita:'https://www.google.com/s2/favicons?domain=novita.ai&sz=64',
+  sambanova:'https://www.google.com/s2/favicons?domain=sambanova.ai&sz=64',
+  deepinfra:'https://www.google.com/s2/favicons?domain=deepinfra.com&sz=64',
+  scaleway:'https://www.google.com/s2/favicons?domain=scaleway.com&sz=64',
+  cerebras:'https://www.google.com/s2/favicons?domain=cerebras.ai&sz=64',
+  kluster:'https://www.google.com/s2/favicons?domain=kluster.ai&sz=64',
+  glhf:'https://www.google.com/s2/favicons?domain=glhf.chat&sz=64',
+  morph:'https://www.google.com/s2/favicons?domain=morph.so&sz=64',
+  longcat:'https://www.google.com/s2/favicons?domain=longcat.ai&sz=64',
+  puter:'https://www.google.com/s2/favicons?domain=puter.com&sz=64',
+  nscale:'https://www.google.com/s2/favicons?domain=nscale.com&sz=64',
+  baseten:'https://www.google.com/s2/favicons?domain=baseten.co&sz=64',
+  publicai:'https://www.google.com/s2/favicons?domain=public.ai&sz=64',
+  'nous-research':'https://www.google.com/s2/favicons?domain=nousresearch.com&sz=64',
+  groq:'https://www.google.com/s2/favicons?domain=groq.com&sz=64',
+  together:'https://www.google.com/s2/favicons?domain=together.ai&sz=64',
+  fireworks:'https://www.google.com/s2/favicons?domain=fireworks.ai&sz=64',
+  openrouter:'https://www.google.com/s2/favicons?domain=openrouter.ai&sz=64',
+  deepseek:'https://www.google.com/s2/favicons?domain=deepseek.com&sz=64',
+  mistral:'https://www.google.com/s2/favicons?domain=mistral.ai&sz=64',
+  xai:'https://www.google.com/s2/favicons?domain=x.ai&sz=64',
+  perplexity:'https://www.google.com/s2/favicons?domain=perplexity.ai&sz=64',
+  cohere:'https://www.google.com/s2/favicons?domain=cohere.com&sz=64',
+  nebius:'https://www.google.com/s2/favicons?domain=nebius.ai&sz=64',
+  siliconflow:'https://www.google.com/s2/favicons?domain=siliconflow.cn&sz=64',
+  hyperbolic:'https://www.google.com/s2/favicons?domain=hyperbolic.xyz&sz=64',
+  nvidia:'https://www.google.com/s2/favicons?domain=nvidia.com&sz=64',
+  enally:'https://www.google.com/s2/favicons?domain=enally.ai&sz=64',
 };
 const SVG_ICONS={
   providers:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3l7.5 4.3v8.5L12 20l-7.5-4.2V7.3L12 3z" stroke="currentColor" stroke-width="2"/><path d="M12 8v8M8.2 10.2l7.6 4.4M15.8 10.2l-7.6 4.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
@@ -626,6 +706,7 @@ function sbGoBack(){
   if(sbScreen==='add-method'){ sbScreen='add-type'; renderSb(); }
   else if(sbScreen==='add-type'){ sbScreen='providers'; renderSb(); }
   else if(sbScreen==='providers'){ sbScreen='home'; renderSb(); }
+  else if(sbScreen==='settings'){ sbScreen='home'; renderSb(); }
 }
 
 function renderSb(){
@@ -634,6 +715,7 @@ function renderSb(){
   const body=document.getElementById('sb-body');
   const showBack=sbScreen!=='home';
   back.style.display=showBack?'flex':'none';
+  document.getElementById('sb').classList.toggle('wide',sbScreen==='providers');
 
   if(sbScreen==='home'){
     title.textContent='Menu';
@@ -647,45 +729,97 @@ function renderSb(){
           </div>
           <span class="nav-arr">&gt;</span>
         </div>
-        <div class="nav-item" style="opacity:.4;pointer-events:none">
-          <div class="nav-ic" style="background:rgba(96,96,128,.1)">i</div>
+        <div class="nav-item" onclick="sbGoTo('settings')">
+          <div class="nav-ic" style="background:rgba(99,102,241,.15)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="2"/></svg></div>
           <div class="nav-info">
             <div class="nav-name">Settings</div>
             <div class="nav-sub">Gateway configuration</div>
           </div>
-          <span class="nav-badge">Soon</span>
-        </div>
-        <div class="nav-item" style="opacity:.4;pointer-events:none">
-          <div class="nav-ic" style="background:rgba(96,96,128,.1)">\${SVG_ICONS.monitor}</div>
-          <div class="nav-info">
-            <div class="nav-name">Monitor</div>
-            <div class="nav-sub">Request logs & metrics</div>
-          </div>
-          <span class="nav-badge">Soon</span>
+          <span class="nav-arr">&gt;</span>
         </div>
       </div>\`;
   }
+  else if(sbScreen==='settings'){
+    title.textContent='Settings';
+    body.innerHTML=\`
+      <div style="padding:14px 14px 6px">
+        <div style="font-size:11px;font-weight:600;color:var(--tx);margin-bottom:10px">Request Body Limit</div>
+        <div style="font-size:10px;color:var(--mu);line-height:1.6;margin-bottom:12px">
+          Maximum size of a single request body proxied through the gateway.<br>
+          Takes effect immediately — no restart needed.
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <input id="set-blimit" type="number" min="1" max="1024" step="1"
+            class="form-input" style="width:80px;text-align:center"
+            placeholder="64" value="..."/>
+          <span style="font-size:11px;color:var(--mu)">MiB</span>
+          <button class="form-submit" style="flex:none;padding:7px 14px;font-size:11px"
+            onclick="saveBodyLimit()">Apply</button>
+          <span id="set-blimit-msg" style="font-size:10px;color:var(--gr);display:none">✓ Applied</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          \${[10,32,64,128,256,512].map(v=>\`
+            <button onclick="document.getElementById('set-blimit').value=\${v}"
+              style="padding:3px 10px;border-radius:6px;border:1px solid var(--b1);
+              background:var(--s2);color:var(--di);font-size:10px;cursor:pointer;transition:all .12s"
+              onmouseover="this.style.borderColor='var(--bl2)';this.style.color='var(--bl2)'"
+              onmouseout="this.style.borderColor='var(--b1)';this.style.color='var(--di)'">\${v} MiB</button>\`).join('')}
+        </div>
+      </div>\`;
+    fetch('/api/settings').then(r=>r.json()).then(d=>{
+      const el=document.getElementById('set-blimit');
+      if(el) el.value=String(d.bodyLimitMiB||64);
+    }).catch(()=>{});
+  }
   else if(sbScreen==='providers'){
     title.textContent='Providers';
+    const entryIds=['anthropic','openai','google','copilot','antigravity'];
+    const cloudIds=['kiro','vertex','ollama','opencode'];
+    const entryDefs=PDEFS.filter(p=>entryIds.includes(p.id));
+    const cloudDefs=PDEFS.filter(p=>cloudIds.includes(p.id));
+    const freeKeyDefs=PDEFS.filter(p=>!entryIds.includes(p.id)&&!cloudIds.includes(p.id)&&p.methods.some(m=>m.id==='apikey'));
+    const freeNoAuthDefs=PDEFS.filter(p=>!entryIds.includes(p.id)&&!cloudIds.includes(p.id)&&p.methods.every(m=>m.id==='local'));
+    function entryCard(p){
+      return \`<div class="pc-e" onclick="sbGoToAdd('\${p.id}')">
+        <div class="pc-e-hd">
+          <div class="pc-e-ic" style="background:\${p.ibg}">\${providerImg(p.id,16)}</div>
+          <span class="pc-e-nm">\${p.name}</span>
+        </div>
+        <div class="pc-e-ft">
+          <span class="pc-e-sb">\${p.sub}</span>
+          <button class="pc-e-add" onclick="event.stopPropagation();sbGoToAdd('\${p.id}')">+ Add</button>
+        </div>
+      </div>\`;
+    }
+    function smCard(p){
+      return \`<div class="pc-sm" onclick="sbGoToAdd('\${p.id}')">
+        <div class="pc-sm-ic" style="background:\${p.ibg}">\${providerImg(p.id,14)}</div>
+        <span class="pc-sm-nm">\${p.name}</span>
+      </div>\`;
+    }
     const connectedHtml=renderConnectedAccounts();
+    const hasConnected=ST.accounts.length>0||ST.ollamaRunning;
     body.innerHTML=\`
-      <div class="sb-section">Add Provider</div>
-      \${PDEFS.map(p=>\`
-        <div class="ptype" onclick="sbGoToAdd('\${p.id}')">
-          <div class="ptype-ic" style="background:\${p.ibg}">\${providerImg(p.id,20)}</div>
-          <div class="ptype-info">
-            <div class="ptype-name">\${p.name}</div>
-            <div class="ptype-sub">\${p.sub}</div>
-          </div>
-          <button class="add-btn" onclick="event.stopPropagation();sbGoToAdd('\${p.id}')">+ Add</button>
-        </div>\`).join('')}
+      \${hasConnected?\`<div class="sb-section">Connected</div>\${connectedHtml}<div class="sb-sep"></div>\`:''}
+      <div class="sb-section">Entry-Level</div>
+      <div class="pg-entry">\${entryDefs.map(entryCard).join('')}</div>
+      <div class="sb-section">Cloud / Local</div>
+      <div class="pg-entry">\${cloudDefs.map(entryCard).join('')}</div>
       <div class="sb-sep"></div>
-      <div class="sb-section">Connected Providers</div>
-      \${connectedHtml}\`;
+      <div class="sb-section">Free Tier — API Key (\${freeKeyDefs.length})</div>
+      <div class="pg-sm">\${freeKeyDefs.map(smCard).join('')}</div>
+      \${freeNoAuthDefs.length?\`
+      <div class="sb-sep"></div>
+      <div class="sb-section">Free Tier — No Auth (\${freeNoAuthDefs.length})</div>
+      <div class="pg-sm">\${freeNoAuthDefs.map(smCard).join('')}</div>\`:''}
+      \${!hasConnected?\`<div class="sb-sep"></div><div class="sb-section">Connected</div>\${connectedHtml}\`:''}
+      \`;
   }
   else if(sbScreen==='add-type'){
     title.textContent='Add '+sbAddingDef.name;
     const methods=sbAddingDef.methods;
+    const keyUrl=sbAddingDef.apiKeyUrl;
+    const hasApiKey=methods.some(m=>m.id==='apikey');
     body.innerHTML=\`
       <div style="padding:10px 14px 6px;font-size:11px;color:var(--mu)">Choose how to connect:</div>
       <div class="auth-cards">
@@ -697,7 +831,17 @@ function renderSb(){
             </div>
             <div class="auth-card-sub">\${m.desc}</div>
           </div>\`).join('')}
-      </div>\`;
+      </div>
+      \${keyUrl&&hasApiKey?\`<div style="padding:4px 14px 12px;display:flex;align-items:center;gap:6px">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;color:var(--mu)"><circle cx="7.5" cy="14.5" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M10 12l8-8m-1 1l3 3m-6 0l2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span style="font-size:10px;color:var(--mu)">Need an API key?</span>
+        <a href="\${keyUrl}" target="_blank" rel="noopener noreferrer"
+          style="font-size:10px;color:var(--bl2);text-decoration:none;display:inline-flex;align-items:center;gap:3px"
+          onmouseover="this.style.color='#a5b4fc'" onmouseout="this.style.color='var(--bl2)'">
+          Get one here
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M10 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4M14 4h6m0 0v6m0-6L10 14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>\`:''}\`;
   }
   else if(sbScreen==='add-method'){
     const m=sbAddingMethod;
@@ -790,44 +934,56 @@ function renderConnectedAccounts(){
     return \`<div style="padding:12px 16px;font-size:10px;color:var(--mu)">No accounts connected yet.</div>\`;
   }
   const methodLabel={apikey:'API Key','oauth-official':'OAuth','oauth-unofficial':'Session',local:'Local'};
-  let html=all.map(a=>{
+  let html=\`<div class="acc-grid">\`+all.map(a=>{
     const models=a.models||[];
     const activeSlots=(a.activeModels||[]).length;
     const canvasCount=Object.values(nodeSlots).filter(s=>s.accountId===a.id).length;
     const sub=accountSubtext(a);
     if(!sidebarModelSel[a.id]&&models.length) sidebarModelSel[a.id]=models[0];
     const curSel=sidebarModelSel[a.id]||'';
+    const statusTxt=activeSlots?\`<span style="color:var(--gr)">\${activeSlots} active</span>\`:canvasCount?\`\${canvasCount} on canvas\`:'idle';
     const modelPicker=models.length
-      ?\`<select class="msel" style="flex:1;font-size:10px;padding:4px 6px"
+      ?\`<select class="msel" style="flex:1;font-size:10px;padding:3px 5px"
             onchange="sidebarModelSel['\${a.id}']=this.value">
           \${models.map(m=>\`<option value="\${m}"\${m===curSel?' selected':''}>\${m}</option>\`).join('')}
          </select>\`
-      :\`<div style="flex:1;font-size:10px;color:var(--mu);padding:4px 0">No models loaded</div>\`;
-    return \`<div class="acc-item" style="flex-direction:column;align-items:stretch;gap:5px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div class="acc-ic" style="background:\${IBGS[a.provider]||'rgba(96,96,128,.1)'}">\${providerImg(a.provider,16)}</div>
-        <div class="acc-info">
-          <div class="acc-name">\${accountName(a)}</div>
-          <div class="acc-sub">\${methodLabel[a.method]||a.method}\${activeSlots?' / <span style="color:var(--gr)">active</span> '+activeSlots+' active':canvasCount?' / '+canvasCount+' on canvas':''}</div>
-          \${sub?\`<div class="acc-sub" style="opacity:.6;margin-top:1px;font-size:9px">\${sub}</div>\`:''}
+      :\`<div style="flex:1;font-size:10px;color:var(--mu)">No models</div>\`;
+    return \`<div class="acc-card">
+      <div class="acc-card-hd">
+        <div class="acc-ic" style="background:\${IBGS[a.provider]||'rgba(96,96,128,.1)'};width:26px;height:26px;border-radius:7px;flex-shrink:0">\${providerImg(a.provider,14)}</div>
+        <div class="acc-card-info">
+          <div class="acc-card-nm">\${accountName(a)}</div>
+          <div class="acc-card-sb">\${methodLabel[a.method]||a.method} · \${statusTxt}</div>
+          \${sub?\`<div class="acc-card-sb" style="opacity:.6;font-size:8px">\${sub}</div>\`:''}
         </div>
         <button class="del-btn" onclick="deleteAccount('\${a.id}')" title="Delete">\${SVG_ICONS.close}</button>
       </div>
-      <div style="display:flex;gap:6px;padding:0 0 2px 40px">
+      <div class="acc-card-ft">
         \${modelPicker}
-        <button class="add-btn" onclick="addToCanvas('\${a.id}')">+ Canvas</button>
+        <button class="add-btn" style="padding:3px 8px;font-size:9px" onclick="addToCanvas('\${a.id}')">+ Canvas</button>
       </div>
     </div>\`;
-  }).join('');
+  }).join('')+\`</div>\`;
   if(ST.ollamaRunning&&!ST.accounts.find(a=>a.provider==='ollama')){
-    html+=\`<div style="padding:8px 16px;font-size:10px;color:var(--mu)">
-      Ollama is running <button onclick="sbGoToAdd('ollama')" style="background:none;border:none;color:var(--bl2);cursor:pointer;font-size:10px">add it as an account</button>
+    html+=\`<div style="padding:4px 12px 8px;font-size:10px;color:var(--mu)">
+      Ollama is running — <button onclick="sbGoToAdd('ollama')" style="background:none;border:none;color:var(--bl2);cursor:pointer;font-size:10px">add account</button>
     </div>\`;
   }
   return html;
 }
 
 function sbGoTo(screen){ sbScreen=screen; renderSb(); }
+function saveBodyLimit(){
+  const el=document.getElementById('set-blimit');
+  const msg=document.getElementById('set-blimit-msg');
+  if(!el) return;
+  const v=parseInt(el.value,10);
+  if(!v||v<1||v>1024){el.style.borderColor='var(--rd)';setTimeout(()=>el.style.borderColor='',1500);return;}
+  fetch('/api/settings',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({bodyLimitMiB:v})})
+    .then(r=>r.json()).then(d=>{
+      if(d.ok&&msg){msg.style.display='';setTimeout(()=>{if(msg)msg.style.display='none';},2000);}
+    }).catch(()=>{if(el)el.style.borderColor='var(--rd)';setTimeout(()=>{if(el)el.style.borderColor='';},1500);});
+}
 function sbGoToAdd(providerId){
   sbAddingDef=PDEFS.find(p=>p.id===providerId);
   sbScreen='add-type';
@@ -1679,6 +1835,7 @@ function startNodeDrag(e,id){
 const WS=document.getElementById('ws');
 WS.addEventListener('pointerdown',e=>{
   if(e.target.closest('.nd')||e.target.closest('.zbar'))return;
+  if(sbOpen){sbOpen=false;document.getElementById('sb').classList.remove('open');document.getElementById('sb-btn').classList.remove('on');}
   panD={sx:e.clientX,sy:e.clientY,vx:vp.x,vy:vp.y};
   WS.style.cursor='grabbing';
   e.preventDefault();

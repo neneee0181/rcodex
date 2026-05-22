@@ -1424,7 +1424,8 @@ async function callSingleProvider(
   }
 
   if (account.provider === "kiro") {
-    const res = await callKiro(account.apiKey ?? "", model, messages, cleanInstructions(instructions), signal, buildOpenAIToolsForProvider(req));
+    const kiroMsgs = toOpenAIChatMessages(req.input, messages) as { role: string; content: string | unknown }[];
+    const res = await callKiro(account.apiKey ?? "", model, kiroMsgs, cleanInstructions(instructions), signal, buildOpenAIToolsForProvider(req));
     if (!res.ok) throw new Error(`Kiro error ${res.status}: ${await res.text()}`);
     let text = "";
     const usageObj: { inputTokens?: number; outputTokens?: number } = {};
@@ -2121,7 +2122,8 @@ async function* streamSingleProvider(
   }
 
   if (account.provider === "kiro") {
-    const res = await callKiro(account.apiKey ?? "", model, messages, cleanInstructions(instructions), signal, buildOpenAIToolsForProvider(req));
+    const kiroMsgs = toOpenAIChatMessages(req.input, messages) as { role: string; content: string | unknown }[];
+    const res = await callKiro(account.apiKey ?? "", model, kiroMsgs, cleanInstructions(instructions), signal, buildOpenAIToolsForProvider(req));
     if (!res.ok) throw new Error(`Kiro error ${res.status}: ${await res.text()}`);
     yield* readKiroEventStream(res, usage);
     return;

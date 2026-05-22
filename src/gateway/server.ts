@@ -77,8 +77,25 @@ export interface GatewayServer {
 export function createGatewayServer(): GatewayServer {
   const initialConfig = loadConfig();
   const bodyLimitMiB = initialConfig.bodyLimitMiB || DEFAULT_BODY_LIMIT_MIB;
-  const fastify = Fastify({ logger: false, bodyLimit: bodyLimitMiB * 1024 * 1024 });
+  // Hard cap 1 GiB at Fastify level; actual live limit enforced in preParsing hook
+  const fastify = Fastify({ logger: false, bodyLimit: 1024 * 1024 * 1024 });
   fastify.register(cors, { origin: "*" });
+
+  // Live-adjustable body limit (bytes) — updated via /api/settings without restart
+  let liveBodyLimitBytes = bodyLimitMiB * 1024 * 1024;
+
+  fastify.addHook("preParsing", async (req, reply, payload) => {
+    const cl = req.headers["content-length"];
+    if (cl) {
+      const bytes = parseInt(cl, 10);
+      if (!isNaN(bytes) && bytes > liveBodyLimitBytes) {
+        const limitMiB = Math.round(liveBodyLimitBytes / 1024 / 1024);
+        const actualMiB = (bytes / 1024 / 1024).toFixed(1);
+        reply.code(413).send({ error: `Request body too large: ${actualMiB} MiB exceeds ${limitMiB} MiB limit` });
+      }
+    }
+    return payload;
+  });
 
   let pendingOAuth: string | null = null;
   let oauthError: string | null = null;
@@ -455,7 +472,25 @@ export function createGatewayServer(): GatewayServer {
     return { ok: true };
   });
 
-  // ?�?� Ollama base URL update ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
+  // ── Settings (bodyLimitMiB etc.) ─────────────────────────────────────────
+  fastify.get("/api/settings", async () => {
+    const config = loadConfig();
+    return { bodyLimitMiB: config.bodyLimitMiB || DEFAULT_BODY_LIMIT_MIB };
+  });
+
+  fastify.patch<{ Body: { bodyLimitMiB?: number } }>("/api/settings", async (req, reply) => {
+    const { bodyLimitMiB: newLimit } = req.body;
+    if (newLimit === undefined) return reply.code(400).send("bodyLimitMiB required");
+    const n = Math.min(1024, Math.max(1, Math.floor(Number(newLimit))));
+    if (!Number.isFinite(n)) return reply.code(400).send("invalid bodyLimitMiB");
+    liveBodyLimitBytes = n * 1024 * 1024;
+    const config = loadConfig();
+    config.bodyLimitMiB = n;
+    saveConfig(config);
+    return { ok: true, bodyLimitMiB: n };
+  });
+
+  // ── Ollama base URL update ────────────────────────────────────────────────
   fastify.post<{ Body: { baseUrl: string } }>("/api/ollama/config", async (req, reply) => {
     const { baseUrl } = req.body;
     if (!baseUrl?.trim()) return reply.code(400).send("baseUrl required");

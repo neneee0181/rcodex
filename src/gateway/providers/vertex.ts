@@ -55,8 +55,12 @@ export function parseServiceAccount(json: string): ServiceAccountInfo {
 
 const DEFAULT_REGION = "us-central1";
 
+// Partner MaaS models are region-specific. Check Vertex AI Model Garden for updates.
 const MODEL_REGION_MAP: Record<string, string> = {
   "deepseek-ai/deepseek-v3.2-maas": "us-east5",
+  "qwen/qwen3-next-80b-a3b-thinking-maas": "us-central1",
+  "qwen/qwen3-next-80b-a3b-instruct-maas": "us-central1",
+  "zai-org/glm-5-maas": "us-central1",
 };
 
 function getRegion(model: string): string {
