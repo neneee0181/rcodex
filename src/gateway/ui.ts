@@ -710,7 +710,7 @@ function methodIcon(id){
   if(id==='session')return SVG_ICONS.cookie;
   return PROVIDER_SVG.ollama;
 }
-if(!NP.out) NP.out={x:520,y:280};
+// NP.out default position is set in fetchStatus() after DOM is ready
 
 // Viewport
 let vp={x:60,y:40,s:1};
@@ -1171,7 +1171,7 @@ let piTerm = null;
 let piWs = null;
 let piFit = null;
 let piTermWrap = null; // persists #pi-term-wrap across renders (detached DOM survives collapse)
-if(!NP.piNode) NP.piNode = { x: 60, y: 60 };
+// NP.piNode default position is set in fetchStatus() after DOM is ready
 if(!NP.piSize) NP.piSize = { w: 780, h: 480 };
 let piConns = new Set(JSON.parse(localStorage.getItem('rcodex-pi-conns')||'[]'));
 let piMaximized = false;
@@ -1541,7 +1541,7 @@ function toggleCgpt(){
 // Monitor node
 function toggleMonitor(tab){
   if(monitorOpen && monitorTab===tab){ monitorOpen=false; }
-  else{ monitorOpen=true; monitorTab=tab; if(!NP.monitor) NP.monitor={x:80,y:60}; }
+  else{ monitorOpen=true; monitorTab=tab; if(!NP.monitor) NP.monitor=findBestPos(); }
   document.getElementById('hb-mon')?.classList.toggle('on', monitorOpen);
   render();
   if(monitorOpen) startMonitorRefresh();
@@ -1961,42 +1961,66 @@ async function refreshQuota(accountId){
   renderUsage();
 }
 
-// Find the canvas position with the most open space visible in the current viewport.
-// Samples a grid across the visible world area; scores each cell by its minimum
-// squared distance to any existing node center; returns the best (most open) cell.
+// Find the best canvas position in the current viewport:
+// 1) Non-overlapping positions only — picks the one furthest from all existing nodes.
+// 2) If viewport is fully packed, falls back to the least-overlapping spot.
 function findBestPos(){
   var wsEl=document.getElementById('ws');
   var wr=wsEl?wsEl.getBoundingClientRect():{width:1200,height:700};
-  // Visible canvas bounds in world (unscaled) coordinates
   var x0=Math.round(-vp.x/vp.s), y0=Math.round(-vp.y/vp.s);
   var x1=Math.round((wr.width-vp.x)/vp.s), y1=Math.round((wr.height-vp.y)/vp.s);
-  var NW=260, NH=180, PAD=24;
-  var ids=Object.keys(NP);
-  // No existing nodes → viewport center
-  if(!ids.length){
-    return{x:Math.max(PAD,Math.round((x0+x1)/2-NW/2)),
-           y:Math.max(PAD,Math.round((y0+y1)/2-NH/2))};
-  }
-  // Sample ~15×10 grid across visible area
-  var COLS=15, ROWS=10;
-  var stepX=Math.max(NW,Math.round((x1-x0-PAD*2)/COLS));
-  var stepY=Math.max(NH,Math.round((y1-y0-PAD*2)/ROWS));
-  var bestX=Math.max(PAD,x0+PAD), bestY=Math.max(PAD,y0+PAD), bestScore=-1;
-  for(var cx=x0+PAD;cx+NW<=x1-PAD;cx+=stepX){
-    for(var cy=y0+PAD;cy+NH<=y1-PAD;cy+=stepY){
-      var tx=Math.max(PAD,cx), ty=Math.max(PAD,cy);
-      // Score = min squared distance from this cell's center to any existing node center
-      var score=Infinity;
-      for(var i=0;i<ids.length;i++){
-        var p=NP[ids[i]];
-        var dx=(tx+NW/2)-(p.x+NW/2), dy=(ty+NH/2)-(p.y+NH/2);
-        var d=dx*dx+dy*dy;
-        if(d<score)score=d;
-      }
-      if(score>bestScore){bestScore=score;bestX=tx;bestY=ty;}
+  var GAP=30, FW=320, FH=220;
+  // Build existing rects from DOM (actual sizes) + NP (pre-render nodes not yet in DOM)
+  var rects=[];
+  var world=document.getElementById('world');
+  if(world){
+    var ndEls=world.querySelectorAll('.nd');
+    for(var i=0;i<ndEls.length;i++){
+      var el=ndEls[i];
+      rects.push({x:parseInt(el.style.left)||0,y:parseInt(el.style.top)||0,
+                  w:el.offsetWidth||FW,h:el.offsetHeight||FH});
     }
   }
-  return{x:bestX,y:bestY};
+  // Add NP entries not already represented in DOM (covers fetchStatus() pre-render loop)
+  var npIds=Object.keys(NP);
+  for(var i=0;i<npIds.length;i++){
+    var p=NP[npIds[i]];
+    var inDom=false;
+    for(var j=0;j<rects.length;j++){
+      if(Math.abs(rects[j].x-p.x)<4&&Math.abs(rects[j].y-p.y)<4){inDom=true;break;}
+    }
+    if(!inDom)rects.push({x:p.x,y:p.y,w:FW,h:FH});
+  }
+  if(!rects.length){
+    return{x:Math.max(GAP,Math.round((x0+x1)/2-FW/2)),
+           y:Math.max(GAP,Math.round((y0+y1)/2-FH/2))};
+  }
+  function hits(x,y){
+    for(var i=0;i<rects.length;i++){
+      var r=rects[i];
+      if(x<r.x+r.w+GAP&&x+FW+GAP>r.x&&y<r.y+r.h+GAP&&y+FH+GAP>r.y)return true;
+    }
+    return false;
+  }
+  var stepX=FW+GAP, stepY=FH+GAP;
+  var bestX=x0+GAP, bestY=y0+GAP;
+  var bestScore=-1, fbX=bestX, fbY=bestY, fbScore=-1;
+  for(var cx=x0+GAP;cx+FW<=x1-GAP;cx+=stepX){
+    for(var cy=y0+GAP;cy+FH<=y1-GAP;cy+=stepY){
+      var score=Infinity;
+      for(var i=0;i<rects.length;i++){
+        var r=rects[i];
+        var dx=(cx+FW/2)-(r.x+r.w/2), dy=(cy+FH/2)-(r.y+r.h/2);
+        var d=dx*dx+dy*dy; if(d<score)score=d;
+      }
+      if(!hits(cx,cy)){
+        if(score>bestScore){bestScore=score;bestX=cx;bestY=cy;}
+      } else {
+        if(score>fbScore){fbScore=score;fbX=cx;fbY=cy;}
+      }
+    }
+  }
+  return bestScore>=0?{x:bestX,y:bestY}:{x:fbX,y:fbY};
 }
 
 // Canvas viewport
@@ -2065,7 +2089,7 @@ function render(){
   }
   const slotNodes=[...onCanvas]
     .filter(id=>id!=='out'&&id!=='monitor')
-    .map(slotId=>buildAccNode(slotId))
+    .map((slotId,i)=>buildAccNode(slotId,i+1))
     .join('');
   world.innerHTML=slotNodes+buildOutNode()+(monitorOpen?buildMonitorNode():'')+buildPiNode();
   // Restore monitor content
@@ -2138,7 +2162,7 @@ function accountSubtext(acc){
   return '';
 }
 
-function buildAccNode(slotId){
+function buildAccNode(slotId,zIdx){
   const info=nodeSlots[slotId];
   if(!info)return '';
   const acc=ST.accounts.find(a=>a.id===info.accountId);
@@ -2151,7 +2175,8 @@ function buildAccNode(slotId){
   const noBadge=no?\`<span class="acct-badge">#\${no}</span>\`:'';
   const subEl=sub?\`<div class="nd-acct" title="\${sub}">\${sub}</div>\`:'';
   const pos=NP[slotId]||{x:80,y:80};
-  return \`<div class="nd \${isOut?'live':''}" id="nd-\${slotId}" style="left:\${pos.x}px;top:\${pos.y}px">
+  const z=zIdx||1;
+  return \`<div class="nd \${isOut?'live':''}" id="nd-\${slotId}" style="left:\${pos.x}px;top:\${pos.y}px;z-index:\${z}">
   <div class="nh">
     <div class="nic" style="background:\${IBGS[acc.provider]}">\${providerImg(acc.provider,14)}</div>
     <div style="flex:1;min-width:0">
@@ -2470,6 +2495,10 @@ async function fetchStatus(){
   try{
     const d=await(await fetch('/api/accounts')).json();
     ST=d;
+
+    // Place fixed nodes in best open positions on first run (no saved position yet)
+    if(!NP.out)    NP.out    = findBestPos();
+    if(!NP.piNode) NP.piNode = findBestPos();
 
     // Sync server activeModels ??canvas (add missing slots)
     let idx=[...onCanvas].length;
