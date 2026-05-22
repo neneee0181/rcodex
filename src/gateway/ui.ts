@@ -1430,6 +1430,8 @@ function togglePiMax(){
     // Terminal must flex-fill remaining height/width instead of using fixed px
     const termEl = piTermWrap || document.getElementById('pi-term-slot');
     if(termEl){ termEl.style.flex = '1'; termEl.style.width = ''; termEl.style.height = 'auto'; }
+    const port = nd.querySelector('#pi-nd-port') as HTMLElement;
+    if(port) port.style.display = 'none';
     document.body.appendChild(nd);
     piMaxTimer = setTimeout(() => { piMaxTimer = null; fitPi(); }, 80);
   } else {
@@ -1437,6 +1439,8 @@ function togglePiMax(){
     const sz = NP.piSize || { w:780, h:480 };
     const termEl = piTermWrap || document.getElementById('pi-term-slot');
     if(termEl){ termEl.style.flex = ''; termEl.style.width = sz.w + 'px'; termEl.style.height = sz.h + 'px'; }
+    const port = nd.querySelector('#pi-nd-port') as HTMLElement;
+    if(port) port.style.display = '';
     nd.style.position = '';
     nd.style.inset = '';
     nd.style.width = sz.w + 'px';
