@@ -423,9 +423,7 @@ body.conn-dragging .pi-nd-port{opacity:1;pointer-events:all}
     <button class="icon-btn" id="hb-mon" onclick="toggleMonitor(monitorTab||'status')" title="Monitor">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="7.5" y="1" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="7.5" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="7.5" y="7.5" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
     </button>
-    <button class="icon-btn" id="hb-pi" onclick="togglePi()" title="Pi Agent">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 11V3l4 5 4-5v8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
+
     <div class="mode-sw">
       <button class="ms-btn" id="ms-rcodex" onclick="switchProvider('rcodex')" title="Route Codex through rcodex Gateway">rcodex</button>
       <button class="ms-btn" id="ms-oai" onclick="switchProvider('openai')" title="Use OpenAI directly (bypass gateway)">OpenAI</button>
