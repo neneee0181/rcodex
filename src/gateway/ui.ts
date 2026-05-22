@@ -315,22 +315,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
   font-family:'SF Mono',Menlo,'Cascadia Code',monospace;font-size:11px;
   background:rgba(0,0,0,.28);border-radius:0 0 0 0}
 .mn-body.last{border-radius:0 0 12px 12px}
-/* terminal */
-.term-wrap{height:100%;padding:8px 10px;display:flex;flex-direction:column;gap:0}
-.term-line{white-space:pre-wrap;word-break:break-all;line-height:1.55;padding:1px 0}
-.t-cmd{color:#e0e0f0}.t-out{color:#8888aa}.t-err{color:#f87171}.t-info{color:#818cf8}
-.mn-inp-row{display:flex;align-items:center;gap:6px;padding:5px 10px;
-  border-top:1px solid var(--b1);background:rgba(0,0,0,.18);
-  border-radius:0 0 12px 12px;flex-shrink:0}
-.mn-cwd-lbl{font-size:9px;color:var(--bl2);font-family:'SF Mono',monospace;
-  max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
-.mn-inp{flex:1;background:transparent;border:none;color:var(--tx);
-  font-size:11px;font-family:'SF Mono',monospace;outline:none;min-width:0}
-.mn-inp::placeholder{color:var(--mu)}
-.mn-run{padding:3px 9px;border-radius:5px;border:1px solid var(--b2);
-  background:rgba(99,102,241,.12);color:var(--bl2);font-size:10px;
-  cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .12s}
-.mn-run:hover{background:rgba(99,102,241,.22)}
 /* status */
 .st-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:12px}
 .st-card{background:rgba(0,0,0,.25);border-radius:9px;padding:10px 12px}
@@ -396,10 +380,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
   font-size:11px;box-shadow:0 8px 32px rgba(0,0,0,.45);z-index:300;
   animation:tIn .2s ease;white-space:nowrap;pointer-events:none}
 @keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(6px)}}
-/* Pi floating terminal panel */
-.pi-panel{position:absolute;display:flex;flex-direction:column;overflow:hidden;background:#0d0d0f;
-  border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.7);border:1px solid #1e1e2a;z-index:40;min-width:300px;min-height:160px}
-.pi-bar{display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid #1e1e2a;background:#111118;flex-shrink:0;cursor:grab;border-radius:12px 12px 0 0}
+/* Pi node */
+.pi-panel{display:flex;flex-direction:column;overflow:hidden;z-index:40;width:780px;height:480px}
 .pi-term-wrap{flex:1;overflow:hidden;padding:4px 0}
 .pi-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0d0d0f;z-index:10;gap:10px;border-radius:0 0 12px 12px}
 .pi-spin{width:24px;height:24px;border:2px solid #333;border-top-color:#818cf8;border-radius:50%;animation:spin .7s linear infinite}
@@ -438,16 +420,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:5px">
-    <button class="icon-btn" id="hb-mon" onclick="toggleMonitor(monitorTab||'terminal')" title="Monitor">
+    <button class="icon-btn" id="hb-mon" onclick="toggleMonitor(monitorTab||'status')" title="Monitor">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="7.5" y="1" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="7.5" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="7.5" y="7.5" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
     </button>
     <button class="icon-btn" id="hb-pi" onclick="togglePi()" title="Pi Agent">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 11V3l4 5 4-5v8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
-    <button class="icon-btn" id="hb-cgpt" onclick="toggleCgpt()" title="ChatGPT Web">
-      <img src="https://www.google.com/s2/favicons?domain=chatgpt.com&sz=32" width="14" height="14" style="border-radius:2px;display:block" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/><svg style="display:none" width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M5 5.5C5 4.4 5.9 3.5 7 3.5s2 .9 2 2c0 1.5-2 2.5-2 2.5M7 10.5v.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-    </button>
-    <div style="width:1px;height:18px;background:var(--b1);margin:0 2px"></div>
     <div class="mode-sw">
       <button class="ms-btn" id="ms-rcodex" onclick="switchProvider('rcodex')" title="Route Codex through rcodex Gateway">rcodex</button>
       <button class="ms-btn" id="ms-oai" onclick="switchProvider('openai')" title="Use OpenAI directly (bypass gateway)">OpenAI</button>
@@ -482,31 +460,27 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
     <div class="hint">Scroll to zoom / Drag to pan / Drag ports to connect</div>
   </div>
 
-  <!-- Pi floating terminal (overlay on canvas) -->
-  <div class="pi-panel" id="pi-panel" style="display:none;right:24px;bottom:24px;width:780px;height:480px">
-    <div class="pi-bar" id="pi-bar" onpointerdown="startPiDrag(event)">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 11V3l4 5 4-5v8" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span style="font-size:12px;font-weight:600;color:#e4e4f7">Pi Agent</span>
-      <span style="font-size:10px;color:#6b7280">via rcodex</span>
-      <div style="flex:1"></div>
-      <button class="icon-btn" onclick="restartPi()" title="Restart Pi" style="opacity:.6">
-        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7A5 5 0 1 0 3.5 3.5L1.5 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1.5 1.5v3h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <button class="icon-btn" onclick="resetPi()" title="Reset Pi (clear auth/models)" style="opacity:.6">
-        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M7 2a5 5 0 1 0 4.33 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M7 2V5M7 2L5 4M7 2L9 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <button class="icon-btn" id="pi-max-btn" onclick="togglePiMax()" title="Toggle fullscreen" style="opacity:.6">
-        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M1 5V2h3M10 2h3v3M13 9v3h-3M4 12H1V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <button class="icon-btn" onclick="togglePi()" title="Close" style="opacity:.6">
-        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </button>
+  <!-- Pi node (overlay on canvas) -->
+  <div class="pi-panel mn" id="pi-panel" style="display:none;position:absolute;right:24px;bottom:24px">
+    <div class="nh" id="pi-bar" onpointerdown="startPiDrag(event)" style="border-radius:13px 13px 0 0;cursor:grab">
+      <div class="nic" style="background:rgba(129,140,248,.15)">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 11V3l4 5 4-5v8" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;color:#e4e4f7">Pi Agent</div>
+        <div style="font-size:10px;color:#6b7280">via rcodex</div>
+      </div>
+      <button class="nd-rm" id="pi-max-btn" onclick="togglePiMax()" title="Toggle fullscreen" style="font-size:14px;width:22px;height:22px">⛶</button>
+      <button class="nd-rm" onclick="togglePi()" title="Close">×</button>
     </div>
-    <div id="pi-term-wrap" class="pi-term-wrap"></div>
-    <div class="pi-loading" id="pi-loading">
+    <div id="pi-term-wrap" class="pi-term-wrap" style="background:#0d0d0f;border-radius:0 0 12px 12px"></div>
+    <div class="pi-loading" id="pi-loading" style="border-radius:0 0 12px 12px">
       <div class="pi-spin"></div>
       <div id="pi-loading-msg" style="font-size:12px;color:#6b7280">Checking Pi installation…</div>
     </div>
+    <div class="mn-rs-e" onpointerdown="startPiResize(event,'e')"></div>
+    <div class="mn-rs-s" onpointerdown="startPiResize(event,'s')"></div>
+    <div class="mn-rs-se" onpointerdown="startPiResize(event,'se')"></div>
   </div>
 
   <!-- ChatGPT panel -->
@@ -718,12 +692,8 @@ let cgptOpen = false;
 // Monitor state
 let monitorOpen = false;
 let resizeD = null;
-let monitorTab = 'terminal';
-let termLines = [];
-let termCwd = '';
-let termHistory = [];
-let termHistIdx = -1;
-let termBusy = false;
+let piResizeD = null;
+let monitorTab = 'status';
 let monitorRefreshTimer = null;
 let usageHtmlCache = '';
 let quotaState = {};
@@ -1225,6 +1195,7 @@ let piFit = null;
 let piDrag = null;
 if(!NP.pi) NP.pi = { x: null, y: null, w: 780, h: 480 };
 if(!NP.piNode) NP.piNode = { x: 60, y: 60 };
+if(!NP.piSize) NP.piSize = { w: 780, h: 480 };
 let piConns = new Set(JSON.parse(localStorage.getItem('rcodex-pi-conns')||'[]'));
 let piMaximized = false;
 function savePiConns(){ localStorage.setItem('rcodex-pi-conns', JSON.stringify([...piConns])); }
@@ -1236,20 +1207,20 @@ function togglePi(){
   const panel = document.getElementById('pi-panel');
   const btn = document.getElementById('hb-pi');
   if(piOpen){
-    // position: right-bottom of canvas if first open
     const ws = document.getElementById('ws');
     const rect = ws.getBoundingClientRect();
-    if(!NP.pi.x) NP.pi.x = rect.width - 800;
-    if(!NP.pi.y) NP.pi.y = rect.height - 510;
+    if(!NP.pi.x) NP.pi.x = rect.width - (NP.piSize.w + 30);
+    if(!NP.pi.y) NP.pi.y = rect.height - (NP.piSize.h + 30);
     panel.style.display = 'flex';
     panel.style.left = NP.pi.x + 'px';
     panel.style.top = NP.pi.y + 'px';
-    panel.style.width = (NP.pi.w||780) + 'px';
-    panel.style.height = (NP.pi.h||480) + 'px';
+    panel.style.width = NP.piSize.w + 'px';
+    panel.style.height = NP.piSize.h + 'px';
     btn?.classList.add('on');
     if(!piTerm) initPiTerminal();
-    render(); // update Pi canvas node
+    render();
   } else {
+    if(piMaximized){ piMaximized = false; panel.classList.remove('maximized'); }
     panel.style.display = 'none';
     btn?.classList.remove('on');
     render();
@@ -1424,10 +1395,16 @@ function togglePiMax(){
     panel.classList.remove('maximized');
     panel.style.left = (NP.pi.x||0) + 'px';
     panel.style.top = (NP.pi.y||0) + 'px';
-    panel.style.width = (NP.pi.w||780) + 'px';
-    panel.style.height = (NP.pi.h||480) + 'px';
+    panel.style.width = NP.piSize.w + 'px';
+    panel.style.height = NP.piSize.h + 'px';
   }
   if(piTerm && piFit) setTimeout(()=>piFit.fit(), 60);
+}
+
+function startPiResize(e,dir){
+  e.preventDefault();e.stopPropagation();
+  const sz=NP.piSize||{w:780,h:480};
+  piResizeD={dir,sx:e.clientX,sy:e.clientY,w0:sz.w,h0:sz.h};
 }
 
 // ChatGPT panel toggle
@@ -1512,10 +1489,9 @@ function startMonitorResize(e,dir){
 function buildMonitorNode(){
   const pos=NP.monitor||{x:80,y:60};
   const sz=NP.monitorSize||{w:620,h:320};
-  const tabs=['terminal','status','logs','requests','usage'];
-  const labels={terminal:'Terminal',status:'Status',logs:'Logs',requests:'Requests',usage:'Usage'};
+  const tabs=['status','logs','requests','usage'];
+  const labels={status:'Status',logs:'Logs',requests:'Requests',usage:'Usage'};
   const icons={
-    terminal:'<svg width="11" height="11" viewBox="0 0 14 14" fill="none"><path d="M1.5 3.5L5 7l-3.5 3.5M6 10.5h6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     status:'<svg width="11" height="11" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 4v3.5l2 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
     logs:'<svg width="11" height="11" viewBox="0 0 14 14" fill="none"><path d="M2 3.5h10M2 7h7M2 10.5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
     requests:'<svg width="11" height="11" viewBox="0 0 14 14" fill="none"><path d="M2.5 4.5h9M2.5 7h6M2.5 9.5h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="11" cy="9.5" r="2" stroke="currentColor" stroke-width="1.2"/></svg>',
@@ -1528,17 +1504,7 @@ function buildMonitorNode(){
     \`<div style="flex:1"></div>\${clearBtn}\`;
 
   let content='',inputRow='';
-  if(monitorTab==='terminal'){
-    const linesHtml=termLines.map(l=>\`<div class="term-line t-\${l.t}">\${escHtml(l.v)}</div>\`).join('');
-    content=\`<div class="term-wrap" id="term-out">\${linesHtml||'<div class="t-info">Ready. Type a command below.</div>'}</div>\`;
-    const cwd=termCwd||'~';
-    const short=cwd.replace(new RegExp('^/Users/[^/]+'),'~');
-    inputRow=\`<div class="mn-inp-row">
-      <span class="mn-cwd-lbl" title="\${cwd}">\${short}$</span>
-      <input class="mn-inp" id="mn-inp" placeholder="Enter command" autocomplete="off" spellcheck="false"/>
-      <button class="mn-run" onclick="sendTerm()">Run</button>
-    </div>\`;
-  } else if(monitorTab==='status'){
+  if(monitorTab==='status'){
     content=\`<div id="mn-status-body"><div class="mn-empty">Loading</div></div>\`;
   } else if(monitorTab==='logs'){
     content=\`<div class="log-wrap" id="mn-logs-body"><div class="mn-empty">Loading</div></div>\`;
@@ -1555,8 +1521,7 @@ function buildMonitorNode(){
     <button class="nd-rm" onclick="toggleMonitor(monitorTab)" title="Close">×</button>
   </div>
   <div class="mn-tabbar">\${tabHtml}</div>
-  <div class="mn-body \${!inputRow?'last':''}" id="mn-body" style="height:\${sz.h}px">\${content}</div>
-  \${inputRow}
+  <div class="mn-body last" id="mn-body" style="height:\${sz.h}px">\${content}</div>
   <div class="mn-rs-e" onpointerdown="startMonitorResize(event,'e')"></div>
   <div class="mn-rs-s" onpointerdown="startMonitorResize(event,'s')"></div>
   <div class="mn-rs-se" onpointerdown="startMonitorResize(event,'se')"></div>
@@ -1564,56 +1529,6 @@ function buildMonitorNode(){
 }
 
 function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
-// Terminal
-function addTermLine(t,v){
-  termLines.push({t,v});
-  if(termLines.length>500)termLines.splice(0,termLines.length-500);
-  const out=document.getElementById('term-out');
-  if(out){
-    const el=document.createElement('div');
-    el.className=\`term-line t-\${t}\`;
-    el.textContent=v;
-    out.appendChild(el);
-    out.scrollTop=out.scrollHeight;
-  }
-}
-
-async function sendTerm(){
-  const inp=document.getElementById('mn-inp');
-  if(!inp||termBusy)return;
-  const cmd=inp.value.trim();
-  if(!cmd)return;
-  inp.value='';
-  termHistory.unshift(cmd);
-  termHistIdx=-1;
-  termBusy=true;
-  addTermLine('cmd',\`\${(termCwd||'~').replace(new RegExp('^/Users/[^/]+'),'~')}$ \${cmd}\`);
-  try{
-    const r=await api('POST','/api/terminal/exec',{cmd,cwd:termCwd||undefined});
-    const d=await r.json();
-    if(d.cwd)termCwd=d.cwd;
-    if(d.stdout?.trim())d.stdout.trimEnd().split('\\n').forEach(l=>addTermLine('out',l));
-    if(d.stderr?.trim())d.stderr.trimEnd().split('\\n').forEach(l=>addTermLine('err',l));
-    // Re-render only header of monitor (for cwd update in prompt)
-    const lbl=document.querySelector('.mn-cwd-lbl');
-    if(lbl){const short=(d.cwd||termCwd||'~').replace(new RegExp('^/Users/[^/]+'),'~');lbl.textContent=short+'$';lbl.title=d.cwd||'';}
-  }catch(e){addTermLine('err','Error: '+e.message);}
-  termBusy=false;
-  document.getElementById('mn-inp')?.focus();
-}
-
-function setupTermKeys(){
-  const inp=document.getElementById('mn-inp');
-  if(!inp)return;
-  inp.onkeydown=e=>{
-    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendTerm();}
-    else if(e.key==='ArrowUp'){e.preventDefault();if(termHistIdx<termHistory.length-1){termHistIdx++;inp.value=termHistory[termHistIdx];}}
-    else if(e.key==='ArrowDown'){e.preventDefault();if(termHistIdx>0){termHistIdx--;inp.value=termHistory[termHistIdx];}else{termHistIdx=-1;inp.value='';}}
-    else if(e.key==='l'&&e.ctrlKey){e.preventDefault();termLines=[];document.getElementById('term-out').innerHTML='';}
-  };
-  inp.focus();
-}
 
 // Status / Logs / Requests refresh
 async function refreshStatus(){
@@ -2004,8 +1919,7 @@ function render(){
   if(monitorOpen){
     const monHdr=document.querySelector('#nd-monitor .nh');
     if(monHdr)monHdr.addEventListener('pointerdown',e=>startNodeDrag(e,'monitor'));
-    if(monitorTab==='terminal') setupTermKeys();
-    else if(monitorTab==='status') refreshStatus();
+    if(monitorTab==='status') refreshStatus();
     else if(monitorTab==='logs') refreshLogs();
     else if(monitorTab==='requests') refreshRequests();
   }
@@ -2231,6 +2145,17 @@ window.addEventListener('pointermove',e=>{
     if(mb) mb.style.height=sz.h+'px';
     return;
   }
+  if(piResizeD){
+    const dx=e.clientX-piResizeD.sx,dy=e.clientY-piResizeD.sy;
+    const sz=NP.piSize||{w:780,h:480};
+    if(piResizeD.dir==='e'||piResizeD.dir==='se') sz.w=Math.max(320,piResizeD.w0+dx);
+    if(piResizeD.dir==='s'||piResizeD.dir==='se') sz.h=Math.max(160,piResizeD.h0+dy);
+    NP.piSize=sz;
+    const pp=document.getElementById('pi-panel');
+    if(pp){pp.style.width=sz.w+'px';pp.style.height=sz.h+'px';}
+    if(piFit) piFit.fit();
+    return;
+  }
   if(nodeD){
     const dx=(e.clientX-nodeD.sx)/vp.s,dy=(e.clientY-nodeD.sy)/vp.s;
     NP[nodeD.id]={x:Math.round(nodeD.nx+dx),y:Math.round(nodeD.ny+dy)};
@@ -2265,6 +2190,7 @@ window.addEventListener('pointermove',e=>{
 
 window.addEventListener('pointerup',async e=>{
   if(resizeD){saveLS();resizeD=null;}
+  if(piResizeD){saveLS();piResizeD=null;}
   if(nodeD){
     document.getElementById('nd-'+nodeD.id)?.classList.remove('sel');
     saveLS();
@@ -2297,7 +2223,7 @@ window.addEventListener('pointerup',async e=>{
 
 WS.addEventListener('wheel',e=>{
   // Don't intercept scroll events from inside panels (monitor, sidebar)
-  if(e.target instanceof Element&&e.target.closest('.mn-body,.sb-body,.mn-inp-row'))return;
+  if(e.target instanceof Element&&e.target.closest('.mn-body,.sb-body'))return;
   e.preventDefault();
   const r=WS.getBoundingClientRect();
   zoomAt(e.deltaY<0?1.1:1/1.1,e.clientX-r.left,e.clientY-r.top);
@@ -2413,7 +2339,6 @@ window.addEventListener('resize',drawLines);
 // Init
 async function init(){
   await fetchStatus();
-  try{const d=await(await fetch('/api/status')).json();if(d.home)termCwd=d.home;}catch{}
   try{const d=await fetch('/api/codex-provider').then(r=>r.json());codexMode=d.mode||'rcodex';updateModeUI();}catch{}
   setTimeout(()=>{applyVp();if([...onCanvas].length>0||NP.out)fitAll();},120);
   setInterval(fetchStatus,10000);
