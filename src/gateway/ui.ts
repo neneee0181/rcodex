@@ -1134,8 +1134,7 @@ function addToCanvas(accountId){
     const ws=document.getElementById('ws');
     const wr=ws.getBoundingClientRect();
     const cx=(wr.width/2-vp.x)/vp.s,cy=(wr.height/2-vp.y)/vp.s;
-    const off=([...onCanvas].length-1)*28;
-    NP[slotId]={x:Math.max(20,cx-107+off),y:Math.max(20,cy-90+off)};
+    NP[slotId]=findFreePos(cx-130,cy-90);
   }
   saveLS();
   render();
@@ -1963,6 +1962,31 @@ async function refreshQuota(accountId){
   renderUsage();
 }
 
+// Find a canvas position near (px,py) that doesn't overlap existing nodes.
+// Uses an expanding ring scan: tries grid cells at distance ring*W, ring*H.
+function findFreePos(px, py){
+  var W=278, H=198; // node width + horizontal gap, estimated height + vertical gap
+  function overlaps(x,y){
+    for(var id in NP){
+      var p=NP[id];
+      if(x<p.x+W&&x+W>p.x&&y<p.y+H&&y+H>p.y)return true;
+    }
+    return false;
+  }
+  var bx=Math.max(20,Math.round(px)), by=Math.max(20,Math.round(py));
+  if(!overlaps(bx,by))return{x:bx,y:by};
+  for(var ring=1;ring<=14;ring++){
+    for(var dc=-ring;dc<=ring;dc++){
+      for(var dr=-ring;dr<=ring;dr++){
+        if(Math.abs(dc)!==ring&&Math.abs(dr)!==ring)continue;
+        var x=Math.max(20,bx+dc*W), y=Math.max(20,by+dr*H);
+        if(!overlaps(x,y))return{x:x,y:y};
+      }
+    }
+  }
+  return{x:bx,y:by};
+}
+
 // Canvas viewport
 function applyVp(){
   // Use CSS zoom for scaling so the browser re-renders content at the exact zoom level
@@ -2445,7 +2469,7 @@ async function fetchStatus(){
         }
         if(!onCanvas.has(slot.slotId)){
           onCanvas.add(slot.slotId);
-          if(!NP[slot.slotId])NP[slot.slotId]={x:80+(idx%4)*240,y:80+Math.floor(idx/4)*180};
+          if(!NP[slot.slotId])NP[slot.slotId]=findFreePos(80+(idx%4)*278,80+Math.floor(idx/4)*198);
           idx++;
         }
       }
