@@ -1262,7 +1262,7 @@ async function initPiTerminal(){
         const {done, value} = await reader.read();
         if(done) break;
         buf += dec.decode(value, {stream:true});
-        const lines = buf.split('\n');
+        const lines = buf.split('\\n');
         buf = lines.pop()||'';
         for(const line of lines){
           if(!line.startsWith('data:')) continue;
