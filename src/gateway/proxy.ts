@@ -1337,6 +1337,8 @@ function resolveAccounts(requestedModel: string, config: GatewayConfig): { accou
       const model = account.selectedModel ||
         (providerFromModel === account.provider ? requestedModel : safeDefault[account.provider] || requestedModel);
       candidates.push({ account, model, order: account.connectedOrder ?? 999 });
+    } else if (account.connectedToPi && account.piModels?.includes(requestedModel)) {
+      candidates.push({ account, model: requestedModel, order: -1 });
     }
   }
 
@@ -1406,6 +1408,31 @@ async function callSingleProvider(
     const res = await callGoogle(auth, model, messages, cleanInstructions(instructions), false, signal);
     if (!res.ok) throw new Error(`Google error ${res.status}: ${await res.text()}`);
     return googleToResponses(await res.json() as Parameters<typeof googleToResponses>[0], model);
+  }
+
+  if (account.provider === "antigravity") {
+    account = await ensureFreshToken(account);
+    const accessToken = account.oauthToken;
+    if (!accessToken) throw new Error("Antigravity: no access token - re-login required");
+    if (!account.projectId) {
+      try {
+        const projectId = await loadAntigravityProject(accessToken);
+        account.projectId = projectId;
+        const cfg = loadConfig();
+        const stored = cfg.accounts.find(a => a.id === account.id);
+        if (stored) { stored.projectId = projectId; saveConfig(cfg); }
+      } catch { /* ignore */ }
+    }
+    const agMessages = messages.map(m => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: typeof m.content === "string" ? m.content : (m.content as { text?: string }[]).map(c => c.text ?? "").join("") }],
+    }));
+    const agSysInstruction = cleanInstructions(instructions) ? { parts: [{ text: cleanInstructions(instructions) }] } : undefined;
+    const res = await callAntigravity(accessToken, model, agMessages, agSysInstruction, undefined, false, signal, account.projectId);
+    if (!res.ok) throw new Error(`Antigravity error ${res.status}: ${await res.text()}`);
+    const data = await res.json() as Record<string, unknown>;
+    const inner = ((data.response ?? data) as Parameters<typeof googleToResponses>[0]);
+    return googleToResponses(inner, model);
   }
 
   if (account.provider === "ollama") {

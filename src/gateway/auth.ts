@@ -33,6 +33,9 @@ export interface Account {
   connectedOrder?: number;
   // Multi-slot routing: each slot = one canvas node with its own model & priority
   activeModels?: ModelSlot[];
+  // Pi Agent node connection
+  connectedToPi?: boolean;
+  piModels?: string[];
 }
 
 // Kept for compatibility with existing provider call signatures
@@ -306,6 +309,30 @@ export function setAccountNodeState(
   account.connectedToOut = connectedToOut;
   if (connectedOrder !== undefined) account.connectedOrder = connectedOrder;
   else if (!connectedToOut) delete account.connectedOrder;
+  saveConfig(config);
+}
+
+export function connectPiAccount(accountId: string, model: string): void {
+  const config = loadConfig();
+  const account = config.accounts.find(a => a.id === accountId);
+  if (!account) return;
+  account.connectedToPi = true;
+  if (!account.piModels) account.piModels = [];
+  if (model && !account.piModels.includes(model)) account.piModels.push(model);
+  saveConfig(config);
+}
+
+export function disconnectPiAccount(accountId: string, model?: string): void {
+  const config = loadConfig();
+  const account = config.accounts.find(a => a.id === accountId);
+  if (!account) return;
+  if (model) {
+    account.piModels = (account.piModels ?? []).filter(m => m !== model);
+    if (!account.piModels.length) { account.connectedToPi = false; delete account.piModels; }
+  } else {
+    account.connectedToPi = false;
+    delete account.piModels;
+  }
   saveConfig(config);
 }
 

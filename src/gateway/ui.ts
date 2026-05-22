@@ -396,13 +396,27 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
   font-size:11px;box-shadow:0 8px 32px rgba(0,0,0,.45);z-index:300;
   animation:tIn .2s ease;white-space:nowrap;pointer-events:none}
 @keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(6px)}}
-/* Pi terminal panel */
-.pi-panel{position:relative;flex:1;display:flex;flex-direction:column;overflow:hidden;background:#0d0d0f}
-.pi-bar{display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid #1e1e2a;background:#111118;flex-shrink:0}
+/* Pi floating terminal panel */
+.pi-panel{position:absolute;display:flex;flex-direction:column;overflow:hidden;background:#0d0d0f;
+  border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.7);border:1px solid #1e1e2a;z-index:40;min-width:300px;min-height:160px}
+.pi-bar{display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid #1e1e2a;background:#111118;flex-shrink:0;cursor:grab;border-radius:12px 12px 0 0}
 .pi-term-wrap{flex:1;overflow:hidden;padding:4px 0}
-.pi-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0d0d0f;z-index:10;gap:10px}
+.pi-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0d0d0f;z-index:10;gap:10px;border-radius:0 0 12px 12px}
 .pi-spin{width:24px;height:24px;border:2px solid #333;border-top-color:#818cf8;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* Pi canvas status node */
+.pi-nd{position:absolute;background:var(--s1);border:1px solid #2a2a3a;border-radius:12px;padding:0;min-width:160px;cursor:default;user-select:none}
+.pi-nd.live{border-color:#818cf8;box-shadow:0 0 0 1px #818cf8}
+.pi-nd-hdr{display:flex;align-items:center;gap:7px;padding:8px 10px 6px;cursor:grab;border-radius:12px 12px 0 0}
+.pi-nd-body{padding:4px 10px 8px;font-size:11px;color:var(--fg2)}
+.pi-nd-port{position:absolute;left:-11px;top:50%;transform:translateY(-50%);
+  width:22px;height:22px;border-radius:50%;background:var(--s1);
+  border:2px solid var(--b2);z-index:15;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;pointer-events:all}
+.pi-nd-port::after{content:'';width:8px;height:8px;border-radius:50%;background:var(--b2);transition:background .15s}
+.pi-nd-port.live{border-color:#818cf8}.pi-nd-port.live::after{background:#818cf8}
+.pi-nd-port.acc{border-color:var(--bl);box-shadow:0 0 0 4px rgba(99,102,241,.2)}.pi-nd-port.acc::after{background:var(--bl)}
+.pi-panel.maximized{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;border-radius:0!important;z-index:200!important;left:0!important;top:0!important}
 </style>
 </head>
 <body style="display:flex;flex-direction:column;height:100vh">
@@ -468,19 +482,24 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
     <div class="hint">Scroll to zoom / Drag to pan / Drag ports to connect</div>
   </div>
 
-  <!-- Pi agent panel -->
-  <div class="pi-panel" id="pi-panel" style="display:none">
-    <div class="pi-bar">
-      <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><path d="M2 11V3l4 5 4-5v8" stroke="#818cf8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span style="font-size:13px;font-weight:600;color:#e4e4f7">Pi Agent</span>
-      <span style="font-size:11px;color:#6b7280;margin-left:2px">via rcodex</span>
+  <!-- Pi floating terminal (overlay on canvas) -->
+  <div class="pi-panel" id="pi-panel" style="display:none;right:24px;bottom:24px;width:780px;height:480px">
+    <div class="pi-bar" id="pi-bar" onpointerdown="startPiDrag(event)">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 11V3l4 5 4-5v8" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span style="font-size:12px;font-weight:600;color:#e4e4f7">Pi Agent</span>
+      <span style="font-size:10px;color:#6b7280">via rcodex</span>
       <div style="flex:1"></div>
-      <button class="ms-btn" onclick="sendToPi('pi --provider openai')" title="Launch Pi agent in terminal" style="font-size:11px;padding:2px 8px">▶ Run Pi</button>
-      <button class="icon-btn" id="pi-restart-btn" onclick="connectPiPty('')" title="New shell" style="opacity:.6">
-        <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7A5 5 0 1 0 3.5 3.5L1.5 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1.5 1.5v3h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <button class="icon-btn" onclick="restartPi()" title="Restart Pi" style="opacity:.6">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7A5 5 0 1 0 3.5 3.5L1.5 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1.5 1.5v3h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="icon-btn" onclick="resetPi()" title="Reset Pi (clear auth/models)" style="opacity:.6">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M7 2a5 5 0 1 0 4.33 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M7 2V5M7 2L5 4M7 2L9 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="icon-btn" id="pi-max-btn" onclick="togglePiMax()" title="Toggle fullscreen" style="opacity:.6">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M1 5V2h3M10 2h3v3M13 9v3h-3M4 12H1V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <button class="icon-btn" onclick="togglePi()" title="Close" style="opacity:.6">
-        <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </button>
     </div>
     <div id="pi-term-wrap" class="pi-term-wrap"></div>
@@ -1203,23 +1222,37 @@ let piOpen = false;
 let piTerm = null;
 let piWs = null;
 let piFit = null;
+let piDrag = null;
+if(!NP.pi) NP.pi = { x: null, y: null, w: 780, h: 480 };
+if(!NP.piNode) NP.piNode = { x: 60, y: 60 };
+let piConns = new Set(JSON.parse(localStorage.getItem('rcodex-pi-conns')||'[]'));
+let piMaximized = false;
+function savePiConns(){ localStorage.setItem('rcodex-pi-conns', JSON.stringify([...piConns])); }
+
+function piCmd(){ return 'pi'; }
 
 function togglePi(){
   piOpen = !piOpen;
   const panel = document.getElementById('pi-panel');
-  const ws = document.getElementById('ws');
   const btn = document.getElementById('hb-pi');
   if(piOpen){
+    // position: right-bottom of canvas if first open
+    const ws = document.getElementById('ws');
+    const rect = ws.getBoundingClientRect();
+    if(!NP.pi.x) NP.pi.x = rect.width - 800;
+    if(!NP.pi.y) NP.pi.y = rect.height - 510;
     panel.style.display = 'flex';
-    ws.style.display = 'none';
+    panel.style.left = NP.pi.x + 'px';
+    panel.style.top = NP.pi.y + 'px';
+    panel.style.width = (NP.pi.w||780) + 'px';
+    panel.style.height = (NP.pi.h||480) + 'px';
     btn?.classList.add('on');
-    // close cgpt if open
-    if(cgptOpen){ cgptOpen=false; document.getElementById('cgpt-panel').style.display='none'; document.getElementById('hb-cgpt')?.classList.remove('on'); }
     if(!piTerm) initPiTerminal();
+    render(); // update Pi canvas node
   } else {
     panel.style.display = 'none';
-    ws.style.display = '';
     btn?.classList.remove('on');
+    render();
   }
 }
 
@@ -1228,7 +1261,6 @@ async function initPiTerminal(){
   const msg = document.getElementById('pi-loading-msg');
   loading.style.display = 'flex';
 
-  // check if pi installed
   msg.textContent = 'Checking Pi installation…';
   let installed = false;
   try{
@@ -1246,9 +1278,10 @@ async function initPiTerminal(){
     }catch(e){ msg.textContent = 'Install error: ' + e.message; return; }
   }
 
+  // Write ~/.pi/agent/models.json with piConns models before starting Pi
+  try{ await api('POST', '/api/pi/sync-models'); }catch{}
   loading.style.display = 'none';
-  // open shell only — user launches pi via button
-  connectPiPty('');
+  connectPiPty(piCmd());
 }
 
 function connectPiPty(initialCmd){
@@ -1259,8 +1292,7 @@ function connectPiPty(initialCmd){
   const term = new Terminal({
     theme:{ background:'#0d0d0f', foreground:'#e4e4e7', cursor:'#818cf8', selectionBackground:'rgba(129,140,248,.3)' },
     fontFamily:'Menlo, Monaco, Consolas, "Courier New", monospace',
-    fontSize:13, lineHeight:1.5, cursorBlink:true,
-    scrollback:5000,
+    fontSize:13, lineHeight:1.5, cursorBlink:true, scrollback:5000,
   });
   const fit = new FitAddon.FitAddon();
   term.loadAddon(fit);
@@ -1271,10 +1303,9 @@ function connectPiPty(initialCmd){
   const wsUrl = \`ws://\${location.host}/api/pty?cols=\${term.cols}&rows=\${term.rows}&cmd=\${encodeURIComponent(initialCmd||'')}\`;
   const ws = new WebSocket(wsUrl);
   piWs = ws;
-  ws.onopen = () => { document.getElementById('pi-restart-btn').title = 'Run Pi'; };
   ws.onmessage = e => term.write(typeof e.data === 'string' ? e.data : new Uint8Array(e.data));
-  ws.onclose = () => { term.write('\\r\\n\\x1b[90m[session ended — click ↺ to restart]\\x1b[0m\\r\\n'); };
-  ws.onerror = () => { term.write('\\r\\n\\x1b[31m[WebSocket error — is gateway running?]\\x1b[0m\\r\\n'); };
+  ws.onclose = () => { term.write('\\r\\n\\x1b[90m[session ended]\\x1b[0m\\r\\n'); render(); };
+  ws.onerror = () => { term.write('\\r\\n\\x1b[31m[connection error]\\x1b[0m\\r\\n'); };
   term.onData(d => { if(ws.readyState === WebSocket.OPEN) ws.send(d); });
   term.onResize(({cols,rows}) => { if(ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({type:'resize',cols,rows})); });
 
@@ -1284,12 +1315,119 @@ function connectPiPty(initialCmd){
 
 function sendToPi(cmd){
   if(piWs && piWs.readyState === WebSocket.OPEN) piWs.send(cmd + '\\r');
-  else { connectPiPty(cmd); }
 }
 
 function restartPi(){
+  if(piTerm){ piTerm.dispose(); piTerm = null; }
+  if(piWs){ try{ piWs.close(); }catch{} piWs = null; }
   document.getElementById('pi-loading').style.display = 'none';
-  connectPiPty('pi --provider openai');
+  connectPiPty(piCmd());
+}
+
+async function resetPi(){
+  try{
+    const r = await api('POST', '/api/pi/reset');
+    const d = await r.json();
+    toast('Pi reset: ' + (d.removed.length ? d.removed.join(', ') + ' removed' : 'nothing to clear'));
+  }catch(e){ toast('Reset failed', true); return; }
+  restartPi();
+}
+
+// Pi panel drag
+function startPiDrag(e){
+  if(e.target.closest('button')) return;
+  e.preventDefault();
+  const panel = document.getElementById('pi-panel');
+  const startX = e.clientX - (NP.pi.x||0);
+  const startY = e.clientY - (NP.pi.y||0);
+  function onMove(ev){
+    NP.pi.x = ev.clientX - startX;
+    NP.pi.y = ev.clientY - startY;
+    panel.style.left = NP.pi.x + 'px';
+    panel.style.top = NP.pi.y + 'px';
+  }
+  function onUp(){ document.removeEventListener('pointermove',onMove); document.removeEventListener('pointerup',onUp); }
+  document.addEventListener('pointermove',onMove);
+  document.addEventListener('pointerup',onUp);
+}
+
+// Pi canvas status node
+function buildPiNode(){
+  const pos = NP.piNode || { x:60, y:60 };
+  const running = piWs && piWs.readyState === WebSocket.OPEN;
+  const dot = running
+    ? \`<span style="width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;margin-right:4px"></span>\`
+    : \`<span style="width:7px;height:7px;border-radius:50%;background:#6b7280;display:inline-block;margin-right:4px"></span>\`;
+  const statusTxt = running ? 'Running' : 'Stopped';
+  const connSlots = [...piConns].map(slotId=>{
+    const info = nodeSlots[slotId];
+    if(!info) return null;
+    const acc = ST.accounts.find(a=>a.id===info.accountId);
+    return acc ? {slotId, model: info.model, acc} : null;
+  }).filter(Boolean);
+  const hasConns = connSlots.length > 0;
+  const modelsHtml = hasConns
+    ? connSlots.map(({slotId,model,acc})=>\`<div style="display:flex;align-items:center;gap:4px;margin-top:2px">
+        <span style="width:6px;height:6px;border-radius:50%;background:\${COL[acc.provider]||'#818cf8'};flex-shrink:0"></span>
+        <span style="color:#b0b0d0;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px">\${model||'(auto)'}</span>
+        <button onclick="removePiConn('\${slotId}')" style="margin-left:auto;background:none;border:none;color:#555;cursor:pointer;font-size:10px;padding:0 2px;line-height:1">✕</button>
+      </div>\`).join('')
+    : \`<div style="color:#555;font-size:10px">Drag node here to connect</div>\`;
+  const portLive = hasConns ? ' live' : '';
+  return \`<div class="pi-nd\${running?' live':''}" id="nd-pi" style="left:\${pos.x}px;top:\${pos.y}px">
+  <div class="pi-nd-port\${portLive}" id="pi-nd-port" title="Drop account node here"></div>
+  <div class="pi-nd-hdr" id="pi-nd-hdr">
+    <div style="width:22px;height:22px;border-radius:6px;background:rgba(129,140,248,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 11V3l4 5 4-5v8" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:600;color:#e0e0f0">Pi Agent</div>
+      <div style="font-size:10px;color:#606080;display:flex;align-items:center">\${dot}\${statusTxt}</div>
+    </div>
+    <div style="flex:1"></div>
+    <button class="zbtn" onclick="togglePi()" title="\${piOpen?'Hide':'Show'} Pi terminal" style="padding:2px 5px;font-size:10px">\${piOpen?'▾':'▸'}</button>
+  </div>
+  <div class="pi-nd-body">\${modelsHtml}</div>
+</div>\`;
+}
+
+async function connectPi(slotId){
+  const info = nodeSlots[slotId];
+  if(!info){ toast('Slot not found', true); return; }
+  const r = await api('POST', '/api/pi/connect', { accountId: info.accountId, model: info.model });
+  if(!r.ok){ toast('Pi connect failed', true); return; }
+  piConns.add(slotId);
+  savePiConns();
+  await api('POST', '/api/pi/sync-models');
+  render();
+  const modelName = info.model || '(model)';
+  toast((piWs && piWs.readyState === WebSocket.OPEN)
+    ? modelName + ' added — use /model in Pi to select'
+    : 'Connected to Pi Agent: ' + modelName);
+}
+async function removePiConn(slotId){
+  const info = nodeSlots[slotId];
+  if(info) await api('DELETE', '/api/pi/connect/' + info.accountId + (info.model ? '?model=' + encodeURIComponent(info.model) : ''));
+  piConns.delete(slotId);
+  savePiConns();
+  await api('POST', '/api/pi/sync-models');
+  render();
+}
+
+function togglePiMax(){
+  piMaximized = !piMaximized;
+  const panel = document.getElementById('pi-panel');
+  if(!panel) return;
+  if(piMaximized){
+    panel.classList.add('maximized');
+  } else {
+    panel.classList.remove('maximized');
+    panel.style.left = (NP.pi.x||0) + 'px';
+    panel.style.top = (NP.pi.y||0) + 'px';
+    panel.style.width = (NP.pi.w||780) + 'px';
+    panel.style.height = (NP.pi.h||480) + 'px';
+  }
+  if(piTerm && piFit) setTimeout(()=>piFit.fit(), 60);
 }
 
 // ChatGPT panel toggle
@@ -1838,7 +1976,7 @@ function render(){
     .filter(id=>id!=='out'&&id!=='monitor')
     .map(slotId=>buildAccNode(slotId))
     .join('');
-  world.innerHTML=slotNodes+buildOutNode()+(monitorOpen?buildMonitorNode():'');
+  world.innerHTML=slotNodes+buildOutNode()+(monitorOpen?buildMonitorNode():'')+buildPiNode();
   // Restore content immediately before async refresh fires
   if(savedReqs){const el=document.getElementById('mn-reqs-body');if(el)el.innerHTML=savedReqs;}
   if(savedLogs){const el=document.getElementById('mn-logs-body');if(el)el.innerHTML=savedLogs;}
@@ -1853,6 +1991,9 @@ function render(){
   });
   const outHdr=document.querySelector('#nd-out .nh');
   if(outHdr)outHdr.addEventListener('pointerdown',e=>startNodeDrag(e,'out'));
+
+  const piNdHdr=document.getElementById('pi-nd-hdr');
+  if(piNdHdr)piNdHdr.addEventListener('pointerdown',e=>startPiNodeDrag(e));
 
   if(monitorOpen){
     const monHdr=document.querySelector('#nd-monitor .nh');
@@ -2001,9 +2142,43 @@ function drawLines(){
     path.setAttribute('d',bezier(sp.x,sp.y,tp.x,tp.y));
     svg.appendChild(path);
   });
+  // Lines to Pi Agent node
+  const piNdPort=document.getElementById('pi-nd-port');
+  if(piNdPort){
+    const pp=portPos(piNdPort);
+    [...piConns].forEach(slotId=>{
+      const info=nodeSlots[slotId];
+      if(!info)return;
+      const acc=ST.accounts.find(a=>a.id===info.accountId);
+      const pe=document.getElementById('po-'+slotId);
+      if(!pe)return;
+      const sp=portPos(pe);
+      const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.classList.add('cp');
+      path.setAttribute('stroke',acc?COL[acc.provider]||'#818cf8':'#818cf8');
+      path.setAttribute('d',bezier(sp.x,sp.y,pp.x,pp.y));
+      svg.appendChild(path);
+    });
+  }
 }
 
 // Node drag
+function startPiNodeDrag(e){
+  if(e.target.tagName==='BUTTON')return;
+  e.preventDefault();e.stopPropagation();
+  const pos=NP.piNode||{x:60,y:60};
+  const sx=e.clientX,sy=e.clientY,nx=pos.x,ny=pos.y;
+  function onMove(ev){
+    NP.piNode={x:nx+(ev.clientX-sx),y:ny+(ev.clientY-sy)};
+    const nd=document.getElementById('nd-pi');
+    if(nd){nd.style.left=NP.piNode.x+'px';nd.style.top=NP.piNode.y+'px';}
+    drawLines();
+  }
+  function onUp(){document.removeEventListener('pointermove',onMove);document.removeEventListener('pointerup',onUp);}
+  document.addEventListener('pointermove',onMove);
+  document.addEventListener('pointerup',onUp);
+}
+
 function startNodeDrag(e,id){
   if(e.target.tagName==='BUTTON'||e.target.tagName==='SELECT'||e.target.tagName==='INPUT')return;
   e.preventDefault();e.stopPropagation();
@@ -2034,6 +2209,7 @@ function startConn(e,fromId){
   tmp.setAttribute('d',bezier(sp.x,sp.y,sp.x,sp.y));
   svg.appendChild(tmp);
   document.getElementById('pi')?.classList.add('acc');
+  document.getElementById('pi-nd-port')?.classList.add('acc');
 }
 
 window.addEventListener('pointermove',e=>{
@@ -2072,6 +2248,12 @@ window.addEventListener('pointermove',e=>{
       const hasConn=ST.accounts.some(a=>(a.activeModels||[]).length>0);
       pi.className='pi '+(near?'acc':hasConn?'live':'');
     }
+    const piNdPort=document.getElementById('pi-nd-port');
+    if(piNdPort){
+      const pr=piNdPort.getBoundingClientRect();
+      const near=Math.hypot(e.clientX-(pr.left+pr.width/2),e.clientY-(pr.top+pr.height/2))<34;
+      piNdPort.className='pi-nd-port '+(near?'acc':piConns.size>0?'live':'');
+    }
   }
 });
 
@@ -2087,11 +2269,21 @@ window.addEventListener('pointerup',async e=>{
     document.getElementById('po-'+connD.fromId)?.classList.remove('dragging');
     document.getElementById('ctmp')?.remove();
     document.getElementById('pi')?.classList.remove('acc');
+    document.getElementById('pi-nd-port')?.classList.remove('acc');
+    let handled = false;
     const pi=document.getElementById('pi');
     if(pi){
       const pr=pi.getBoundingClientRect();
       const near=Math.hypot(e.clientX-(pr.left+pr.width/2),e.clientY-(pr.top+pr.height/2))<36;
-      if(near)await connectOut(connD.fromId);
+      if(near){await connectOut(connD.fromId);handled=true;}
+    }
+    if(!handled){
+      const piNdPort=document.getElementById('pi-nd-port');
+      if(piNdPort){
+        const pr=piNdPort.getBoundingClientRect();
+        const near=Math.hypot(e.clientX-(pr.left+pr.width/2),e.clientY-(pr.top+pr.height/2))<36;
+        if(near) connectPi(connD.fromId);
+      }
     }
     connD=null;
   }
@@ -2121,6 +2313,11 @@ async function removeOut(accountId,slotId){
   hiddenSlots.add(slotId);
   delete nodeSlots[slotId];
   delete NP[slotId];
+  if(piConns.has(slotId)){
+    piConns.delete(slotId); savePiConns();
+    const info2 = nodeSlots[slotId];
+    if(info2) api('DELETE', '/api/pi/connect/' + info2.accountId);
+  }
   saveLS();
   render();
   toast('Disconnected');

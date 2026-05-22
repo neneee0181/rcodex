@@ -5,7 +5,7 @@ import { spawn as ptySpawn } from "node-pty";
 import { createServer } from "net";
 import { exec } from "child_process";
 import { promisify } from "util";
-import { readFileSync, writeFileSync, accessSync, constants } from "fs";
+import { readFileSync, writeFileSync, accessSync, constants, rmSync, existsSync, mkdirSync, statSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import { getCodexConfigPath } from "../utils/paths.js";
@@ -16,6 +16,7 @@ import { migrateThreads } from "../commands/migrate.js";
 import {
   loadConfig, saveConfig, addAccount, removeAccount, setAccountNodeState, reorderConnectedAccounts,
   addModelSlot, removeModelSlot, reorderAllSlots, updateAccountProjectId,
+  connectPiAccount, disconnectPiAccount,
   saveGatewayPid, clearGatewayPid, DEFAULT_BODY_LIMIT_MIB, type GatewayConfig, type Account,
 } from "./auth.js";
 import { buildAuthUrl, waitForCallback, exchangeCode } from "./providers/openai-oauth-flow.js";
@@ -374,6 +375,52 @@ export function createGatewayServer(): GatewayServer {
     }
   });
 
+  fastify.post<{ Body: { accountId: string; model: string } }>("/api/pi/connect", async (req) => {
+    const { accountId, model } = req.body;
+    connectPiAccount(accountId, model);
+    return { ok: true };
+  });
+
+  fastify.delete<{ Params: { accountId: string }; Querystring: { model?: string } }>("/api/pi/connect/:accountId", async (req) => {
+    disconnectPiAccount(req.params.accountId, req.query.model);
+    return { ok: true };
+  });
+
+  fastify.post("/api/pi/sync-models", async () => {
+    const config = loadConfig();
+    const allModels: string[] = [];
+    for (const a of config.accounts.filter(a => a.connectedToPi)) {
+      for (const m of a.piModels ?? []) { if (m && !allModels.includes(m)) allModels.push(m); }
+    }
+    const agentDir = join(homedir(), ".pi", "agent");
+    mkdirSync(agentDir, { recursive: true });
+    const modelsPath = join(agentDir, "models.json");
+    const modelsJson = {
+      providers: {
+        rcodex: {
+          baseUrl: `http://127.0.0.1:${config.port}/v1`,
+          api: "openai-completions",
+          apiKey: "rcodex",
+          compat: { supportsDeveloperRole: false, supportsReasoningEffort: false },
+          models: allModels.map(id => ({ id })),
+        },
+      },
+    };
+    writeFileSync(modelsPath, JSON.stringify(modelsJson, null, 2), "utf-8");
+    return { ok: true, models: allModels };
+  });
+
+  fastify.post("/api/pi/reset", async () => {
+    const agentDir = join(homedir(), ".pi", "agent");
+    const targets = ["auth.json", "models.json", "settings.json"];
+    const removed: string[] = [];
+    for (const t of targets) {
+      const p = join(agentDir, t);
+      if (existsSync(p)) { rmSync(p); removed.push(t); }
+    }
+    return { ok: true, removed };
+  });
+
   // ── PTY WebSocket — registered inside a child scope so @fastify/websocket
   //   onRoute hook fires after the plugin is loaded (Fastify 5 requirement)
   fastify.register(async (child) => {
@@ -382,22 +429,33 @@ export function createGatewayServer(): GatewayServer {
       const cols = Math.max(10, Math.min(500, parseInt(q.cols) || 120));
       const rows = Math.max(2,  Math.min(200, parseInt(q.rows) || 30));
       const initialCmd = q.cmd || "";
+      const requestedCwd = q.cwd ? decodeURIComponent(q.cwd) : "";
       const cfg = loadConfig();
       const gatewayUrl = `http://127.0.0.1:${cfg.port}/v1`;
+
+      const launchCwd = process.cwd();
+      let resolvedCwd = launchCwd;
+      if (requestedCwd) {
+        try {
+          if (statSync(requestedCwd).isDirectory()) resolvedCwd = requestedCwd;
+        } catch { /* fallback to launch cwd */ }
+      }
 
       const shell = process.platform === "win32" ? "powershell.exe" : (process.env.SHELL || "bash");
       const ptyProc = ptySpawn(shell, [], {
         name: "xterm-256color",
         cols, rows,
-        cwd: process.env.USERPROFILE || process.env.HOME || process.cwd(),
-        env: {
-          ...process.env,
-          OPENAI_BASE_URL: gatewayUrl,
-          OPENAI_API_KEY: "rcodex",
-          ANTHROPIC_BASE_URL: gatewayUrl,
-          TERM: "xterm-256color",
-          COLORTERM: "truecolor",
-        },
+        cwd: resolvedCwd,
+        env: (()=>{
+          const e: Record<string,string> = {};
+          for(const [k,v] of Object.entries(process.env)){
+            if(v !== undefined && k !== 'OPENAI_API_KEY' && k !== 'OPENAI_BASE_URL' && k !== 'ANTHROPIC_API_KEY' && k !== 'ANTHROPIC_BASE_URL')
+              e[k] = v;
+          }
+          e.TERM = "xterm-256color";
+          e.COLORTERM = "truecolor";
+          return e;
+        })(),
       });
 
       ptyProc.onData(data => { try { socket.send(data); } catch {} });
@@ -732,18 +790,26 @@ export function createGatewayServer(): GatewayServer {
   // ?�?� Models (only from connected accounts, filtered by selectedModel) ?�?�?�?�?�?�?�?�
   fastify.get("/v1/models", async () => {
     const config = loadConfig();
+    const seen = new Set<string>();
     const models: { id: string; object: "model"; owned_by: string }[] = [];
+
+    const push = (id: string, provider: string) => {
+      if (!seen.has(id)) { seen.add(id); models.push({ id, object: "model", owned_by: provider }); }
+    };
 
     for (const account of config.accounts.filter(a => a.connectedToOut)) {
       if (account.selectedModel) {
-        models.push({ id: account.selectedModel, object: "model", owned_by: account.provider });
+        push(account.selectedModel, account.provider);
       } else {
         const accountModels = await loadModelsForAccount(account, config.ollamaBaseUrl);
-        accountModels.forEach(id => models.push({ id, object: "model", owned_by: account.provider }));
+        accountModels.forEach(id => push(id, account.provider));
       }
     }
 
-    // Ollama connected directly (special case for nodes without account entry)
+    for (const account of config.accounts.filter(a => a.connectedToPi)) {
+      for (const m of account.piModels ?? []) push(m, account.provider);
+    }
+
     return { object: "list", data: models };
   });
 
@@ -1052,6 +1118,35 @@ export function createGatewayServer(): GatewayServer {
         instructions: systemMsg?.content,
         stream,
       };
+
+      if (stream) {
+        const id = `chatcmpl-${Date.now()}`;
+        reply.raw.writeHead(200, {
+          "content-type": "text/event-stream",
+          "cache-control": "no-cache",
+          "connection": "keep-alive",
+        });
+        const sse = (data: unknown) => reply.raw.write(`data: ${JSON.stringify(data)}\n\n`);
+        const abortController = new AbortController();
+        reply.raw.on("close", () => abortController.abort());
+        try {
+          sse({ id, object: "chat.completion.chunk", model, choices: [{ index: 0, delta: { role: "assistant" }, finish_reason: null }] });
+          for await (const chunk of streamProxyRequest(responsesReq, config, abortController.signal)) {
+            if (chunk.type === "text") {
+              sse({ id, object: "chat.completion.chunk", model, choices: [{ index: 0, delta: { content: chunk.content }, finish_reason: null }] });
+            }
+          }
+          sse({ id, object: "chat.completion.chunk", model, choices: [{ index: 0, delta: {}, finish_reason: "stop" }] });
+          reply.raw.write("data: [DONE]\n\n");
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          sse({ error: { message: msg } });
+        } finally {
+          reply.raw.end();
+        }
+        return reply;
+      }
+
       try {
         const result = await proxyRequest(responsesReq, config);
         const text = result.output[0]?.content[0]?.text ?? "";
