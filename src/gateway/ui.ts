@@ -1884,8 +1884,8 @@ function renderUsage(){
   const reqs=(lastReqData?.requests||[]);
   const ok=reqs.filter(function(r){return r.status==='ok'&&r.usedModel;});
   let tokenHtml='';
-  function buildTokenSection(subset,label,accent){
-    if(!subset.length)return'';
+  function buildTokenSection(subset,label,accent,allowEmpty){
+    if(!subset.length && !allowEmpty)return'';
     var totIn=0,totOut=0,totCost=0,hasCost=false,byModel={};
     for(var i=0;i<subset.length;i++){
       var r=subset[i],inT=r.inputTokens||0,outT=r.outputTokens||0;
@@ -1915,21 +1915,22 @@ function renderUsage(){
         '<span>'+(m.hasCost?fmtCost(m.cost):'-')+'</span>'+
       '</div>';
     }).join('');
+    var emptyRow=!rows?'<div style="padding:6px 8px;font-size:10px;color:var(--mu)">No requests</div>':'';
     return'<div style="'+acStyle+'">'+
       '<div style="font-size:9px;font-weight:700;color:'+(accent||'var(--mu)')+';margin-bottom:4px">'+label+'</div>'+
       cards+
-      '<div style="background:var(--s2);border-radius:6px;overflow:hidden">'+hdr+rows+'</div>'+
+      '<div style="background:var(--s2);border-radius:6px;overflow:hidden">'+hdr+rows+emptyRow+'</div>'+
     '</div>';
   }
   if(ok.length){
     var piReqs=ok.filter(function(r){return r.source==='pi';});
     var codexReqs=ok.filter(function(r){return r.source!=='pi';});
-    var hasBreakdown=piReqs.length>0&&codexReqs.length>0;
+    var hasBreakdown=piReqs.length>0;
     var sections='';
     if(hasBreakdown){
       sections+=buildTokenSection(ok,'Total (24h)','');
-      if(codexReqs.length)sections+='<div style="margin-top:10px">'+buildTokenSection(codexReqs,'rcodex','#6366f1')+'</div>';
-      if(piReqs.length)sections+='<div style="margin-top:10px">'+buildTokenSection(piReqs,'Pi','#22c55e')+'</div>';
+      sections+='<div style="margin-top:10px">'+buildTokenSection(codexReqs,'rcodex','#6366f1',true)+'</div>';
+      sections+='<div style="margin-top:10px">'+buildTokenSection(piReqs,'Pi','#22c55e')+'</div>';
     }else{
       sections=buildTokenSection(ok,'Token Usage (24h)','');
     }
