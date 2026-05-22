@@ -413,9 +413,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:5px">
-    <button class="icon-btn" id="hb-mon" onclick="toggleMonitor(monitorTab||'status')" title="Monitor">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="7.5" y="1" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="7.5" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="7.5" y="7.5" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
-    </button>
     <button class="icon-btn" id="hb-pi" onclick="togglePi()" title="Pi Agent">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 11V3l4 5 4-5v8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
@@ -1274,15 +1271,14 @@ async function resetPi(){
   restartPi();
 }
 
-// Pi canvas node (full terminal node inside #world)
+// Pi canvas node — small (collapsed) or full terminal (expanded)
 function buildPiNode(){
-  if(!piOpen || piMaximized) return '';
+  if(piMaximized) return '';
   const pos = NP.piNode || { x:60, y:60 };
-  const sz  = NP.piSize  || { w:780, h:480 };
   const running = piWs && piWs.readyState === WebSocket.OPEN;
   const dot = running
-    ? \`<span style="width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;margin-right:5px;flex-shrink:0"></span>\`
-    : \`<span style="width:7px;height:7px;border-radius:50%;background:#6b7280;display:inline-block;margin-right:5px;flex-shrink:0"></span>\`;
+    ? \`<span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;margin-right:4px;flex-shrink:0"></span>\`
+    : \`<span style="width:6px;height:6px;border-radius:50%;background:#4b5563;display:inline-block;margin-right:4px;flex-shrink:0"></span>\`;
   const connSlots = [...piConns].map(slotId=>{
     const info = nodeSlots[slotId];
     if(!info) return null;
@@ -1291,8 +1287,35 @@ function buildPiNode(){
   }).filter(Boolean);
   const hasConns = connSlots.length > 0;
   const portLive = hasConns ? ' live' : '';
+  const PI_ICON = \`<svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 11V3l4 5 4-5v8" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>\`;
+
+  if(!piOpen){
+    // ── Collapsed: small status node ──
+    const modelsHtml = hasConns
+      ? connSlots.map(({slotId,model,acc})=>\`<div style="display:flex;align-items:center;gap:4px;padding:2px 0">
+          <span style="width:5px;height:5px;border-radius:50%;background:\${COL[acc.provider]||'#818cf8'};flex-shrink:0"></span>
+          <span style="color:#9090b0;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px">\${model||'(auto)'}</span>
+          <button onclick="removePiConn('\${slotId}')" style="margin-left:auto;background:none;border:none;color:#555;cursor:pointer;font-size:10px;padding:0 1px;line-height:1">✕</button>
+        </div>\`).join('')
+      : \`<div style="color:#444;font-size:10px">Drag node here to connect</div>\`;
+    return \`<div class="nd" id="nd-pi" style="left:\${pos.x}px;top:\${pos.y}px;min-width:180px">
+  <div class="pi-nd-port\${portLive}" id="pi-nd-port" title="Drop account node here"></div>
+  <div class="nh" id="pi-nd-hdr" style="cursor:grab">
+    <div class="nic" style="background:rgba(129,140,248,.15)">\${PI_ICON}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:11px;font-weight:600;color:#e0e0f0;display:flex;align-items:center">\${dot}Pi Agent</div>
+      <div style="font-size:9px;color:#606080">\${running?'Running':'Stopped'}</div>
+    </div>
+    <button class="nd-rm" onclick="togglePi()" title="Open terminal" style="font-size:13px">▸</button>
+  </div>
+  <div class="nb">\${modelsHtml}</div>
+</div>\`;
+  }
+
+  // ── Expanded: full terminal node ──
+  const sz = NP.piSize || { w:780, h:480 };
   const connHtml = hasConns
-    ? connSlots.map(({slotId,model,acc})=>\`<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(0,0,0,.25);border-radius:5px;padding:1px 5px 1px 3px;font-size:9px;color:#9090b0;margin-right:3px">
+    ? connSlots.map(({slotId,model,acc})=>\`<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(0,0,0,.25);border-radius:4px;padding:1px 5px 1px 3px;font-size:9px;color:#9090b0;margin-right:3px">
         <span style="width:5px;height:5px;border-radius:50%;background:\${COL[acc.provider]||'#818cf8'};flex-shrink:0"></span>\${model||'(auto)'}
         <button onclick="removePiConn('\${slotId}')" style="background:none;border:none;color:#555;cursor:pointer;font-size:9px;padding:0;line-height:1;margin-left:1px">✕</button>
       </span>\`).join('')
@@ -1300,15 +1323,13 @@ function buildPiNode(){
   return \`<div class="nd mn" id="nd-pi" style="left:\${pos.x}px;top:\${pos.y}px;width:\${sz.w}px">
   <div class="pi-nd-port\${portLive}" id="pi-nd-port" title="Drop account node here"></div>
   <div class="nh" id="pi-nd-hdr" style="cursor:grab">
-    <div class="nic" style="background:rgba(129,140,248,.15)">
-      <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 11V3l4 5 4-5v8" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
+    <div class="nic" style="background:rgba(129,140,248,.15)">\${PI_ICON}</div>
     <div style="flex:1;min-width:0">
       <div style="font-size:11px;font-weight:600;color:#e0e0f0;display:flex;align-items:center">\${dot}Pi Agent</div>
       <div style="font-size:9px;margin-top:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">\${connHtml}</div>
     </div>
     <button class="nd-rm" style="font-size:14px;width:22px;height:22px" onclick="togglePiMax()" title="Fullscreen">⛶</button>
-    <button class="nd-rm" onclick="togglePi()" title="Close">×</button>
+    <button class="nd-rm" onclick="togglePi()" title="Collapse" style="font-size:13px">▾</button>
   </div>
   <div id="pi-term-slot" style="height:\${sz.h}px;overflow:hidden;background:#0d0d0f;border-radius:0 0 12px 12px"></div>
   <div id="pi-loading-slot"></div>
@@ -1863,9 +1884,9 @@ function render(){
   const savedReqs=document.getElementById('mn-reqs-body')?.innerHTML;
   const savedLogs=document.getElementById('mn-logs-body')?.innerHTML;
   const savedStat=document.getElementById('mn-status-body')?.innerHTML;
-  // Preserve xterm Pi terminal and loading overlay across world rebuilds
-  const piTermEl   = piOpen && !piMaximized ? document.getElementById('pi-term-wrap')  : null;
-  const piLoadEl   = piOpen && !piMaximized ? document.getElementById('pi-loading')     : null;
+  // Preserve xterm Pi terminal across world rebuilds (even when collapsing to small node)
+  const piTermEl = piTerm ? document.getElementById('pi-term-wrap') : null;
+  const piLoadEl = document.getElementById('pi-loading');
   const slotNodes=[...onCanvas]
     .filter(id=>id!=='out'&&id!=='monitor')
     .map(slotId=>buildAccNode(slotId))
@@ -1876,9 +1897,11 @@ function render(){
   if(savedLogs){const el=document.getElementById('mn-logs-body');if(el)el.innerHTML=savedLogs;}
   if(savedStat){const el=document.getElementById('mn-status-body');if(el)el.innerHTML=savedStat;}
   if(savedScroll>0){const mb=document.getElementById('mn-body');if(mb)mb.scrollTop=savedScroll;}
-  // Re-attach preserved Pi terminal elements
-  if(piTermEl){const slot=document.getElementById('pi-term-slot');if(slot)slot.replaceWith(piTermEl);}
-  if(piLoadEl){const slot=document.getElementById('pi-loading-slot');if(slot)slot.replaceWith(piLoadEl);}
+  // Re-attach Pi terminal only when expanded (not in small/collapsed node)
+  if(piOpen && !piMaximized){
+    if(piTermEl){const slot=document.getElementById('pi-term-slot');if(slot){slot.replaceWith(piTermEl);if(piFit)setTimeout(()=>piFit.fit(),40);}}
+    if(piLoadEl){const slot=document.getElementById('pi-loading-slot');if(slot)slot.replaceWith(piLoadEl);}
+  }
 
   [...onCanvas].filter(id=>id!=='out'&&id!=='monitor').forEach(slotId=>{
     const port=document.getElementById('po-'+slotId);
