@@ -1162,6 +1162,7 @@ let piOpen = false;
 let piTerm = null;
 let piWs = null;
 let piFit = null;
+let piTermWrap = null; // persists #pi-term-wrap across renders (detached DOM survives collapse)
 if(!NP.piNode) NP.piNode = { x: 60, y: 60 };
 if(!NP.piSize) NP.piSize = { w: 780, h: 480 };
 let piConns = new Set(JSON.parse(localStorage.getItem('rcodex-pi-conns')||'[]'));
@@ -1217,8 +1218,8 @@ async function initPiTerminal(){
 }
 
 function connectPiPty(initialCmd){
-  // Reuse existing #pi-term-wrap element or find the slot placeholder
-  let wrap = document.getElementById('pi-term-wrap');
+  // Use persistent ref first — wrap may be detached from DOM (collapsed state)
+  let wrap = piTermWrap || document.getElementById('pi-term-wrap');
   if(!wrap){
     wrap = document.createElement('div');
     wrap.id = 'pi-term-wrap';
@@ -1226,6 +1227,7 @@ function connectPiPty(initialCmd){
     const slot = document.getElementById('pi-term-slot');
     if(slot) slot.replaceWith(wrap); else document.getElementById('nd-pi')?.appendChild(wrap);
   }
+  piTermWrap = wrap;
   if(piTerm){ piTerm.dispose(); piTerm = null; }
   if(piWs){ try{ piWs.close(); }catch{} piWs = null; }
 
@@ -1377,19 +1379,28 @@ function togglePiMax(){
     nd.style.height = '100vh';
     nd.style.borderRadius = '0';
     nd.style.zIndex = '200';
+    nd.style.display = 'flex';
+    nd.style.flexDirection = 'column';
+    // Terminal must flex-fill remaining height instead of using fixed px
+    const termEl = piTermWrap || document.getElementById('pi-term-slot');
+    if(termEl){ termEl.style.flex = '1'; termEl.style.height = 'auto'; }
     document.body.appendChild(nd);
   } else {
-    // Move back into #world
+    // Reset flex before render rebuilds the node
+    const sz = NP.piSize || { w:780, h:480 };
+    const termEl = piTermWrap || document.getElementById('pi-term-slot');
+    if(termEl){ termEl.style.flex = ''; termEl.style.height = sz.h + 'px'; }
     nd.style.position = '';
     nd.style.inset = '';
-    nd.style.width = NP.piSize.w + 'px';
+    nd.style.width = sz.w + 'px';
     nd.style.height = '';
     nd.style.borderRadius = '';
     nd.style.zIndex = '';
+    nd.style.display = '';
+    nd.style.flexDirection = '';
     nd.style.left = NP.piNode.x + 'px';
     nd.style.top  = NP.piNode.y + 'px';
     document.getElementById('world').appendChild(nd);
-    // Restore term slot ← wrap preserved, re-slot via render
     render();
   }
   if(piFit) setTimeout(()=>piFit.fit(), 80);
@@ -1887,8 +1898,9 @@ function render(){
   const savedReqs=document.getElementById('mn-reqs-body')?.innerHTML;
   const savedLogs=document.getElementById('mn-logs-body')?.innerHTML;
   const savedStat=document.getElementById('mn-status-body')?.innerHTML;
-  // Preserve xterm Pi terminal across world rebuilds (even when collapsing to small node)
-  const piTermEl = piTerm ? document.getElementById('pi-term-wrap') : null;
+  // Preserve xterm Pi terminal across world rebuilds (use persistent ref — getElementById
+  // returns null when wrap is detached, which breaks the 2nd expand cycle)
+  const piTermEl = piTermWrap;
   const piLoadEl = document.getElementById('pi-loading');
   const slotNodes=[...onCanvas]
     .filter(id=>id!=='out'&&id!=='monitor')
