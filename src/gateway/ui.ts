@@ -2053,26 +2053,28 @@ function zoomStep(d){zoomAt(d>0?1.25:1/1.25)}
 function fitAll(){
   const ws=document.getElementById('ws');
   if(!ws)return;
-  const wr=ws.getBoundingClientRect();
   const world=document.getElementById('world');
   if(!world)return;
-  let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
-  const ndEls=world.querySelectorAll('.nd');
-  for(var i=0;i<ndEls.length;i++){
-    const r=ndEls[i].getBoundingClientRect();
-    if(!r.width&&!r.height)continue;
-    // convert screen coords → world coords using current vp
-    const wx=(r.left-wr.left-vp.x)/vp.s, wy=(r.top-wr.top-vp.y)/vp.s;
-    const ww=r.width/vp.s, wh=r.height/vp.s;
-    x0=Math.min(x0,wx);y0=Math.min(y0,wy);
-    x1=Math.max(x1,wx+ww);y1=Math.max(y1,wy+wh);
+  // Iterate 3×: each applyVp() forces reflow so next getBoundingClientRect() sees updated layout
+  for(var iter=0;iter<3;iter++){
+    const wr=ws.getBoundingClientRect();
+    const ndEls=world.querySelectorAll('.nd');
+    let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+    for(var i=0;i<ndEls.length;i++){
+      const r=ndEls[i].getBoundingClientRect();
+      if(!r.width&&!r.height)continue;
+      const wx=(r.left-wr.left-vp.x)/vp.s, wy=(r.top-wr.top-vp.y)/vp.s;
+      const ww=r.width/vp.s, wh=r.height/vp.s;
+      x0=Math.min(x0,wx);y0=Math.min(y0,wy);
+      x1=Math.max(x1,wx+ww);y1=Math.max(y1,wy+wh);
+    }
+    if(!isFinite(x0))return;
+    const pad=60;
+    vp.s=Math.max(0.08,Math.min((wr.width-pad*2)/(x1-x0),(wr.height-pad*2)/(y1-y0)));
+    vp.x=Math.round(wr.width/2-(x0+x1)/2*vp.s);
+    vp.y=Math.round(wr.height/2-(y0+y1)/2*vp.s);
+    applyVp(); // forces synchronous reflow — next iteration reads updated positions
   }
-  if(!isFinite(x0))return;
-  const pad=60;
-  vp.s=Math.max(0.08,Math.min((wr.width-pad*2)/(x1-x0),(wr.height-pad*2)/(y1-y0)));
-  vp.x=Math.round(wr.width/2-(x0+x1)/2*vp.s);
-  vp.y=Math.round(wr.height/2-(y0+y1)/2*vp.s);
-  applyVp();
 }
 
 // Canvas render
