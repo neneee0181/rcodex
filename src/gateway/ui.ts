@@ -1133,8 +1133,7 @@ function addToCanvas(accountId){
   if(!NP[slotId]){
     const ws=document.getElementById('ws');
     const wr=ws.getBoundingClientRect();
-    const cx=(wr.width/2-vp.x)/vp.s,cy=(wr.height/2-vp.y)/vp.s;
-    NP[slotId]=findFreePos(cx-130,cy-90);
+    NP[slotId]=findBestPos();
   }
   saveLS();
   render();
@@ -1962,29 +1961,42 @@ async function refreshQuota(accountId){
   renderUsage();
 }
 
-// Find a canvas position near (px,py) that doesn't overlap existing nodes.
-// Uses an expanding ring scan: tries grid cells at distance ring*W, ring*H.
-function findFreePos(px, py){
-  var W=278, H=198; // node width + horizontal gap, estimated height + vertical gap
-  function overlaps(x,y){
-    for(var id in NP){
-      var p=NP[id];
-      if(x<p.x+W&&x+W>p.x&&y<p.y+H&&y+H>p.y)return true;
-    }
-    return false;
+// Find the canvas position with the most open space visible in the current viewport.
+// Samples a grid across the visible world area; scores each cell by its minimum
+// squared distance to any existing node center; returns the best (most open) cell.
+function findBestPos(){
+  var wsEl=document.getElementById('ws');
+  var wr=wsEl?wsEl.getBoundingClientRect():{width:1200,height:700};
+  // Visible canvas bounds in world (unscaled) coordinates
+  var x0=Math.round(-vp.x/vp.s), y0=Math.round(-vp.y/vp.s);
+  var x1=Math.round((wr.width-vp.x)/vp.s), y1=Math.round((wr.height-vp.y)/vp.s);
+  var NW=260, NH=180, PAD=24;
+  var ids=Object.keys(NP);
+  // No existing nodes → viewport center
+  if(!ids.length){
+    return{x:Math.max(PAD,Math.round((x0+x1)/2-NW/2)),
+           y:Math.max(PAD,Math.round((y0+y1)/2-NH/2))};
   }
-  var bx=Math.max(20,Math.round(px)), by=Math.max(20,Math.round(py));
-  if(!overlaps(bx,by))return{x:bx,y:by};
-  for(var ring=1;ring<=14;ring++){
-    for(var dc=-ring;dc<=ring;dc++){
-      for(var dr=-ring;dr<=ring;dr++){
-        if(Math.abs(dc)!==ring&&Math.abs(dr)!==ring)continue;
-        var x=Math.max(20,bx+dc*W), y=Math.max(20,by+dr*H);
-        if(!overlaps(x,y))return{x:x,y:y};
+  // Sample ~15×10 grid across visible area
+  var COLS=15, ROWS=10;
+  var stepX=Math.max(NW,Math.round((x1-x0-PAD*2)/COLS));
+  var stepY=Math.max(NH,Math.round((y1-y0-PAD*2)/ROWS));
+  var bestX=Math.max(PAD,x0+PAD), bestY=Math.max(PAD,y0+PAD), bestScore=-1;
+  for(var cx=x0+PAD;cx+NW<=x1-PAD;cx+=stepX){
+    for(var cy=y0+PAD;cy+NH<=y1-PAD;cy+=stepY){
+      var tx=Math.max(PAD,cx), ty=Math.max(PAD,cy);
+      // Score = min squared distance from this cell's center to any existing node center
+      var score=Infinity;
+      for(var i=0;i<ids.length;i++){
+        var p=NP[ids[i]];
+        var dx=(tx+NW/2)-(p.x+NW/2), dy=(ty+NH/2)-(p.y+NH/2);
+        var d=dx*dx+dy*dy;
+        if(d<score)score=d;
       }
+      if(score>bestScore){bestScore=score;bestX=tx;bestY=ty;}
     }
   }
-  return{x:bx,y:by};
+  return{x:bestX,y:bestY};
 }
 
 // Canvas viewport
@@ -2469,7 +2481,7 @@ async function fetchStatus(){
         }
         if(!onCanvas.has(slot.slotId)){
           onCanvas.add(slot.slotId);
-          if(!NP[slot.slotId])NP[slot.slotId]=findFreePos(80+(idx%4)*278,80+Math.floor(idx/4)*198);
+          if(!NP[slot.slotId])NP[slot.slotId]=findBestPos();
           idx++;
         }
       }
