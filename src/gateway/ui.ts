@@ -382,6 +382,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
 @keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(6px)}}
 /* Pi node (canvas) */
 .pi-term-wrap{flex:1;overflow:hidden;padding:4px 0;background:#0d0d0f;border-radius:0 0 12px 12px}
+.pi-term-wrap .xterm-viewport{overflow-y:scroll!important}
+.pi-term-wrap .xterm-viewport::-webkit-scrollbar{width:5px}
+.pi-term-wrap .xterm-viewport::-webkit-scrollbar-track{background:transparent}
+.pi-term-wrap .xterm-viewport::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:3px}
+.pi-term-wrap .xterm-viewport::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.35)}
 .pi-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0d0d0f;z-index:10;gap:10px;border-radius:0 0 12px 12px}
 .pi-spin{width:24px;height:24px;border:2px solid #333;border-top-color:#818cf8;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -1253,7 +1258,8 @@ function connectPiPty(initialCmd){
   term.onData(d => { if(ws.readyState === WebSocket.OPEN) ws.send(d); });
   term.onResize(({cols,rows}) => { if(ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({type:'resize',cols,rows})); });
 
-  const ro = new ResizeObserver(() => { if(piFit) piFit.fit(); });
+  wrap.addEventListener('wheel', e => e.stopPropagation());
+  const ro = new ResizeObserver(() => { if(piFit){ piFit.fit(); if(piTerm) piTerm.refresh(0, piTerm.rows-1); } });
   ro.observe(wrap);
 }
 
@@ -1407,7 +1413,7 @@ function togglePiMax(){
     document.getElementById('world').appendChild(nd);
     render();
   }
-  if(piFit) setTimeout(()=>piFit.fit(), 80);
+  if(piFit) setTimeout(()=>{ piFit.fit(); if(piTerm) piTerm.refresh(0, piTerm.rows-1); }, 80);
 }
 
 function startPiResize(e,dir){
@@ -2181,7 +2187,7 @@ window.addEventListener('pointermove',e=>{
     if(nd) nd.style.width=sz.w+'px';
     const slot=document.getElementById('pi-term-wrap')||document.getElementById('pi-term-slot');
     if(slot) slot.style.height=sz.h+'px';
-    if(piFit) piFit.fit();
+    if(piFit){ piFit.fit(); if(piTerm) piTerm.refresh(0, piTerm.rows-1); }
     return;
   }
   if(nodeD){
@@ -2251,8 +2257,8 @@ window.addEventListener('pointerup',async e=>{
 });
 
 WS.addEventListener('wheel',e=>{
-  // Don't intercept scroll events from inside panels (monitor, sidebar)
-  if(e.target instanceof Element&&e.target.closest('.mn-body,.sb-body'))return;
+  // Don't intercept scroll events from inside panels (monitor, sidebar, pi terminal)
+  if(e.target instanceof Element&&e.target.closest('.mn-body,.sb-body,.pi-term-wrap'))return;
   e.preventDefault();
   const r=WS.getBoundingClientRect();
   zoomAt(e.deltaY<0?1.1:1/1.1,e.clientX-r.left,e.clientY-r.top);
