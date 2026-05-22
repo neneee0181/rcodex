@@ -1188,6 +1188,25 @@ function fitPi(){
   piTerm.scrollToBottom();
 }
 
+// Keep piTermWrap as position:fixed on body overlaid on pi-term-slot.
+// This keeps xterm.js outside CSS zoom so mouse/IME/selection coords are correct.
+function repositionPiTermWrap(){
+  if(!piTermWrap || !piOpen || piMaximized) return;
+  const slot=document.getElementById('pi-term-slot');
+  if(!slot) return;
+  const r=slot.getBoundingClientRect();
+  if(!r.width||!r.height) return;
+  piTermWrap.style.position='fixed';
+  piTermWrap.style.left=r.left+'px';
+  piTermWrap.style.top=r.top+'px';
+  piTermWrap.style.width=r.width+'px';
+  piTermWrap.style.height=r.height+'px';
+  piTermWrap.style.visibility='';
+  piTermWrap.style.pointerEvents='';
+  piTermWrap.style.zIndex='100';
+  fitPi();
+}
+
 function togglePi(){
   piOpen = !piOpen;
   document.getElementById('hb-pi')?.classList.toggle('on', piOpen);
@@ -1284,14 +1303,14 @@ async function initPiTerminal(){
 }
 
 function connectPiPty(initialCmd, isInstall){
-  // Use persistent ref first — wrap may be detached from DOM (collapsed state)
+  // Always keep wrap on body as position:fixed — never inside #world (avoids CSS zoom)
   let wrap = piTermWrap || document.getElementById('pi-term-wrap');
   if(!wrap){
     wrap = document.createElement('div');
     wrap.id = 'pi-term-wrap';
     wrap.className = 'pi-term-wrap';
-    const slot = document.getElementById('pi-term-slot');
-    if(slot) slot.replaceWith(wrap); else document.getElementById('nd-pi')?.appendChild(wrap);
+    wrap.style.cssText='position:fixed;left:-9999px;top:-9999px;width:780px;height:480px;visibility:hidden;pointer-events:none;z-index:100';
+    document.body.appendChild(wrap);
   }
   piTermWrap = wrap;
   if(piTerm){ piTerm.dispose(); piTerm = null; }
@@ -1337,27 +1356,26 @@ function connectPiPty(initialCmd, isInstall){
 
   term.attachCustomKeyEventHandler(function(e){
     if(e.type!=='keydown') return true;
-    // Ctrl+C: copy selection if present, else pass through as SIGINT
     if(e.ctrlKey && e.key==='c'){
       const sel=term.getSelection();
       if(sel){ navigator.clipboard.writeText(sel).catch(function(){}); return false; }
       return true;
     }
-    // Ctrl+V: paste from clipboard
     if(e.ctrlKey && e.key==='v'){
       navigator.clipboard.readText().then(function(text){
-        if(text && ws.readyState===WebSocket.OPEN) ws.send(text);
+        if(text && piWs && piWs.readyState===WebSocket.OPEN) piWs.send(text);
       }).catch(function(){});
       return false;
     }
-    // Shift+Enter: insert literal newline
     if(e.shiftKey && e.key==='Enter'){
-      if(ws.readyState===WebSocket.OPEN) ws.send('\\n');
+      if(piWs && piWs.readyState===WebSocket.OPEN) piWs.send('\\n');
       return false;
     }
     return true;
   });
 
+  // Refocus terminal on click so canvas interactions don't steal input
+  wrap.addEventListener('mousedown', function(){ term.focus(); });
   wrap.addEventListener('wheel', e => e.stopPropagation());
 }
 
@@ -2063,6 +2081,7 @@ function applyVp(){
   ws.style.backgroundPosition=\`\${rx}px \${ry}px\`;
   document.getElementById('zpct').textContent=Math.round(vp.s*100)+'%';
   drawLines();
+  repositionPiTermWrap();
 }
 function zoomAt(f,cx,cy){
   const r=document.getElementById('ws').getBoundingClientRect();
@@ -2109,18 +2128,11 @@ function render(){
   const savedLogs=document.getElementById('mn-logs-body')?.innerHTML;
   const savedStat=document.getElementById('mn-status-body')?.innerHTML;
   const piLoadEl = document.getElementById('pi-loading');
-  // Park piTermWrap on body during world rebuild to keep xterm DOM-connected.
-  // When piOpen=false, park off-screen/hidden so the terminal never floats on canvas.
-  // When piOpen=true, styles are cleared below before re-inserting into the slot.
-  if(piTermWrap && !piMaximized){
-    if(!piOpen){
-      piTermWrap.style.position='fixed';
-      piTermWrap.style.left='-9999px';
-      piTermWrap.style.top='-9999px';
-      piTermWrap.style.visibility='hidden';
-      piTermWrap.style.pointerEvents='none';
-    }
-    document.body.appendChild(piTermWrap);
+  // piTermWrap always lives on body as position:fixed — just show/hide
+  if(piTermWrap && !piMaximized && !piOpen){
+    piTermWrap.style.visibility='hidden';
+    piTermWrap.style.pointerEvents='none';
+    piTermWrap.style.left='-9999px';
   }
   const slotNodes=[...onCanvas]
     .filter(id=>id!=='out'&&id!=='monitor')
@@ -2132,21 +2144,9 @@ function render(){
   if(savedLogs){const el=document.getElementById('mn-logs-body');if(el)el.innerHTML=savedLogs;}
   if(savedStat){const el=document.getElementById('mn-status-body');if(el)el.innerHTML=savedStat;}
   if(savedScroll>0){const mb=document.getElementById('mn-body');if(mb)mb.scrollTop=savedScroll;}
-  // Re-attach Pi terminal into new slot
+  // Overlay piTermWrap on pi-term-slot (position:fixed, outside CSS zoom)
   if(piOpen && !piMaximized){
-    if(piTermWrap){
-      const slot=document.getElementById('pi-term-slot');
-      if(slot){
-        // Clear off-screen styles set while parked on body
-        piTermWrap.style.position='';
-        piTermWrap.style.left='';
-        piTermWrap.style.top='';
-        piTermWrap.style.visibility='';
-        piTermWrap.style.pointerEvents='';
-        slot.replaceWith(piTermWrap);
-        setTimeout(fitPi, 60);
-      }
-    }
+    setTimeout(function(){ repositionPiTermWrap(); if(piTerm) piTerm.focus(); }, 60);
     if(piLoadEl){const slot=document.getElementById('pi-loading-slot');if(slot)slot.replaceWith(piLoadEl);}
   }
 
@@ -2402,9 +2402,10 @@ window.addEventListener('pointermove',e=>{
     NP.piSize=sz;
     const nd=document.getElementById('nd-pi');
     if(nd) nd.style.width=sz.w+'px';
-    const slot=document.getElementById('pi-term-wrap')||document.getElementById('pi-term-slot');
+    // Update slot height so the placeholder shows correct size
+    const slot=document.getElementById('pi-term-slot');
     if(slot) slot.style.height=sz.h+'px';
-    fitPi();
+    repositionPiTermWrap(); // resizes+repositions piTermWrap over updated slot
     return;
   }
   if(nodeD){
