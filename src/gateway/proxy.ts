@@ -1295,7 +1295,7 @@ const anthropicExtract = (evt: Record<string, unknown>): string | null =>
     ? (evt.delta as Record<string, string>).text ?? null : null;
 
   // --- Account resolution: sorted by priority (slot order) ---
-function resolveAccounts(requestedModel: string, config: GatewayConfig): { account: Account; model: string }[] {
+function resolveAccounts(requestedModel: string, config: GatewayConfig, source?: "codex" | "pi" | "api"): { account: Account; model: string }[] {
   const safeDefault: Record<string, string> = {
     anthropic: "claude-opus-4-7-20250514",
     openai: "gpt-4o",
@@ -1326,20 +1326,31 @@ function resolveAccounts(requestedModel: string, config: GatewayConfig): { accou
 
   const candidates: { account: Account; model: string; order: number }[] = [];
 
-  for (const account of config.accounts) {
-    if (account.activeModels?.length) {
-      // New multi-slot routing
-      for (const slot of account.activeModels) {
-        const model = slot.model || safeDefault[account.provider] || requestedModel;
-        candidates.push({ account, model, order: slot.order });
+  if (source === "pi") {
+    // Pi requests: only route to explicitly Pi-connected accounts.
+    // Output-chain accounts are NOT eligible — removing a Pi connection
+    // must fully cut access even while Pi is running.
+    for (const account of config.accounts) {
+      if (account.connectedToPi && account.piModels?.includes(requestedModel)) {
+        candidates.push({ account, model: requestedModel, order: -1 });
       }
-    } else if (account.connectedToOut) {
-      // Legacy single-connection fallback
-      const model = account.selectedModel ||
-        (providerFromModel === account.provider ? requestedModel : safeDefault[account.provider] || requestedModel);
-      candidates.push({ account, model, order: account.connectedOrder ?? 999 });
-    } else if (account.connectedToPi && account.piModels?.includes(requestedModel)) {
-      candidates.push({ account, model: requestedModel, order: -1 });
+    }
+  } else {
+    for (const account of config.accounts) {
+      if (account.activeModels?.length) {
+        // New multi-slot routing
+        for (const slot of account.activeModels) {
+          const model = slot.model || safeDefault[account.provider] || requestedModel;
+          candidates.push({ account, model, order: slot.order });
+        }
+      } else if (account.connectedToOut) {
+        // Legacy single-connection fallback
+        const model = account.selectedModel ||
+          (providerFromModel === account.provider ? requestedModel : safeDefault[account.provider] || requestedModel);
+        candidates.push({ account, model, order: account.connectedOrder ?? 999 });
+      } else if (account.connectedToPi && account.piModels?.includes(requestedModel)) {
+        candidates.push({ account, model: requestedModel, order: -1 });
+      }
     }
   }
 
@@ -2227,7 +2238,7 @@ export async function* streamProxyRequest(
   responseId?: string,
   source?: "codex" | "pi" | "api"
 ): AsyncGenerator<StreamChunk> {
-  const candidates = resolveAccounts(req.model, config);
+  const candidates = resolveAccounts(req.model, config, source);
   if (!candidates.length) throw new Error("No provider connected to output");
 
   const order = candidates.map((c, i) => `${i + 1}.${c.account.provider}(${c.model})`).join(" -> ");
