@@ -1335,6 +1335,29 @@ function connectPiPty(initialCmd, isInstall){
   term.onData(d => { if(ws.readyState === WebSocket.OPEN) ws.send(d); });
   term.onResize(({cols,rows}) => { if(ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({type:'resize',cols,rows})); });
 
+  term.attachCustomKeyEventHandler(function(e){
+    if(e.type!=='keydown') return true;
+    // Ctrl+C: copy selection if present, else pass through as SIGINT
+    if(e.ctrlKey && e.key==='c'){
+      const sel=term.getSelection();
+      if(sel){ navigator.clipboard.writeText(sel).catch(function(){}); return false; }
+      return true;
+    }
+    // Ctrl+V: paste from clipboard
+    if(e.ctrlKey && e.key==='v'){
+      navigator.clipboard.readText().then(function(text){
+        if(text && ws.readyState===WebSocket.OPEN) ws.send(text);
+      }).catch(function(){});
+      return false;
+    }
+    // Shift+Enter: insert literal newline
+    if(e.shiftKey && e.key==='Enter'){
+      if(ws.readyState===WebSocket.OPEN) ws.send('\\n');
+      return false;
+    }
+    return true;
+  });
+
   wrap.addEventListener('wheel', e => e.stopPropagation());
 }
 
