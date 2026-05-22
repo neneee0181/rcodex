@@ -1174,6 +1174,7 @@ if(!NP.piNode) NP.piNode = { x: 60, y: 60 };
 if(!NP.piSize) NP.piSize = { w: 780, h: 480 };
 let piConns = new Set(JSON.parse(localStorage.getItem('rcodex-pi-conns')||'[]'));
 let piMaximized = false;
+let piMaxTimer = null; // cancel pending resize on rapid ⛶ toggle
 function savePiConns(){ localStorage.setItem('rcodex-pi-conns', JSON.stringify([...piConns])); }
 
 function piCmd(){ return 'pi'; }
@@ -1383,6 +1384,8 @@ async function removePiConn(slotId){
 }
 
 function togglePiMax(){
+  // Cancel any pending resize from a previous rapid toggle
+  if(piMaxTimer){ clearTimeout(piMaxTimer); piMaxTimer = null; }
   piMaximized = !piMaximized;
   const nd = document.getElementById('nd-pi');
   if(!nd) return;
@@ -1400,7 +1403,7 @@ function togglePiMax(){
     const termEl = piTermWrap || document.getElementById('pi-term-slot');
     if(termEl){ termEl.style.flex = '1'; termEl.style.height = 'auto'; }
     document.body.appendChild(nd);
-    setTimeout(fitPi, 80); // enter: normal fit
+    piMaxTimer = setTimeout(() => { piMaxTimer = null; fitPi(); }, 80);
   } else {
     // Reset flex before render rebuilds the node
     const sz = NP.piSize || { w:780, h:480 };
@@ -1418,16 +1421,10 @@ function togglePiMax(){
     nd.style.top  = NP.piNode.y + 'px';
     document.getElementById('world').appendChild(nd);
     render();
-    // exit: two-step resize to guarantee scrollback survives
-    // resize(cols,1) pushes ALL content into scrollback buffer,
-    // then piFit.fit() pulls the last N rows back — scrollback always populated
-    setTimeout(() => {
-      if(piTerm && piFit){
-        piTerm.resize(piTerm.cols, 1);
-        piFit.fit();
-        piTerm.refresh(0, piTerm.rows - 1);
-      }
-    }, 100);
+    // render() already schedules fitPi at 60ms — that single fit is sufficient.
+    // The old two-step (resize→1 then fit) sent a PTY resize to rows=1,
+    // causing the shell to redraw in 1-row mode and inject escape sequences
+    // that corrupted the scroll buffer. Removed.
   }
 }
 
