@@ -1430,9 +1430,9 @@ function togglePiMax(){
     // Terminal must flex-fill remaining height/width instead of using fixed px
     const termEl = piTermWrap || document.getElementById('pi-term-slot');
     if(termEl){ termEl.style.flex = '1'; termEl.style.width = ''; termEl.style.height = 'auto'; }
-    const port = nd.querySelector('#pi-nd-port') as HTMLElement;
+    const port = nd.querySelector('#pi-nd-port');
     if(port) port.style.display = 'none';
-    nd.querySelectorAll<HTMLElement>('.mn-rs-e,.mn-rs-s,.mn-rs-se').forEach(el => el.style.display = 'none');
+    nd.querySelectorAll('.mn-rs-e,.mn-rs-s,.mn-rs-se').forEach(function(el){el.style.display='none';});
     document.body.appendChild(nd);
     piMaxTimer = setTimeout(() => { piMaxTimer = null; fitPi(); }, 80);
   } else {
@@ -1440,9 +1440,9 @@ function togglePiMax(){
     const sz = NP.piSize || { w:780, h:480 };
     const termEl = piTermWrap || document.getElementById('pi-term-slot');
     if(termEl){ termEl.style.flex = ''; termEl.style.width = sz.w + 'px'; termEl.style.height = sz.h + 'px'; }
-    const port = nd.querySelector('#pi-nd-port') as HTMLElement;
+    const port = nd.querySelector('#pi-nd-port');
     if(port) port.style.display = '';
-    nd.querySelectorAll<HTMLElement>('.mn-rs-e,.mn-rs-s,.mn-rs-se').forEach(el => el.style.display = '');
+    nd.querySelectorAll('.mn-rs-e,.mn-rs-s,.mn-rs-se').forEach(function(el){el.style.display='';});
     nd.style.position = '';
     nd.style.inset = '';
     nd.style.width = sz.w + 'px';
