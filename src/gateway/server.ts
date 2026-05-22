@@ -967,7 +967,7 @@ export function createGatewayServer(): GatewayServer {
       }
     }, 3_000);
     try {
-      for await (const chunk of streamProxyRequest(responsesReq, config, abortController.signal, responseId)) {
+      for await (const chunk of streamProxyRequest(responsesReq, config, abortController.signal, responseId, "codex")) {
         if (chunk.type === 'reasoning') {
           if (!reasoningStarted) {
             sse("response.output_item.added", { type: "response.output_item.added", output_index: nextOutputIdx++, item: { type: "reasoning", id: reasoningItemId, status: "in_progress", summary: [] } });
@@ -1105,11 +1105,15 @@ export function createGatewayServer(): GatewayServer {
   });
 
   // ?�?� Chat completions fallback ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
-  fastify.post<{ Body: { model: string; messages: { role: string; content: string }[]; stream?: boolean } }>(
+  fastify.post<{ Body: Record<string, unknown> }>(
     "/v1/chat/completions",
     async (req, reply) => {
       const config = loadConfig();
-      const { model, messages, stream = false } = req.body;
+      const body = req.body;
+      const model = body.model as string;
+      const messages = (body.messages as { role: string; content: string }[]) ?? [];
+      const stream = (body.stream as boolean) ?? false;
+      const tools = body.tools as unknown[] | undefined;
       const systemMsg = messages.find(m => m.role === "system");
       const userMessages = messages.filter(m => m.role !== "system");
       const responsesReq: ResponsesRequest = {
@@ -1117,6 +1121,7 @@ export function createGatewayServer(): GatewayServer {
         input: userMessages.map(m => ({ type: "message", role: m.role, content: m.content })),
         instructions: systemMsg?.content,
         stream,
+        ...(tools?.length ? { tools } : {}),
       };
 
       if (stream) {
@@ -1129,14 +1134,28 @@ export function createGatewayServer(): GatewayServer {
         const sse = (data: unknown) => reply.raw.write(`data: ${JSON.stringify(data)}\n\n`);
         const abortController = new AbortController();
         reply.raw.on("close", () => abortController.abort());
+        // track open tool calls for finish_reason
+        const openToolCalls = new Map<string, { index: number; name: string }>();
+        let toolCallIndex = 0;
+        let hasToolCalls = false;
         try {
           sse({ id, object: "chat.completion.chunk", model, choices: [{ index: 0, delta: { role: "assistant" }, finish_reason: null }] });
-          for await (const chunk of streamProxyRequest(responsesReq, config, abortController.signal)) {
+          for await (const chunk of streamProxyRequest(responsesReq, config, abortController.signal, undefined, "pi")) {
             if (chunk.type === "text") {
               sse({ id, object: "chat.completion.chunk", model, choices: [{ index: 0, delta: { content: chunk.content }, finish_reason: null }] });
+            } else if (chunk.type === "tool_call_start") {
+              const idx = toolCallIndex++;
+              openToolCalls.set(chunk.id, { index: idx, name: chunk.name });
+              hasToolCalls = true;
+              glog(`[chat/completions] tool_call: ${chunk.name}`);
+              sse({ id, object: "chat.completion.chunk", model, choices: [{ index: 0, delta: { tool_calls: [{ index: idx, id: chunk.id, type: "function", function: { name: chunk.name, arguments: "" } }] }, finish_reason: null }] });
+            } else if (chunk.type === "tool_call_delta") {
+              const tc = openToolCalls.get(chunk.id);
+              if (tc) sse({ id, object: "chat.completion.chunk", model, choices: [{ index: 0, delta: { tool_calls: [{ index: tc.index, function: { arguments: chunk.delta } }] }, finish_reason: null }] });
             }
           }
-          sse({ id, object: "chat.completion.chunk", model, choices: [{ index: 0, delta: {}, finish_reason: "stop" }] });
+          const finishReason = hasToolCalls ? "tool_calls" : "stop";
+          sse({ id, object: "chat.completion.chunk", model, choices: [{ index: 0, delta: {}, finish_reason: finishReason }] });
           reply.raw.write("data: [DONE]\n\n");
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);

@@ -421,6 +421,7 @@ export interface RequestLogEntry {
   toolCalls?: string[];
   toolCallDetails?: { name: string; args: string }[];
   webFetches?: string[];
+  source?: "codex" | "pi" | "api";
 }
 // Load persisted requests from today (local time), compacting the file
 function loadAndCompact(): RequestLogEntry[] {
@@ -2223,13 +2224,21 @@ export async function* streamProxyRequest(
   req: ResponsesRequest,
   config: GatewayConfig,
   signal?: AbortSignal,
-  responseId?: string
+  responseId?: string,
+  source?: "codex" | "pi" | "api"
 ): AsyncGenerator<StreamChunk> {
   const candidates = resolveAccounts(req.model, config);
   if (!candidates.length) throw new Error("No provider connected to output");
 
   const order = candidates.map((c, i) => `${i + 1}.${c.account.provider}(${c.model})`).join(" -> ");
   glog(`[gateway] stream routing order: ${order}`);
+
+  // inputPreview from last user message
+  const inputItems = Array.isArray(req.input) ? req.input as unknown as { role?: string; content?: unknown }[] : [];
+  const lastUserContent = inputItems.filter(i => i.role === "user").slice(-1)[0]?.content;
+  const inputPreview = typeof lastUserContent === "string"
+    ? lastUserContent.slice(0, 120)
+    : typeof req.input === "string" ? (req.input as string).slice(0, 120) : undefined;
 
   const t0 = Date.now();
   let lastError: Error | null = null;
@@ -2239,14 +2248,18 @@ export async function* streamProxyRequest(
     let yielded = false;
     let entry: RequestLogEntry | null = null;
     const usage: { inputTokens?: number; outputTokens?: number } = {};
+    let outputText = "";
+    const toolCallNames: string[] = [];
     try {
       for await (const chunk of streamSingleProvider(account, model, req, config, signal, usage, responseId)) {
         if (!yielded) {
           if (i > 0) gwarn(`[gateway] stream fallback: ${account.provider}(${model})`);
           else glog(`[gateway] stream ${account.provider}(${model})`);
-          entry = pushLog({ ts: Date.now(), requestedModel: req.model, provider: account.provider, usedModel: model, fallback: i > 0, failedModels: failedModels.length ? [...failedModels] : undefined, ms: Date.now() - t0, status: "ok" });
+          entry = pushLog({ ts: Date.now(), requestedModel: req.model, provider: account.provider, usedModel: model, fallback: i > 0, failedModels: failedModels.length ? [...failedModels] : undefined, ms: Date.now() - t0, status: "ok", source, inputPreview });
           yielded = true;
         }
+        if (chunk.type === "text") outputText += chunk.content;
+        else if (chunk.type === "tool_call_start") toolCallNames.push(chunk.name);
         yield chunk;
       }
       // Update entry with usage + final latency, then persist
@@ -2254,6 +2267,8 @@ export async function* streamProxyRequest(
         entry.ms = Date.now() - t0;
         if (usage.inputTokens) entry.inputTokens = usage.inputTokens;
         if (usage.outputTokens) entry.outputTokens = usage.outputTokens;
+        if (outputText) entry.outputPreview = outputText.slice(0, 200);
+        if (toolCallNames.length) entry.toolCalls = toolCallNames;
       }
       flushLog();
       return;

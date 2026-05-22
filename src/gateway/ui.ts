@@ -347,7 +347,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
 .log-l.err{color:#f87171}.log-l.warn{color:#fbbf24}.log-l.ok{color:#4ade80}
 /* requests */
 .req-wrap{padding:4px 0}
-.req-row{display:grid;grid-template-columns:52px 80px 1fr 40px 72px 20px;
+.req-row{display:grid;grid-template-columns:52px 80px 1fr 38px 40px 72px 20px;
   gap:4px;align-items:start;padding:5px 8px;font-size:10px;
   border-bottom:1px solid rgba(255,255,255,.035)}
 .req-row:last-child{border-bottom:none}
@@ -1673,7 +1673,7 @@ async function refreshRequests(){
   try{
     const d=await(await fetch('/api/requests')).json();
     if(!d.requests?.length){body.innerHTML='<div class="mn-empty">No requests yet</div>';return;}
-    const hdr='<div class="req-row req-hdr"><span>Time</span><span>Provider</span><span>Model</span><span>ms</span><span>Tokens</span><span></span></div>';
+    const hdr='<div class="req-row req-hdr"><span>Time</span><span>Provider</span><span>Model</span><span>Src</span><span>ms</span><span>Tokens</span><span></span></div>';
     const rows=d.requests.map((r,i)=>{
       const t=new Date(r.ts);
       const ts=t.toLocaleTimeString('en',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
@@ -1713,11 +1713,17 @@ async function refreshRequests(){
         detailHtml=\`<div id="\${detailId}" class="req-detail-panel" style="display:none">\${parts.join('')}</div>\`;
       }
 
+      const srcBadge=r.source==='pi'
+        ?\`<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#1e3a5f;color:#60a5fa;font-weight:600">Pi</span>\`
+        :r.source==='codex'
+        ?\`<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#2d1b69;color:#a78bfa;font-weight:600">Codex</span>\`
+        :'';
       return \`<div style="flex-direction:column;display:flex;border-bottom:1px solid rgba(255,255,255,.035)">
         <div class="req-row \${stCls}-row" style="border-bottom:none">
           <span class="req-ts">\${ts}</span>
           <span class="req-prov" style="color:\${col}">\${r.provider||'-'}</span>
           <span class="req-model">\${modelLabel}</span>
+          <span>\${srcBadge}</span>
           <span class="req-ms">\${r.ms}</span>
           <span>\${tokensTxt}</span>
           <span>\${detailBtn}</span>
