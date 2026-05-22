@@ -1913,10 +1913,12 @@ function render(){
   const savedReqs=document.getElementById('mn-reqs-body')?.innerHTML;
   const savedLogs=document.getElementById('mn-logs-body')?.innerHTML;
   const savedStat=document.getElementById('mn-status-body')?.innerHTML;
-  // Preserve xterm Pi terminal across world rebuilds (use persistent ref — getElementById
-  // returns null when wrap is detached, which breaks the 2nd expand cycle)
-  const piTermEl = piTermWrap;
   const piLoadEl = document.getElementById('pi-loading');
+  // Keep piTermWrap connected to document during world rebuild.
+  // world.innerHTML would disconnect it — xterm v5 detects disconnection and
+  // resets its internal scroll/viewport state, destroying scrollback position.
+  // Moving to body keeps it "in document" so xterm never sees a disconnect.
+  if(piTermWrap && !piMaximized) document.body.appendChild(piTermWrap);
   const slotNodes=[...onCanvas]
     .filter(id=>id!=='out'&&id!=='monitor')
     .map(slotId=>buildAccNode(slotId))
@@ -1927,12 +1929,12 @@ function render(){
   if(savedLogs){const el=document.getElementById('mn-logs-body');if(el)el.innerHTML=savedLogs;}
   if(savedStat){const el=document.getElementById('mn-status-body');if(el)el.innerHTML=savedStat;}
   if(savedScroll>0){const mb=document.getElementById('mn-body');if(mb)mb.scrollTop=savedScroll;}
-  // Re-attach Pi terminal only when expanded
+  // Re-attach Pi terminal into new slot
   if(piOpen && !piMaximized){
-    if(piTermEl){
+    if(piTermWrap){
       const slot=document.getElementById('pi-term-slot');
       if(slot){
-        slot.replaceWith(piTermEl);
+        slot.replaceWith(piTermWrap);
         setTimeout(fitPi, 60);
       }
     }
