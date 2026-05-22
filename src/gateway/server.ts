@@ -368,7 +368,7 @@ export function createGatewayServer(): GatewayServer {
   // ── Pi agent status ──────────────────────────────────────────────────────
   fastify.get("/api/pi/status", async () => {
     try {
-      await execAsync("pi --version", { timeout: 5000 });
+      await execAsync("pi --version", { timeout: 5000, windowsHide: true });
       return { installed: true };
     } catch {
       return { installed: false };
