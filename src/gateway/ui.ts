@@ -2052,20 +2052,24 @@ function zoomAt(f,cx,cy){
 function zoomStep(d){zoomAt(d>0?1.25:1/1.25)}
 function fitAll(){
   const ws=document.getElementById('ws'),wr=ws.getBoundingClientRect();
-  const ids=['out',...onCanvas];
   let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
-  ids.forEach(id=>{
-    const el=document.getElementById('nd-'+id);
-    if(!el||!NP[id])return;
-    x0=Math.min(x0,NP[id].x);y0=Math.min(y0,NP[id].y);
-    x1=Math.max(x1,NP[id].x+(el.offsetWidth||215));
-    y1=Math.max(y1,NP[id].y+(el.offsetHeight||180));
-  });
+  // Include all rendered .nd nodes via DOM (covers account slots, out, monitor, pi)
+  const world=document.getElementById('world');
+  if(world){
+    const ndEls=world.querySelectorAll('.nd');
+    for(var i=0;i<ndEls.length;i++){
+      const el=ndEls[i];
+      const lx=parseInt(el.style.left)||0, ly=parseInt(el.style.top)||0;
+      x0=Math.min(x0,lx); y0=Math.min(y0,ly);
+      x1=Math.max(x1,lx+el.offsetWidth); y1=Math.max(y1,ly+el.offsetHeight);
+    }
+  }
   if(!isFinite(x0))return;
-  const pad=70,cw=x1-x0+pad*2,ch=y1-y0+pad*2;
-  vp.s=Math.min(wr.width/cw,wr.height/ch,1.4);
-  vp.x=Math.round((wr.width-cw*vp.s)/2-(x0-pad)*vp.s);
-  vp.y=Math.round((wr.height-ch*vp.s)/2-(y0-pad)*vp.s);
+  const pad=60;
+  const cw=x1-x0+pad*2, ch=y1-y0+pad*2;
+  vp.s=Math.max(0.08,Math.min(wr.width/cw,wr.height/ch));
+  vp.x=Math.round(wr.width/2-(x0+x1)/2*vp.s);
+  vp.y=Math.round(wr.height/2-(y0+y1)/2*vp.s);
   applyVp();
 }
 
