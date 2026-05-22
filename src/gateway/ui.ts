@@ -2002,25 +2002,24 @@ function findBestPos(){
     }
     return false;
   }
+  // Viewport center in world coords — prefer cells closest to center that are free
+  var vcx=Math.round((x0+x1)/2), vcy=Math.round((y0+y1)/2);
   var stepX=FW+GAP, stepY=FH+GAP;
   var bestX=x0+GAP, bestY=y0+GAP;
-  var bestScore=-1, fbX=bestX, fbY=bestY, fbScore=-1;
+  var bestDist=Infinity, fbX=bestX, fbY=bestY, fbDist=Infinity;
   for(var cx=x0+GAP;cx+FW<=x1-GAP;cx+=stepX){
     for(var cy=y0+GAP;cy+FH<=y1-GAP;cy+=stepY){
-      var score=Infinity;
-      for(var i=0;i<rects.length;i++){
-        var r=rects[i];
-        var dx=(cx+FW/2)-(r.x+r.w/2), dy=(cy+FH/2)-(r.y+r.h/2);
-        var d=dx*dx+dy*dy; if(d<score)score=d;
-      }
+      // Distance from this cell center to viewport center
+      var ddx=(cx+FW/2)-vcx, ddy=(cy+FH/2)-vcy;
+      var dist=ddx*ddx+ddy*ddy;
       if(!hits(cx,cy)){
-        if(score>bestScore){bestScore=score;bestX=cx;bestY=cy;}
+        if(dist<bestDist){bestDist=dist;bestX=cx;bestY=cy;}
       } else {
-        if(score>fbScore){fbScore=score;fbX=cx;fbY=cy;}
+        if(dist<fbDist){fbDist=dist;fbX=cx;fbY=cy;}
       }
     }
   }
-  return bestScore>=0?{x:bestX,y:bestY}:{x:fbX,y:fbY};
+  return bestDist<Infinity?{x:bestX,y:bestY}:{x:fbX,y:fbY};
 }
 
 // Canvas viewport
