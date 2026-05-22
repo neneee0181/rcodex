@@ -1207,15 +1207,17 @@ function togglePi(){
   const panel = document.getElementById('pi-panel');
   const btn = document.getElementById('hb-pi');
   if(piOpen){
-    const ws = document.getElementById('ws');
-    const rect = ws.getBoundingClientRect();
-    if(!NP.pi.x) NP.pi.x = rect.width - (NP.piSize.w + 30);
-    if(!NP.pi.y) NP.pi.y = rect.height - (NP.piSize.h + 30);
+    if(!NP.pi.x){
+      const ws = document.getElementById('ws');
+      const rect = ws.getBoundingClientRect();
+      // init in world coords: bottom-right area of current viewport
+      NP.pi.x = Math.round((rect.width  - NP.piSize.w - 30 - vp.x) / vp.s);
+      NP.pi.y = Math.round((rect.height - NP.piSize.h - 30 - vp.y) / vp.s);
+    }
     panel.style.display = 'flex';
-    panel.style.left = NP.pi.x + 'px';
-    panel.style.top = NP.pi.y + 'px';
-    panel.style.width = NP.piSize.w + 'px';
+    panel.style.width  = NP.piSize.w + 'px';
     panel.style.height = NP.piSize.h + 'px';
+    positionPiPanel();
     btn?.classList.add('on');
     if(!piTerm) initPiTerminal();
     render();
@@ -1304,20 +1306,17 @@ async function resetPi(){
   restartPi();
 }
 
-// Pi panel drag
+// Pi panel drag (operates in world coords so panel stays with canvas)
 function startPiDrag(e){
   if(e.target.closest('button')) return;
   e.preventDefault();
-  const panel = document.getElementById('pi-panel');
-  const startX = e.clientX - (NP.pi.x||0);
-  const startY = e.clientY - (NP.pi.y||0);
+  const sx=e.clientX,sy=e.clientY,nx=NP.pi.x||0,ny=NP.pi.y||0;
   function onMove(ev){
-    NP.pi.x = ev.clientX - startX;
-    NP.pi.y = ev.clientY - startY;
-    panel.style.left = NP.pi.x + 'px';
-    panel.style.top = NP.pi.y + 'px';
+    NP.pi.x=Math.round(nx+(ev.clientX-sx)/vp.s);
+    NP.pi.y=Math.round(ny+(ev.clientY-sy)/vp.s);
+    positionPiPanel();
   }
-  function onUp(){ document.removeEventListener('pointermove',onMove); document.removeEventListener('pointerup',onUp); }
+  function onUp(){ saveLS(); document.removeEventListener('pointermove',onMove); document.removeEventListener('pointerup',onUp); }
   document.addEventListener('pointermove',onMove);
   document.addEventListener('pointerup',onUp);
 }
@@ -1393,10 +1392,9 @@ function togglePiMax(){
     panel.classList.add('maximized');
   } else {
     panel.classList.remove('maximized');
-    panel.style.left = (NP.pi.x||0) + 'px';
-    panel.style.top = (NP.pi.y||0) + 'px';
-    panel.style.width = NP.piSize.w + 'px';
+    panel.style.width  = NP.piSize.w + 'px';
     panel.style.height = NP.piSize.h + 'px';
+    positionPiPanel();
   }
   if(piTerm && piFit) setTimeout(()=>piFit.fit(), 60);
 }
@@ -1843,6 +1841,14 @@ async function refreshQuota(accountId){
   renderUsage();
 }
 
+// Pi panel: position in screen space from world coords so it moves with canvas pan/zoom
+function positionPiPanel(){
+  const panel=document.getElementById('pi-panel');
+  if(!panel||panel.style.display==='none'||piMaximized) return;
+  panel.style.left=Math.round(NP.pi.x*vp.s+vp.x)+'px';
+  panel.style.top =Math.round(NP.pi.y*vp.s+vp.y)+'px';
+}
+
 // Canvas viewport
 function applyVp(){
   // Use CSS zoom for scaling so the browser re-renders content at the exact zoom level
@@ -1856,6 +1862,7 @@ function applyVp(){
   ws.style.backgroundPosition=\`\${rx}px \${ry}px\`;
   document.getElementById('zpct').textContent=Math.round(vp.s*100)+'%';
   drawLines();
+  positionPiPanel();
 }
 function zoomAt(f,cx,cy){
   const r=document.getElementById('ws').getBoundingClientRect();
