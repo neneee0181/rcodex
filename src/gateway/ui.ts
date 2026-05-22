@@ -1924,11 +1924,11 @@ function render(){
   const savedLogs=document.getElementById('mn-logs-body')?.innerHTML;
   const savedStat=document.getElementById('mn-status-body')?.innerHTML;
   const piLoadEl = document.getElementById('pi-loading');
-  // Keep piTermWrap connected to document during world rebuild.
-  // world.innerHTML would disconnect it — xterm v5 detects disconnection and
-  // resets its internal scroll/viewport state, destroying scrollback position.
-  // Moving to body keeps it "in document" so xterm never sees a disconnect.
-  if(piTermWrap && !piMaximized) document.body.appendChild(piTermWrap);
+  // Keep piTermWrap connected to document during world rebuild — only when it
+  // will actually be re-inserted (piOpen=true). When collapsing (piOpen=false)
+  // we do NOT park on body; world.innerHTML detaches it safely as a JS object.
+  // Parking on body when piOpen=false leaves the terminal floating on screen.
+  if(piTermWrap && piOpen && !piMaximized) document.body.appendChild(piTermWrap);
   const slotNodes=[...onCanvas]
     .filter(id=>id!=='out'&&id!=='monitor')
     .map(slotId=>buildAccNode(slotId))
