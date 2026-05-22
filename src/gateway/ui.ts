@@ -1150,6 +1150,11 @@ async function removeFromCanvas(slotId){
   hiddenSlots.add(slotId);
   delete NP[slotId];
   delete nodeSlots[slotId];
+  if(piConns.has(slotId)){
+    piConns.delete(slotId); savePiConns();
+    if(info) await api('DELETE', '/api/pi/connect/' + info.accountId + (info.model ? '?model=' + encodeURIComponent(info.model) : ''));
+    await api('POST', '/api/pi/sync-models');
+  }
   saveLS();
   render();
   if(sbOpen)renderSb();
@@ -2288,6 +2293,7 @@ async function connectOut(slotId){
   await fetchStatus();
 }
 async function removeOut(accountId,slotId){
+  const info=nodeSlots[slotId]; // save before deletion
   await api('DELETE',\`/api/accounts/\${accountId}/slots/\${slotId}\`);
   onCanvas.delete(slotId);
   hiddenSlots.add(slotId);
@@ -2295,8 +2301,8 @@ async function removeOut(accountId,slotId){
   delete NP[slotId];
   if(piConns.has(slotId)){
     piConns.delete(slotId); savePiConns();
-    const info2 = nodeSlots[slotId];
-    if(info2) api('DELETE', '/api/pi/connect/' + info2.accountId);
+    if(info) await api('DELETE', '/api/pi/connect/' + info.accountId + (info.model ? '?model=' + encodeURIComponent(info.model) : ''));
+    await api('POST', '/api/pi/sync-models');
   }
   saveLS();
   render();
