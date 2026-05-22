@@ -1400,6 +1400,7 @@ function togglePiMax(){
     const termEl = piTermWrap || document.getElementById('pi-term-slot');
     if(termEl){ termEl.style.flex = '1'; termEl.style.height = 'auto'; }
     document.body.appendChild(nd);
+    setTimeout(fitPi, 80); // enter: normal fit
   } else {
     // Reset flex before render rebuilds the node
     const sz = NP.piSize || { w:780, h:480 };
@@ -1417,8 +1418,17 @@ function togglePiMax(){
     nd.style.top  = NP.piNode.y + 'px';
     document.getElementById('world').appendChild(nd);
     render();
+    // exit: two-step resize to guarantee scrollback survives
+    // resize(cols,1) pushes ALL content into scrollback buffer,
+    // then piFit.fit() pulls the last N rows back — scrollback always populated
+    setTimeout(() => {
+      if(piTerm && piFit){
+        piTerm.resize(piTerm.cols, 1);
+        piFit.fit();
+        piTerm.refresh(0, piTerm.rows - 1);
+      }
+    }, 100);
   }
-  setTimeout(fitPi, 80);
 }
 
 function startPiResize(e,dir){
