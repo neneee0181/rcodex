@@ -1180,7 +1180,6 @@ if(!NP.piSize) NP.piSize = { w: 780, h: 480 };
 let piConns = new Set(JSON.parse(localStorage.getItem('rcodex-pi-conns')||'[]'));
 let piMaximized = false;
 let piMaxTimer = null; // cancel pending resize on rapid ⛶ toggle
-let piPreloaded = false; // set after background status check so first open skips loading
 function savePiConns(){ localStorage.setItem('rcodex-pi-conns', JSON.stringify([...piConns])); }
 
 function piCmd(){ return 'pi'; }
@@ -1204,24 +1203,28 @@ function togglePi(){
 }
 
 async function initPiBackground(){
-  // Pre-check only — no PTY spawned, no xterm created.
-  // Just verify Pi is installed and sync models so the first ▸ click skips loading.
-  if(piPreloaded || piTerm) return;
+  // Full background init: status check, sync-models, xterm + PTY connected off-screen.
+  // No window flash — execAsync in /api/pi/status uses windowsHide:true.
+  if(piTerm || piTermWrap) return;
   try{
     const r = await api('GET', '/api/pi/status');
     const d = await r.json();
     if(!d.installed) return; // not installed — loading UI handles install on first open
   }catch{ return; }
   try{ await api('POST', '/api/pi/sync-models'); }catch{}
-  piPreloaded = true;
+  // Create off-screen xterm container so terminal is connected before user opens it
+  const wrap = document.createElement('div');
+  wrap.id = 'pi-term-wrap';
+  wrap.className = 'pi-term-wrap';
+  wrap.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:780px;height:444px;overflow:hidden;visibility:hidden;pointer-events:none;';
+  document.body.appendChild(wrap);
+  piTermWrap = wrap;
+  connectPiPty(piCmd());
 }
 
 async function initPiTerminal(){
-  // Fast path: background pre-check confirmed Pi is installed — skip loading UI
-  if(piPreloaded){
-    connectPiPty(piCmd());
-    return;
-  }
+  // If background init already connected a terminal, just show it (fitPi runs via render)
+  if(piTerm) return;
 
   // Slow path: show loading UI, check install, sync, then connect
   let loading = document.getElementById('pi-loading');
