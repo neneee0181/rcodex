@@ -5,6 +5,9 @@ export function getHTML(port: number): string {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>rcodex Gateway</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5/css/xterm.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5/lib/xterm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10/lib/addon-fit.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -191,6 +194,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
   background:linear-gradient(135deg,#6366f1,#8b5cf6);
   color:#fff;font-size:11px;font-weight:600;cursor:pointer}
 .form-submit:hover{opacity:.9}
+
+/* ChatGPT panel */
+.cgpt-panel{position:relative;flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.cgpt-bar{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--b1);background:var(--s1);flex-shrink:0}
+.cgpt-frame{flex:1;border:none;width:100%;height:100%;background:#fff}
+.cgpt-blocked{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);z-index:10}
 
 /* Canvas */
 .ws{position:relative;flex:1;overflow:hidden;cursor:default;user-select:none;
@@ -387,6 +396,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
   font-size:11px;box-shadow:0 8px 32px rgba(0,0,0,.45);z-index:300;
   animation:tIn .2s ease;white-space:nowrap;pointer-events:none}
 @keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(6px)}}
+/* Pi terminal panel */
+.pi-panel{position:relative;flex:1;display:flex;flex-direction:column;overflow:hidden;background:#0d0d0f}
+.pi-bar{display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid #1e1e2a;background:#111118;flex-shrink:0}
+.pi-term-wrap{flex:1;overflow:hidden;padding:4px 0}
+.pi-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0d0d0f;z-index:10;gap:10px}
+.pi-spin{width:24px;height:24px;border:2px solid #333;border-top-color:#818cf8;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body style="display:flex;flex-direction:column;height:100vh">
@@ -408,20 +424,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:5px">
-    <button class="icon-btn" id="hb-term" onclick="toggleMonitor('terminal')" title="Terminal">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1.5 3.5L5 7l-3.5 3.5M6 10.5h6.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <button class="icon-btn" id="hb-mon" onclick="toggleMonitor(monitorTab||'terminal')" title="Monitor">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="7.5" y="1" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="7.5" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="7.5" y="7.5" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
     </button>
-    <button class="icon-btn" id="hb-stat" onclick="toggleMonitor('status')" title="Gateway Status">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 4v3.5l2 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    <button class="icon-btn" id="hb-pi" onclick="togglePi()" title="Pi Agent">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 11V3l4 5 4-5v8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
-    <button class="icon-btn" id="hb-logs" onclick="toggleMonitor('logs')" title="Gateway Logs">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 3.5h10M2 7h7M2 10.5h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-    </button>
-    <button class="icon-btn" id="hb-reqs" onclick="toggleMonitor('requests')" title="Request History">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 4.5h9M2.5 7h6M2.5 9.5h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="11" cy="9.5" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
-    </button>
-    <button class="icon-btn" id="hb-usage" onclick="toggleMonitor('usage')" title="Token Usage">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="8" width="2.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="5.75" y="5" width="2.5" height="7.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="10" y="2" width="2.5" height="10.5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
+    <button class="icon-btn" id="hb-cgpt" onclick="toggleCgpt()" title="ChatGPT Web">
+      <img src="https://www.google.com/s2/favicons?domain=chatgpt.com&sz=32" width="14" height="14" style="border-radius:2px;display:block" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/><svg style="display:none" width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M5 5.5C5 4.4 5.9 3.5 7 3.5s2 .9 2 2c0 1.5-2 2.5-2 2.5M7 10.5v.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
     </button>
     <div style="width:1px;height:18px;background:var(--b1);margin:0 2px"></div>
     <div class="mode-sw">
@@ -456,6 +466,53 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
       <button class="zbtn" onclick="fitAll()" title="Fit to view"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 9h6v6H9z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
     </div>
     <div class="hint">Scroll to zoom / Drag to pan / Drag ports to connect</div>
+  </div>
+
+  <!-- Pi agent panel -->
+  <div class="pi-panel" id="pi-panel" style="display:none">
+    <div class="pi-bar">
+      <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><path d="M2 11V3l4 5 4-5v8" stroke="#818cf8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span style="font-size:13px;font-weight:600;color:#e4e4f7">Pi Agent</span>
+      <span style="font-size:11px;color:#6b7280;margin-left:2px">via rcodex</span>
+      <div style="flex:1"></div>
+      <button class="ms-btn" onclick="sendToPi('pi --provider openai')" title="Launch Pi agent in terminal" style="font-size:11px;padding:2px 8px">▶ Run Pi</button>
+      <button class="icon-btn" id="pi-restart-btn" onclick="connectPiPty('')" title="New shell" style="opacity:.6">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7A5 5 0 1 0 3.5 3.5L1.5 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1.5 1.5v3h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="icon-btn" onclick="togglePi()" title="Close" style="opacity:.6">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div id="pi-term-wrap" class="pi-term-wrap"></div>
+    <div class="pi-loading" id="pi-loading">
+      <div class="pi-spin"></div>
+      <div id="pi-loading-msg" style="font-size:12px;color:#6b7280">Checking Pi installation…</div>
+    </div>
+  </div>
+
+  <!-- ChatGPT panel -->
+  <div class="cgpt-panel" id="cgpt-panel" style="display:none">
+    <div class="cgpt-bar">
+      <img src="https://www.google.com/s2/favicons?domain=chatgpt.com&sz=32" width="16" height="16" style="border-radius:3px"/>
+      <span style="font-size:13px;font-weight:600;color:var(--fg)">ChatGPT</span>
+      <div style="flex:1"></div>
+      <button class="icon-btn" onclick="document.getElementById('cgpt-frame').src=document.getElementById('cgpt-frame').src" title="Reload" style="opacity:.6">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7A5 5 0 1 0 3.5 3.5L1.5 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1.5 1.5v3h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="icon-btn" onclick="window.open('https://chatgpt.com/','_blank')" title="Open in new tab" style="opacity:.6">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M6 2H2.5A1.5 1.5 0 0 0 1 3.5v8A1.5 1.5 0 0 0 2.5 13h8A1.5 1.5 0 0 0 12 11.5V8M8 1h5v5M13 1l-7 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="icon-btn" onclick="toggleCgpt()" title="Close" style="opacity:.6">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <iframe id="cgpt-frame" src="" class="cgpt-frame" sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-storage-access-by-user-activation"></iframe>
+    <div class="cgpt-blocked" id="cgpt-blocked" style="display:none">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="var(--fg2)" stroke-width="1.5"/><path d="M12 7v5.5l3 2" stroke="var(--fg2)" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <div style="font-size:14px;font-weight:600;color:var(--fg);margin-top:12px">ChatGPT couldn't load</div>
+      <div style="font-size:12px;color:var(--fg2);margin-top:6px;text-align:center;max-width:280px">chatgpt.com blocks embedding. Open in a new tab to use alongside rcodex.</div>
+      <button class="btn-primary" style="margin-top:16px" onclick="window.open('https://chatgpt.com/','_blank')">Open ChatGPT in new tab</button>
+    </div>
   </div>
 
 </div>
@@ -635,6 +692,9 @@ let sbAddingDef = null;
 let sbAddingMethod = null;
 let sbOAuthDevice = null;
 let sidebarModelSel = {}; // accountId ??currently selected model in sidebar
+
+// ChatGPT panel state
+let cgptOpen = false;
 
 // Monitor state
 let monitorOpen = false;
@@ -1138,14 +1198,134 @@ async function removeFromCanvas(slotId){
   }
 }
 
+// Pi agent panel
+let piOpen = false;
+let piTerm = null;
+let piWs = null;
+let piFit = null;
+
+function togglePi(){
+  piOpen = !piOpen;
+  const panel = document.getElementById('pi-panel');
+  const ws = document.getElementById('ws');
+  const btn = document.getElementById('hb-pi');
+  if(piOpen){
+    panel.style.display = 'flex';
+    ws.style.display = 'none';
+    btn?.classList.add('on');
+    // close cgpt if open
+    if(cgptOpen){ cgptOpen=false; document.getElementById('cgpt-panel').style.display='none'; document.getElementById('hb-cgpt')?.classList.remove('on'); }
+    if(!piTerm) initPiTerminal();
+  } else {
+    panel.style.display = 'none';
+    ws.style.display = '';
+    btn?.classList.remove('on');
+  }
+}
+
+async function initPiTerminal(){
+  const loading = document.getElementById('pi-loading');
+  const msg = document.getElementById('pi-loading-msg');
+  loading.style.display = 'flex';
+
+  // check if pi installed
+  msg.textContent = 'Checking Pi installation…';
+  let installed = false;
+  try{
+    const r = await api('GET', '/api/pi/status');
+    const d = await r.json();
+    installed = d.installed;
+  }catch{}
+
+  if(!installed){
+    msg.textContent = 'Installing Pi… (npm install -g @earendil-works/pi-coding-agent)';
+    try{
+      const r = await api('POST', '/api/terminal/exec', { cmd: 'npm install -g @earendil-works/pi-coding-agent' });
+      const d = await r.json();
+      if(d.stderr && !d.stdout){ msg.textContent = 'Install failed: ' + d.stderr.slice(0,120); return; }
+    }catch(e){ msg.textContent = 'Install error: ' + e.message; return; }
+  }
+
+  loading.style.display = 'none';
+  // open shell only — user launches pi via button
+  connectPiPty('');
+}
+
+function connectPiPty(initialCmd){
+  const wrap = document.getElementById('pi-term-wrap');
+  if(piTerm){ piTerm.dispose(); piTerm = null; }
+  if(piWs){ try{ piWs.close(); }catch{} piWs = null; }
+
+  const term = new Terminal({
+    theme:{ background:'#0d0d0f', foreground:'#e4e4e7', cursor:'#818cf8', selectionBackground:'rgba(129,140,248,.3)' },
+    fontFamily:'Menlo, Monaco, Consolas, "Courier New", monospace',
+    fontSize:13, lineHeight:1.5, cursorBlink:true,
+    scrollback:5000,
+  });
+  const fit = new FitAddon.FitAddon();
+  term.loadAddon(fit);
+  term.open(wrap);
+  fit.fit();
+  piTerm = term; piFit = fit;
+
+  const wsUrl = \`ws://\${location.host}/api/pty?cols=\${term.cols}&rows=\${term.rows}&cmd=\${encodeURIComponent(initialCmd||'')}\`;
+  const ws = new WebSocket(wsUrl);
+  piWs = ws;
+  ws.onopen = () => { document.getElementById('pi-restart-btn').title = 'Run Pi'; };
+  ws.onmessage = e => term.write(typeof e.data === 'string' ? e.data : new Uint8Array(e.data));
+  ws.onclose = () => { term.write('\\r\\n\\x1b[90m[session ended — click ↺ to restart]\\x1b[0m\\r\\n'); };
+  ws.onerror = () => { term.write('\\r\\n\\x1b[31m[WebSocket error — is gateway running?]\\x1b[0m\\r\\n'); };
+  term.onData(d => { if(ws.readyState === WebSocket.OPEN) ws.send(d); });
+  term.onResize(({cols,rows}) => { if(ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({type:'resize',cols,rows})); });
+
+  const ro = new ResizeObserver(() => { if(piFit) piFit.fit(); });
+  ro.observe(wrap);
+}
+
+function sendToPi(cmd){
+  if(piWs && piWs.readyState === WebSocket.OPEN) piWs.send(cmd + '\\r');
+  else { connectPiPty(cmd); }
+}
+
+function restartPi(){
+  document.getElementById('pi-loading').style.display = 'none';
+  connectPiPty('pi --provider openai');
+}
+
+// ChatGPT panel toggle
+function toggleCgpt(){
+  cgptOpen = !cgptOpen;
+  const panel = document.getElementById('cgpt-panel');
+  const ws = document.getElementById('ws');
+  const btn = document.getElementById('hb-cgpt');
+  if(cgptOpen){
+    panel.style.display='flex';
+    ws.style.display='none';
+    btn?.classList.add('on');
+    const frame = document.getElementById('cgpt-frame');
+    if(frame && (!frame.src || frame.src === window.location.href)){
+      frame.src = 'https://chatgpt.com/';
+      setTimeout(()=>{
+        try{
+          const blocked = !frame.contentDocument || frame.contentDocument.URL==='about:blank';
+          if(blocked) document.getElementById('cgpt-blocked').style.display='flex';
+        }catch(e){
+          // cross-origin = iframe loaded fine
+        }
+      }, 4000);
+    }
+  } else {
+    panel.style.display='none';
+    ws.style.display='';
+    btn?.classList.remove('on');
+  }
+}
+
 // Monitor node
 function toggleMonitor(tab){
   if(monitorOpen && monitorTab===tab){ monitorOpen=false; }
   else{ monitorOpen=true; monitorTab=tab; if(!NP.monitor) NP.monitor={x:80,y:60}; }
-  ['terminal','status','logs','requests','usage'].forEach(t=>{
-    document.getElementById('hb-'+{terminal:'term',status:'stat',logs:'logs',requests:'reqs',usage:'usage'}[t])
-      ?.classList.toggle('on', monitorOpen&&monitorTab===t);
-  });
+  document.getElementById('hb-mon')?.classList.toggle('on', monitorOpen);
   render();
   if(monitorOpen) startMonitorRefresh();
   else stopMonitorRefresh();

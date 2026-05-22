@@ -44,10 +44,12 @@
   "homepage": "https://github.com/neneee0181/rcodex#readme",
   "dependencies": {
     "@fastify/cors": "^11.2.0",
+    "@fastify/websocket": "^11.2.0",
     "@iarna/toml": "^2.2.5",
     "better-sqlite3": "^12.10.0",
     "commander": "^12.1.0",
     "fastify": "^5.8.5",
+    "node-pty": "^1.1.0",
     "open": "^11.0.0"
   },
   "devDependencies": {

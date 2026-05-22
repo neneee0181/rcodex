@@ -1,5 +1,7 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import websocket from "@fastify/websocket";
+import { spawn as ptySpawn } from "node-pty";
 import { createServer } from "net";
 import { exec } from "child_process";
 import { promisify } from "util";
@@ -80,6 +82,7 @@ export function createGatewayServer(): GatewayServer {
   // Hard cap 1 GiB at Fastify level; actual live limit enforced in preParsing hook
   const fastify = Fastify({ logger: false, bodyLimit: 1024 * 1024 * 1024 });
   fastify.register(cors, { origin: "*" });
+  fastify.register(websocket);
 
   // Live-adjustable body limit (bytes) — updated via /api/settings without restart
   let liveBodyLimitBytes = bodyLimitMiB * 1024 * 1024;
@@ -361,7 +364,61 @@ export function createGatewayServer(): GatewayServer {
     }
   });
 
-  // ?�?� Accounts list + status ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
+  // ── Pi agent status ──────────────────────────────────────────────────────
+  fastify.get("/api/pi/status", async () => {
+    try {
+      await execAsync("pi --version", { timeout: 5000 });
+      return { installed: true };
+    } catch {
+      return { installed: false };
+    }
+  });
+
+  // ── PTY WebSocket — registered inside a child scope so @fastify/websocket
+  //   onRoute hook fires after the plugin is loaded (Fastify 5 requirement)
+  fastify.register(async (child) => {
+    child.get("/api/pty", { websocket: true }, (socket, req) => {
+      const q = req.query as Record<string, string>;
+      const cols = Math.max(10, Math.min(500, parseInt(q.cols) || 120));
+      const rows = Math.max(2,  Math.min(200, parseInt(q.rows) || 30));
+      const initialCmd = q.cmd || "";
+      const cfg = loadConfig();
+      const gatewayUrl = `http://127.0.0.1:${cfg.port}/v1`;
+
+      const shell = process.platform === "win32" ? "powershell.exe" : (process.env.SHELL || "bash");
+      const ptyProc = ptySpawn(shell, [], {
+        name: "xterm-256color",
+        cols, rows,
+        cwd: process.env.USERPROFILE || process.env.HOME || process.cwd(),
+        env: {
+          ...process.env,
+          OPENAI_BASE_URL: gatewayUrl,
+          OPENAI_API_KEY: "rcodex",
+          ANTHROPIC_BASE_URL: gatewayUrl,
+          TERM: "xterm-256color",
+          COLORTERM: "truecolor",
+        },
+      });
+
+      ptyProc.onData(data => { try { socket.send(data); } catch {} });
+      socket.on("message", (msg: Buffer | string) => {
+        try {
+          const raw = msg.toString();
+          if (raw.startsWith("{")) {
+            const parsed = JSON.parse(raw);
+            if (parsed.type === "resize") { ptyProc.resize(parsed.cols, parsed.rows); return; }
+          }
+          ptyProc.write(raw);
+        } catch {}
+      });
+      socket.on("close", () => { try { ptyProc.kill(); } catch {} });
+      ptyProc.onExit(() => { try { socket.close(); } catch {} });
+
+      if (initialCmd) setTimeout(() => { try { ptyProc.write(initialCmd + "\r"); } catch {} }, 600);
+    });
+  });
+
+  // ── Accounts list + status ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
   fastify.get("/api/accounts", async () => {
     const config = loadConfig();
     const ollamaModels = await getOllamaModels(config.ollamaBaseUrl);
@@ -488,6 +545,42 @@ export function createGatewayServer(): GatewayServer {
     config.bodyLimitMiB = n;
     saveConfig(config);
     return { ok: true, bodyLimitMiB: n };
+  });
+
+  // ── Web embed proxy (strips X-Frame-Options so iframes work) ────────────
+  fastify.get<{ Querystring: { url?: string } }>("/proxy/web", async (req, reply) => {
+    const { url } = req.query;
+    if (!url || !/^https?:\/\//.test(url)) return reply.code(400).send("bad url");
+    try {
+      const upstream = await fetch(url, {
+        headers: {
+          "user-agent": (req.headers["user-agent"] as string) || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "accept": (req.headers["accept"] as string) || "text/html,application/xhtml+xml",
+          "accept-language": (req.headers["accept-language"] as string) || "en-US,en;q=0.9",
+          "accept-encoding": "identity",
+          "cookie": (req.headers["cookie"] as string) || "",
+        },
+        redirect: "follow",
+      });
+      const ct = upstream.headers.get("content-type") || "text/html";
+      const strip = new Set(["x-frame-options", "content-security-policy", "transfer-encoding", "content-encoding"]);
+      upstream.headers.forEach((val, key) => {
+        if (!strip.has(key.toLowerCase())) reply.header(key, val);
+      });
+      if (ct.includes("text/html")) {
+        let html = await upstream.text();
+        const origin = new URL(url).origin;
+        html = html.replace(/<base[^>]*>/gi, "");
+        html = `<base href="${origin}/" target="_self">` + html;
+        // rewrite absolute /path links to go through proxy
+        html = html.replace(/(href|src|action)="(\/[^"]*?)"/g, (_, attr, path) => `${attr}="${origin}${path}"`);
+        return reply.code(upstream.status).type(ct).send(html);
+      }
+      const buf = Buffer.from(await upstream.arrayBuffer());
+      return reply.code(upstream.status).type(ct).send(buf);
+    } catch (e: any) {
+      return reply.code(502).send("proxy error: " + e.message);
+    }
   });
 
   // ── Ollama base URL update ────────────────────────────────────────────────
