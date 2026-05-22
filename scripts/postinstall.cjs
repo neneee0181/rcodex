@@ -1,5 +1,23 @@
 const { execSync } = require("child_process");
 const path = require("path");
+const fs = require("fs");
+
+// Patch node-pty's conpty_console_list_agent fork to use windowsHide:true.
+// Without this, the fork briefly creates a visible console window on Windows
+// every time a PTY process exits (page refresh, restart, tab close, etc.).
+try {
+  const agentFile = path.join(__dirname, "..", "node_modules", "node-pty", "lib", "windowsPtyAgent.js");
+  if (fs.existsSync(agentFile)) {
+    const src = fs.readFileSync(agentFile, "utf8");
+    const patched = src.replace(
+      /child_process_1\.fork\(path\.join\(__dirname,\s*'conpty_console_list_agent'\),\s*\[_this\._innerPid\.toString\(\)\]\)/,
+      "child_process_1.fork(path.join(__dirname, 'conpty_console_list_agent'), [_this._innerPid.toString()], { windowsHide: true })"
+    );
+    if (patched !== src) {
+      fs.writeFileSync(agentFile, patched, "utf8");
+    }
+  }
+} catch { /* ignore patch failures */ }
 
 function normalizePath(inputPath) {
   try {
