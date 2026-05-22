@@ -1250,7 +1250,20 @@ async function initPiTerminal(){
       const r = await api('POST', '/api/terminal/exec', { cmd: 'npm install -g @earendil-works/pi-coding-agent' });
       const d = await r.json();
       if(d.stderr && !d.stdout){ msg.textContent = 'Install failed: ' + d.stderr.slice(0,120); return; }
-    }catch(e){ msg.textContent = 'Install error: ' + e.message; return; }
+    }catch(e){ msg.textContent = 'Install error: ' + (e.message||e); return; }
+
+    // Re-verify: npm bin dir may not be in PATH even after successful install
+    msg.textContent = 'Verifying Pi installation…';
+    let verified = false;
+    try{
+      const vr = await api('GET', '/api/pi/status');
+      const vd = await vr.json();
+      verified = vd.installed;
+    }catch{}
+    if(!verified){
+      msg.textContent = 'Pi installed but "pi" command not found in PATH. Run "npm config get prefix" to find the npm global bin directory and add it to your PATH, then restart rcodex.';
+      return;
+    }
   }
 
   try{ await api('POST', '/api/pi/sync-models'); }catch{}
