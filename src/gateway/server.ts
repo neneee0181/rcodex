@@ -524,7 +524,7 @@ export function createGatewayServer(): GatewayServer {
           api: "openai-completions",
           apiKey: "rcodex",
           compat: { supportsDeveloperRole: false, supportsReasoningEffort: false },
-          models: allModels.map(id => ({ id })),
+          models: allModels.map(id => ({ id, input: ["text", "image"] })),
         },
       },
     };
@@ -1282,15 +1282,46 @@ export function createGatewayServer(): GatewayServer {
       const config = loadConfig();
       const body = req.body;
       const model = body.model as string;
-      const messages = (body.messages as { role: string; content: string }[]) ?? [];
+      const messages = (body.messages as { role: string; content: unknown }[]) ?? [];
       const stream = (body.stream as boolean) ?? false;
       const tools = body.tools as unknown[] | undefined;
       const systemMsg = messages.find(m => m.role === "system");
       const userMessages = messages.filter(m => m.role !== "system");
+      const textFromChatContent = (content: unknown): string => {
+        if (typeof content === "string") return content;
+        if (!Array.isArray(content)) return "";
+        return content.map(part => {
+          if (!part || typeof part !== "object") return "";
+          const p = part as Record<string, unknown>;
+          return typeof p.text === "string" ? p.text : "";
+        }).join("");
+      };
+      const toResponsesContent = (content: unknown): string | { type: string; text?: string; image_url?: string }[] => {
+        if (typeof content === "string") return content;
+        if (!Array.isArray(content)) return textFromChatContent(content);
+        const parts: { type: string; text?: string; image_url?: string }[] = [];
+        for (const part of content) {
+          if (!part || typeof part !== "object") continue;
+          const p = part as Record<string, unknown>;
+          if ((p.type === "text" || p.type === "input_text") && typeof p.text === "string") {
+            parts.push({ type: "input_text", text: p.text });
+            continue;
+          }
+          if (p.type === "image_url" || p.type === "input_image") {
+            const imageUrl = typeof p.image_url === "string"
+              ? p.image_url
+              : p.image_url && typeof p.image_url === "object"
+                ? (p.image_url as Record<string, unknown>).url
+                : undefined;
+            if (typeof imageUrl === "string" && imageUrl) parts.push({ type: "input_image", image_url: imageUrl });
+          }
+        }
+        return parts.length ? parts : "";
+      };
       const responsesReq: ResponsesRequest = {
         model,
-        input: userMessages.map(m => ({ type: "message", role: m.role, content: m.content })),
-        instructions: systemMsg?.content,
+        input: userMessages.map(m => ({ type: "message", role: m.role, content: toResponsesContent(m.content) })),
+        instructions: systemMsg ? textFromChatContent(systemMsg.content) : undefined,
         stream,
         ...(tools?.length ? { tools } : {}),
       };

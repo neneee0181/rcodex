@@ -88,7 +88,7 @@ export interface ResponsesRequest {
 interface InputItem {
   type: "message";
   role: string;
-  content: string | { type: string; text: string }[];
+  content: string | { type: string; text?: string; image_url?: string | { url?: string }; [key: string]: unknown }[];
 }
 
 export interface ResponsesResponse {
@@ -479,6 +479,37 @@ function parseInput(input: string | InputItem[]): Message[] {
         ? item.content
         : (item.content as { type?: string; text?: string; [key: string]: unknown }[]).map(c => ({ ...c, type: normalizeContentType(c.type), ...(c.text != null ? { text: c.text } : {}) })),
     }));
+}
+
+function imageDataUrlToGeminiPart(url: string): unknown | null {
+  const match = url.match(/^data:([^;,]+);base64,(.*)$/i);
+  if (!match) return null;
+  return { inlineData: { mimeType: match[1], data: match[2] } };
+}
+
+function imagePartToGeminiPart(part: { [key: string]: unknown }): unknown | null {
+  const source = part.source as { type?: string; media_type?: string; data?: string } | undefined;
+  if (source?.type === "base64" && source.media_type && source.data) {
+    return { inlineData: { mimeType: source.media_type, data: source.data } };
+  }
+  const rawImageUrl = part.image_url as string | { url?: string } | undefined;
+  const imageUrl = typeof rawImageUrl === "string" ? rawImageUrl : rawImageUrl?.url;
+  if (imageUrl) return imageDataUrlToGeminiPart(imageUrl);
+  return null;
+}
+
+function contentToGeminiParts(content: string | ContentPart[]): unknown[] {
+  if (typeof content === "string") return [{ text: content }];
+  const parts: unknown[] = [];
+  for (const part of content) {
+    if (part.type === "image") {
+      const imagePart = imagePartToGeminiPart(part);
+      if (imagePart) parts.push(imagePart);
+      continue;
+    }
+    if (part.text) parts.push({ text: part.text });
+  }
+  return parts.length ? parts : [{ text: "" }];
 }
 
 function toOpenAIChatMessages(input: string | InputItem[], fallback: Message[]): unknown[] {
@@ -1437,7 +1468,7 @@ async function callSingleProvider(
     }
     const agMessages = messages.map(m => ({
       role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: typeof m.content === "string" ? m.content : (m.content as { text?: string }[]).map(c => c.text ?? "").join("") }],
+      parts: contentToGeminiParts(m.content),
     }));
     const agSysInstruction = cleanInstructions(instructions) ? { parts: [{ text: cleanInstructions(instructions) }] } : undefined;
     const res = await callAntigravity(accessToken, model, agMessages, agSysInstruction, undefined, false, signal, account.projectId);
@@ -1659,7 +1690,7 @@ async function* streamSingleProvider(
     if (responseId && capturedTools.length > 0) {
       const base = googleContents ?? messages.map((m) => ({
         role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: typeof m.content === "string" ? m.content : m.content.map((c) => c.text ?? "").join("") }],
+        parts: contentToGeminiParts(m.content),
       }));
       const assistantParts: unknown[] = [];
       if (capturedText.value) assistantParts.push({ text: capturedText.value });
@@ -1739,7 +1770,7 @@ async function* streamSingleProvider(
 
     const agFinalContents = agContents ?? messages.map(m => ({
       role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: typeof m.content === "string" ? m.content : m.content.map(c => c.text ?? "").join("") }],
+      parts: contentToGeminiParts(m.content),
     }));
     const agSysInstruction = agSystem ? { parts: [{ text: agSystem }] } : undefined;
 
