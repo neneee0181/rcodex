@@ -1371,8 +1371,8 @@ function connectPiPty(initialCmd, isInstall){
       }).catch(function(){});
       return false;
     }
-    if((e.shiftKey && e.key==='Enter') || (e.ctrlKey && e.shiftKey && e.key==='Enter')){
-      if(piWs && piWs.readyState===WebSocket.OPEN) piWs.send('\\n');
+    if(e.shiftKey && e.key==='Enter' && !e.ctrlKey){
+      if(piWs && piWs.readyState===WebSocket.OPEN) piWs.send('\\x16\\n');
       return false;
     }
     return true;
