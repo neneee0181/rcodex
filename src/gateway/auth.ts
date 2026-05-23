@@ -57,6 +57,13 @@ export interface GatewayConfig {
   pid?: number;
   accounts: Account[];
   ollamaBaseUrl: string;
+  uiState?: {
+    pos?: Record<string, { x: number; y: number } | unknown>;
+    canvas?: string[];
+    slots?: Record<string, { accountId: string; model: string } | unknown>;
+    hidden?: string[];
+    piConns?: string[];
+  };
 }
 
 export function accountToProviderAuth(account: Account): ProviderAuth {

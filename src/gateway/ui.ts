@@ -688,12 +688,50 @@ let NP        = loadPos();
 let onCanvas  = loadCanvas();  // Set of slotIds (+ 'out', 'monitor')
 let nodeSlots = loadSlots();   // {[slotId]: {accountId, model}}
 let hiddenSlots = loadHidden();
+let uiStateReady = false;
+let uiStateSaveTimer = null;
+let applyingUiState = false;
 
 function saveLS(){
   localStorage.setItem(LS_POS,    JSON.stringify(NP));
   localStorage.setItem(LS_CANVAS, JSON.stringify([...onCanvas]));
   localStorage.setItem(LS_SLOTS,  JSON.stringify(nodeSlots));
   localStorage.setItem(LS_HIDDEN, JSON.stringify([...hiddenSlots]));
+  if(uiStateReady && !applyingUiState) queueSaveUiState();
+}
+function canvasStateHasData(s){
+  return !!s && (
+    (s.canvas && s.canvas.length) ||
+    (s.slots && Object.keys(s.slots).length) ||
+    (s.pos && Object.keys(s.pos).length) ||
+    (s.hidden && s.hidden.length) ||
+    (s.piConns && s.piConns.length)
+  );
+}
+function currentUiState(){
+  return { pos:NP, canvas:[...onCanvas], slots:nodeSlots, hidden:[...hiddenSlots], piConns:[...piConns] };
+}
+function applyUiState(s){
+  if(!canvasStateHasData(s)) return false;
+  applyingUiState = true;
+  try{
+    NP = (s.pos && typeof s.pos === 'object') ? s.pos : {};
+    onCanvas = new Set(Array.isArray(s.canvas) ? s.canvas : []);
+    nodeSlots = (s.slots && typeof s.slots === 'object') ? s.slots : {};
+    hiddenSlots = new Set(Array.isArray(s.hidden) ? s.hidden : []);
+    piConns = new Set(Array.isArray(s.piConns) ? s.piConns : []);
+    savePiConns();
+    saveLS();
+  } finally {
+    applyingUiState = false;
+  }
+  return true;
+}
+function queueSaveUiState(){
+  clearTimeout(uiStateSaveTimer);
+  uiStateSaveTimer = setTimeout(function(){
+    api('POST','/api/ui-state',currentUiState()).catch(function(){});
+  }, 250);
 }
 function accountNo(acc){
   const same=(ST.accounts||[]).filter(a=>a.provider===acc.provider&&a.label===acc.label);
@@ -1451,10 +1489,11 @@ function connectPiPty(initialCmd, isInstall){
     wrap = document.createElement('div');
     wrap.id = 'pi-term-wrap';
     wrap.className = 'pi-term-wrap';
-    wrap.style.cssText='position:fixed;left:-9999px;top:-9999px;width:780px;height:480px;visibility:hidden;pointer-events:none;z-index:100';
+    wrap.style.cssText='position:fixed;left:-9999px;top:-9999px;width:780px;height:480px;visibility:hidden;pointer-events:none;z-index:50';
     document.body.appendChild(wrap);
   }
   piTermWrap = wrap;
+  wrap.style.zIndex = '50';
   if(piTerm){ piTerm.dispose(); piTerm = null; }
   if(piWs){ try{ piWs.close(); }catch{} piWs = null; }
   piImgMode = false; piImgTokens = [];
@@ -2721,6 +2760,13 @@ async function fetchStatus(){
   try{
     const d=await(await fetch('/api/accounts')).json();
     ST=d;
+    if(!uiStateReady){
+      const serverHas=canvasStateHasData(d.uiState);
+      const localHas=canvasStateHasData(currentUiState());
+      if(serverHas) applyUiState(d.uiState);
+      uiStateReady = true;
+      if(!serverHas && localHas) queueSaveUiState();
+    }
 
     // Place fixed nodes in best open positions on first run (no saved position yet)
     if(!NP.out)    NP.out    = findBestPos();

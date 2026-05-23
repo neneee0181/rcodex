@@ -648,9 +648,24 @@ export function createGatewayServer(): GatewayServer {
       ollamaRunning: ollamaModels.length > 0,
       ollamaModels,
       ollamaBaseUrl: config.ollamaBaseUrl,
+      uiState: config.uiState ?? null,
       oauthPending: pendingOAuth,
       oauthError,
     };
+  });
+
+  fastify.post<{ Body: NonNullable<GatewayConfig["uiState"]> }>("/api/ui-state", async (req, reply) => {
+    const config = loadConfig();
+    const body = req.body ?? {};
+    config.uiState = {
+      pos: body.pos && typeof body.pos === "object" ? body.pos : {},
+      canvas: Array.isArray(body.canvas) ? body.canvas.filter(x => typeof x === "string") : [],
+      slots: body.slots && typeof body.slots === "object" ? body.slots : {},
+      hidden: Array.isArray(body.hidden) ? body.hidden.filter(x => typeof x === "string") : [],
+      piConns: Array.isArray(body.piConns) ? body.piConns.filter(x => typeof x === "string") : [],
+    };
+    saveConfig(config);
+    return reply.send({ ok: true });
   });
 
   // ?�?� Add account ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
