@@ -1179,6 +1179,7 @@ let piMaxTimer = null; // cancel pending resize on rapid ⛶ toggle
 function savePiConns(){ localStorage.setItem('rcodex-pi-conns', JSON.stringify([...piConns])); }
 
 let piResolvedPath = 'pi'; // updated by initPiBackground / initPiTerminal after status check
+let piIsWindows = false;   // set from /api/pi/status — controls xterm windowsMode
 function piCmd(){ return piResolvedPath; }
 
 function fitPi(){
@@ -1222,24 +1223,17 @@ function togglePi(){
 }
 
 async function initPiBackground(){
-  // Full background init: status check, sync-models, xterm + PTY connected off-screen.
-  // No window flash — execAsync in /api/pi/status uses windowsHide:true.
+  // Pre-flight only: resolve pi path and platform. Do NOT start the PTY here —
+  // pi exits immediately when no models are configured, causing [session ended]
+  // to appear on the user's first open. PTY starts on demand in initPiTerminal.
   if(piTerm || piTermWrap) return;
   try{
     const r = await api('GET', '/api/pi/status');
     const d = await r.json();
-    if(!d.installed) return; // not installed — loading UI handles install on first open
+    if(d.platform) piIsWindows = d.platform === 'win32';
+    if(!d.installed) return;
     if(d.piPath) piResolvedPath = d.piPath;
   }catch{ return; }
-  try{ await api('POST', '/api/pi/sync-models'); }catch{}
-  // Create off-screen xterm container so terminal is connected before user opens it
-  const wrap = document.createElement('div');
-  wrap.id = 'pi-term-wrap';
-  wrap.className = 'pi-term-wrap';
-  wrap.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:780px;height:444px;overflow:hidden;visibility:hidden;pointer-events:none;';
-  document.body.appendChild(wrap);
-  piTermWrap = wrap;
-  connectPiPty(piCmd());
 }
 
 async function initPiTerminal(){
@@ -1251,10 +1245,10 @@ async function initPiTerminal(){
   try{
     const r = await api('GET', '/api/pi/status');
     statusData = await r.json();
+    if(statusData?.platform) piIsWindows = statusData.platform === 'win32';
   }catch{}
 
   if(statusData && statusData.installed && statusData.piPath){
-    // Already installed — connect directly
     piResolvedPath = statusData.piPath;
     try{ await api('POST', '/api/pi/sync-models'); }catch{}
     connectPiPty(piCmd());
@@ -1323,7 +1317,7 @@ function connectPiPty(initialCmd, isInstall){
     theme:{ background:'#0d0d0f', foreground:'#e4e4e7', cursor:'#818cf8', selectionBackground:'rgba(129,140,248,.3)' },
     fontFamily:'Menlo, Monaco, Consolas, "Courier New", monospace',
     fontSize:13, lineHeight:1.5, cursorBlink:true, scrollback:5000,
-    windowsMode: true,
+    windowsMode: piIsWindows,
   });
   const fit = new FitAddon.FitAddon();
   term.loadAddon(fit);
@@ -1336,8 +1330,8 @@ function connectPiPty(initialCmd, isInstall){
   piWs = ws;
   ws.onmessage = e => term.write(typeof e.data === 'string' ? e.data : new Uint8Array(e.data));
   ws.onclose = () => {
-    term.write('\\r\\n\\x1b[90m[session ended]\\x1b[0m\\r\\n');
     if(isInstall){
+      term.write('\\r\\n\\x1b[90m[session ended]\\x1b[0m\\r\\n');
       term.write('\\x1b[90mChecking Pi installation…\\x1b[0m\\r\\n');
       api('GET', '/api/pi/status').then(r=>r.json()).then(function(d){
         if(d.installed && d.piPath){
@@ -1346,11 +1340,29 @@ function connectPiPty(initialCmd, isInstall){
           api('POST', '/api/pi/sync-models').catch(function(){});
           setTimeout(function(){ connectPiPty(piCmd()); }, 800);
         } else {
-          term.write('\\x1b[33mPi not found in PATH. Click ↺ to retry.\\x1b[0m\\r\\n');
-          render();
+          term.write('\\x1b[33mPi not found. Running diagnostics…\\x1b[0m\\r\\n');
+          api('GET', '/api/pi/diagnose').then(r=>r.json()).then(function(diag){
+            for(const [k,v] of Object.entries(diag)){
+              const color = String(v).startsWith('FAIL') ? '\\x1b[31m' : String(v).startsWith('YES') ? '\\x1b[32m' : '\\x1b[90m';
+              term.write(color + k + ': \\x1b[0m' + v + '\\r\\n');
+            }
+            term.write('\\x1b[90mTo debug, run manually: npm install -g @earendil-works/pi-coding-agent\\x1b[0m\\r\\n');
+            term.write('\\x1b[33mClick ↺ to retry (will re-run install).\\x1b[0m\\r\\n');
+            render();
+          }).catch(function(){
+            term.write('\\x1b[33mPi not found in PATH. Click ↺ to retry.\\x1b[0m\\r\\n');
+            render();
+          });
         }
       }).catch(function(){ render(); });
     } else {
+      if(!piOpen && piTerm === term){
+        // Background session ended before user opened Pi — clear refs silently for fresh start
+        term.dispose(); piTerm = null;
+        if(piTermWrap){ piTermWrap.remove(); piTermWrap = null; }
+        return;
+      }
+      term.write('\\r\\n\\x1b[90m[session ended]\\x1b[0m\\r\\n');
       render();
     }
   };
@@ -1396,7 +1408,8 @@ function restartPi(){
   if(piWs){ try{ piWs.close(); }catch{} piWs = null; }
   const l = document.getElementById('pi-loading');
   if(l) l.style.display = 'none';
-  connectPiPty(piCmd());
+  // Re-run full init so install flow triggers if pi is not yet installed
+  initPiTerminal();
 }
 
 async function resetPi(){

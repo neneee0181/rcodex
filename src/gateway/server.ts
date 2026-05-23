@@ -370,14 +370,36 @@ export function createGatewayServer(): GatewayServer {
   });
 
   // ── Pi agent status ──────────────────────────────────────────────────────
+  // Returns true if path is an executable file — used as fallback when --version exits non-zero
+  function isExecutable(p: string): boolean {
+    try { accessSync(p, constants.X_OK); return true; } catch { return false; }
+  }
+
   // Resolve absolute path to pi executable — handles cases where npm global bin is not in PATH
   async function resolvePiPath(): Promise<string | null> {
+    const accept = async (p: string): Promise<string | null> => {
+      // Prefer --version success; fall back to executable check (pi may need auth/setup first run)
+      try { await execAsync(`"${p}" --version`, { timeout: 5000, windowsHide: true }); return p; } catch {}
+      if (isExecutable(p)) return p;
+      return null;
+    };
+
     // 1. Try plain 'pi' (already in PATH)
     try {
       await execAsync("pi --version", { timeout: 5000, windowsHide: true });
       return "pi";
     } catch {}
-    // 2. Try npm global prefix bin directory
+
+    // 2. Try 'which pi' — works when shell PATH differs from process PATH
+    if (process.platform !== "win32") {
+      try {
+        const { stdout } = await execAsync("which pi 2>/dev/null || command -v pi 2>/dev/null", { timeout: 5000 });
+        const p = stdout.trim();
+        if (p && existsSync(p)) { const r = await accept(p); if (r) return r; }
+      } catch {}
+    }
+
+    // 3. Try npm global prefix bin directory
     try {
       const { stdout } = await execAsync("npm config get prefix", { timeout: 5000, windowsHide: true });
       const prefix = stdout.trim();
@@ -385,11 +407,22 @@ export function createGatewayServer(): GatewayServer {
         ? [join(prefix, "pi.cmd"), join(prefix, "pi")]
         : [join(prefix, "bin", "pi")];
       for (const p of candidates) {
-        if (existsSync(p)) {
-          try { await execAsync(`"${p}" --version`, { timeout: 5000, windowsHide: true }); return p; } catch {}
-        }
+        if (existsSync(p)) { const r = await accept(p); if (r) return r; }
       }
     } catch {}
+
+    // 4. macOS/Linux hardcoded fallbacks (Homebrew Apple Silicon / Intel, custom npm prefix)
+    if (process.platform !== "win32") {
+      const fallbacks = [
+        "/opt/homebrew/bin/pi",
+        "/usr/local/bin/pi",
+        join(homedir(), ".npm-global", "bin", "pi"),
+        join(homedir(), ".npm", "bin", "pi"),
+      ];
+      for (const p of fallbacks) {
+        if (existsSync(p)) { const r = await accept(p); if (r) return r; }
+      }
+    }
     return null;
   }
 
@@ -400,7 +433,25 @@ export function createGatewayServer(): GatewayServer {
   fastify.get("/api/pi/status", async () => {
     const piPath = await resolvePiPath();
     const npmAvailable = piPath !== null ? true : await isNpmAvailable();
-    return { installed: piPath !== null, piPath, npmAvailable };
+    const config = loadConfig();
+    const piConnected = config.accounts.some(a => a.connectedToPi && (a.piModels ?? []).length > 0);
+    return { installed: piPath !== null, piPath, npmAvailable, platform: process.platform, piConnected };
+  });
+
+  fastify.get("/api/pi/diagnose", async () => {
+    const checks: Record<string, string> = {};
+    try { const { stdout } = await execAsync("pi --version", { timeout: 5000, windowsHide: true }); checks["pi --version"] = stdout.trim(); } catch (e) { checks["pi --version"] = "FAIL: " + String(e).slice(0, 100); }
+    if (process.platform !== "win32") {
+      try { const { stdout } = await execAsync("which pi 2>/dev/null || true", { timeout: 3000 }); checks["which pi"] = stdout.trim() || "(not found)"; } catch (e) { checks["which pi"] = "FAIL: " + String(e).slice(0, 100); }
+    }
+    try { const { stdout } = await execAsync("npm config get prefix", { timeout: 5000, windowsHide: true }); const prefix = stdout.trim(); checks["npm prefix"] = prefix; const bin = join(prefix, process.platform === "win32" ? "pi.cmd" : "bin/pi"); checks["prefix/bin/pi exists"] = existsSync(bin) ? "YES: " + bin : "NO"; if (existsSync(bin)) { checks["prefix/bin/pi executable"] = isExecutable(bin) ? "YES" : "NO"; try { const { stdout: v } = await execAsync(`"${bin}" --version`, { timeout: 5000, windowsHide: true }); checks["prefix/bin/pi --version"] = v.trim(); } catch (e) { checks["prefix/bin/pi --version"] = "FAIL: " + String(e).slice(0, 100); } } } catch (e) { checks["npm prefix"] = "FAIL: " + String(e).slice(0, 100); }
+    if (process.platform !== "win32") {
+      for (const p of ["/opt/homebrew/bin/pi", "/usr/local/bin/pi", join(homedir(), ".npm-global/bin/pi")]) {
+        checks[p] = existsSync(p) ? (isExecutable(p) ? "YES (executable)" : "YES (not executable)") : "NO";
+      }
+    }
+    checks["process.env.PATH"] = process.env.PATH ?? "(unset)";
+    return checks;
   });
 
   // Ensure npm/Node.js is available (SSE). Pi itself is installed interactively via PTY.
@@ -461,6 +512,8 @@ export function createGatewayServer(): GatewayServer {
     for (const a of config.accounts.filter(a => a.connectedToPi)) {
       for (const m of a.piModels ?? []) { if (m && !allModels.includes(m)) allModels.push(m); }
     }
+    // If no accounts connected, don't overwrite existing models.json — user may have their own config
+    if (allModels.length === 0) return { ok: true, skipped: true };
     const agentDir = join(homedir(), ".pi", "agent");
     mkdirSync(agentDir, { recursive: true });
     const modelsPath = join(agentDir, "models.json");
@@ -511,7 +564,10 @@ export function createGatewayServer(): GatewayServer {
       }
 
       const shell = process.platform === "win32" ? "powershell.exe" : (process.env.SHELL || "bash");
-      const ptyProc = ptySpawn(shell, [], {
+      glog(`[PTY] connection: cmd=${JSON.stringify(initialCmd)} cols=${cols} rows=${rows} shell=${shell}`);
+      let ptyProc: ReturnType<typeof ptySpawn>;
+      try {
+        ptyProc = ptySpawn(shell, [], {
         name: "xterm-256color",
         cols, rows,
         cwd: resolvedCwd,
@@ -526,9 +582,22 @@ export function createGatewayServer(): GatewayServer {
           }
           e.TERM = "xterm-256color";
           e.COLORTERM = "truecolor";
+          // Ensure Homebrew and common npm global bin dirs are in PATH on macOS/Linux
+          // so that npm-installed binaries (like pi) and their node runtime can be found.
+          if (process.platform !== "win32") {
+            const extraPaths = ["/opt/homebrew/bin", "/opt/homebrew/sbin", "/usr/local/bin", `${homedir()}/.npm-global/bin`, `${homedir()}/.npm/bin`];
+            const existing = (e.PATH || "").split(":").filter(Boolean);
+            const merged = [...new Set([...extraPaths, ...existing])];
+            e.PATH = merged.join(":");
+          }
           return e;
         })(),
-      });
+        });
+      } catch (spawnErr) {
+        glog(`[PTY] spawn error: ${spawnErr}`);
+        try { socket.close(); } catch {}
+        return;
+      }
 
       ptyProc.onData(data => { try { socket.send(data); } catch {} });
       socket.on("message", (msg: Buffer | string) => {
@@ -542,9 +611,14 @@ export function createGatewayServer(): GatewayServer {
         } catch {}
       });
       socket.on("close", () => { try { ptyProc.kill(); } catch {} });
-      ptyProc.onExit(() => { try { socket.close(); } catch {} });
+      ptyProc.onExit(({ exitCode, signal }) => {
+        glog(`[PTY] exited — code=${exitCode} signal=${signal} cmd=${JSON.stringify(initialCmd)} shell=${shell}`);
+        try { socket.close(); } catch {}
+      });
 
-      if (initialCmd) setTimeout(() => { try { ptyProc.write(initialCmd + "\r"); } catch {} }, 600);
+      if (initialCmd) {
+        setTimeout(() => { try { ptyProc.write(initialCmd + "\r"); } catch {} }, 600);
+      }
     });
   });
 

@@ -2,6 +2,23 @@ const { execSync } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 
+// Fix missing execute permission on node-pty spawn-helper prebuilds (macOS/Linux).
+// npm sometimes unpacks prebuilt binaries without the +x bit, causing posix_spawnp to fail.
+if (process.platform !== "win32") {
+  try {
+    const prebuildsDir = path.join(__dirname, "..", "node_modules", "node-pty", "prebuilds");
+    if (fs.existsSync(prebuildsDir)) {
+      for (const dir of fs.readdirSync(prebuildsDir)) {
+        const helper = path.join(prebuildsDir, dir, "spawn-helper");
+        if (fs.existsSync(helper)) {
+          const mode = fs.statSync(helper).mode;
+          if (!(mode & 0o111)) fs.chmodSync(helper, mode | 0o111);
+        }
+      }
+    }
+  } catch { /* ignore */ }
+}
+
 // Patch node-pty's conpty_console_list_agent fork to use windowsHide:true.
 // Without this, the fork briefly creates a visible console window on Windows
 // every time a PTY process exits (page refresh, restart, tab close, etc.).
