@@ -1210,10 +1210,8 @@ let piMaxTimer = null; // cancel pending resize on rapid ⛶ toggle
 let piResolvedPath = 'pi'; // updated by initPiBackground / initPiTerminal after status check
 let piIsWindows = false;   // set from /api/pi/status — controls xterm windowsMode
 function piCmd(){ return piResolvedPath; }
-let piImgMode = false;
-let piImgTokens = [];
 let piImgCount = 0;
-let piImgPendingEcho = '';
+let piImgLastPaste = 0;
 
 function fitPi(){
   if(!piFit || !piTerm) return;
@@ -1362,85 +1360,6 @@ async function initPiTerminal(){
 function piImgIsPasteKey(e){
   return (e.ctrlKey || e.metaKey) && (((e.key || '').toLowerCase() === 'v') || e.code === 'KeyV');
 }
-function piImgWidth(text){
-  let w = 0;
-  for(const ch of Array.from(text)) w += ch.charCodeAt(0) > 0x7f ? 2 : 1;
-  return w;
-}
-function piImgErase(text){
-  if(!piTerm || !text) return;
-  const w = piImgWidth(text);
-  if(w > 0) piTerm.write('\\x1b[' + w + 'D\\x1b[' + w + 'P');
-}
-function piImgAppendToken(display, actual, type){
-  piImgMode = true;
-  piImgTokens.push({display:display, actual:actual, type:type});
-  if(piTerm){ piTerm.write(display); piTerm.focus(); }
-}
-function piImgAddText(text){
-  if(!text) return;
-  piImgMode = true;
-  const last = piImgTokens[piImgTokens.length - 1];
-  if(last && last.type === 'text'){
-    last.display += text;
-    last.actual += text;
-  } else {
-    piImgTokens.push({display:text, actual:text, type:'text'});
-  }
-  if(piTerm){ piTerm.write(text); piTerm.focus(); }
-}
-function piImgBackspace(){
-  if(!piImgTokens.length) return;
-  const last = piImgTokens[piImgTokens.length - 1];
-  if(last.type === 'image'){
-    piImgErase(last.display);
-    piImgTokens.pop();
-  } else {
-    const chars = Array.from(last.display);
-    const removed = chars.pop() || '';
-    piImgErase(removed);
-    last.display = chars.join('');
-    last.actual = Array.from(last.actual).slice(0, -1).join('');
-    if(!last.display) piImgTokens.pop();
-  }
-  if(!piImgTokens.length) piImgMode = false;
-}
-function piImgCancel(){
-  for(let i = piImgTokens.length - 1; i >= 0; i--) piImgErase(piImgTokens[i].display);
-  piImgMode = false;
-  piImgTokens = [];
-}
-function piImgCommit(){
-  const actual = piImgTokens.map(function(t){ return t.actual; }).join('');
-  piImgMode = false;
-  piImgTokens = [];
-  if(piWs && piWs.readyState === WebSocket.OPEN){
-    if(actual) piImgPendingEcho += actual;
-    piWs.send(actual + '\\r');
-  }
-}
-function piImgFilterEcho(data){
-  if(!piImgPendingEcho || typeof data !== 'string') return data;
-  if(data.startsWith(piImgPendingEcho)){
-    const rest = data.slice(piImgPendingEcho.length);
-    piImgPendingEcho = '';
-    return rest;
-  }
-  if(piImgPendingEcho.startsWith(data)){
-    piImgPendingEcho = piImgPendingEcho.slice(data.length);
-    return '';
-  }
-  return data;
-}
-function piImgKey(e){
-  if(piImgIsPasteKey(e)){ piImgHandlePaste(e).catch(function(){}); return false; }
-  if(e.key === 'Escape'){ piImgCancel(); return false; }
-  if(e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey){ piImgCommit(); return false; }
-  if(e.key === 'Backspace'){ piImgBackspace(); return false; }
-  if(e.ctrlKey || e.metaKey || e.altKey) return false;
-  if(e.key.length === 1 || e.isComposing || e.key === 'Process' || e.keyCode === 229) return true;
-  return false;
-}
 async function piImgUploadBlob(blob, type){
   const ext = (type || blob.type || 'image/png').split('/')[1] || 'png';
   const arr = await blob.arrayBuffer();
@@ -1454,11 +1373,14 @@ async function piImgUploadBlob(blob, type){
     body: JSON.stringify({data:b64, ext:ext}),
   });
   if(!res.ok) return;
-  const d = await res.json();
   piImgCount++;
-  piImgAppendToken('[\\uc774\\ubbf8\\uc9c0#' + piImgCount + ']', d.path, 'image');
+  // Send label directly to PTY so Pi echoes it at the correct cursor position
+  if(piWs && piWs.readyState === WebSocket.OPEN) piWs.send('[\\uc774\\ubbf8\\uc9c0 #' + piImgCount + '] ');
 }
 async function piImgHandlePaste(e){
+  const now = Date.now();
+  if(now - piImgLastPaste < 200) return;
+  piImgLastPaste = now;
   if(e && e.preventDefault) e.preventDefault();
   if(e && e.stopPropagation) e.stopPropagation();
   if(e && e.stopImmediatePropagation) e.stopImmediatePropagation();
@@ -1471,20 +1393,19 @@ async function piImgHandlePaste(e){
         if(file){ hasImg = true; await piImgUploadBlob(file, item.type); }
       }
     }
-    const text = dt.getData ? dt.getData('text/plain') : '';
-    if(text){
-      if(hasImg || piImgMode) piImgAddText(text);
-      else if(piTerm) piTerm.paste(text);
+    if(!hasImg){
+      const text = dt.getData ? dt.getData('text/plain') : '';
+      if(text && piTerm) piTerm.paste(text);
     }
-    if(hasImg || text) return;
+    return;
   }
   let items;
   try { items = await navigator.clipboard.read(); } catch {
     const text = await navigator.clipboard.readText().catch(function(){ return ''; });
-    if(text){ if(!piImgMode){ if(piTerm) piTerm.paste(text); return; } piImgAddText(text); }
+    if(text && piTerm) piTerm.paste(text);
     return;
   }
-  let hasImg = false; let textContent = '';
+  let hasImg = false;
   for(const item of items){
     const imgType = item.types.find(function(t){ return t.startsWith('image/'); });
     if(imgType){
@@ -1494,11 +1415,11 @@ async function piImgHandlePaste(e){
         await piImgUploadBlob(blob, imgType);
       } catch(err){ console.error('paste-image error', err); }
     }
-    if(item.types.includes('text/plain')){
-      try { const b = await item.getType('text/plain'); textContent = await b.text(); } catch {}
-    }
   }
-  if(textContent){ if(!hasImg && !piImgMode){ if(piTerm) piTerm.paste(textContent); return; } piImgAddText(textContent); }
+  if(!hasImg){
+    const textItem = items.find(function(i){ return i.types.includes('text/plain'); });
+    if(textItem){ try { const b = await textItem.getType('text/plain'); const t = await b.text(); if(t && piTerm) piTerm.paste(t); } catch {} }
+  }
 }
 function connectPiPty(initialCmd, isInstall){
   // Always keep wrap on body as position:fixed — never inside #world (avoids CSS zoom)
@@ -1514,9 +1435,6 @@ function connectPiPty(initialCmd, isInstall){
   wrap.style.zIndex = '50';
   if(piTerm){ piTerm.dispose(); piTerm = null; }
   if(piWs){ try{ piWs.close(); }catch{} piWs = null; }
-  piImgMode = false; piImgTokens = [];
-  piImgPendingEcho = '';
-
   const term = new Terminal({
     theme:{ background:'#0d0d0f', foreground:'#e4e4e7', cursor:'#818cf8', selectionBackground:'rgba(129,140,248,.3)' },
     fontFamily:'Menlo, Monaco, Consolas, "Courier New", monospace',
@@ -1533,7 +1451,7 @@ function connectPiPty(initialCmd, isInstall){
   const ws = new WebSocket(wsUrl);
   piWs = ws;
   ws.onmessage = e => {
-    const data = piImgFilterEcho(typeof e.data === 'string' ? e.data : new Uint8Array(e.data));
+    const data = typeof e.data === 'string' ? e.data : new Uint8Array(e.data);
     if(data) term.write(data);
   };
   ws.onclose = () => {
@@ -1575,19 +1493,12 @@ function connectPiPty(initialCmd, isInstall){
   };
   ws.onerror = () => { term.write('\\r\\n\\x1b[31m[connection error]\\x1b[0m\\r\\n'); };
   term.onData(d => {
-    if(piImgMode){
-      if(d === '\\r'){ piImgCommit(); return; }
-      if(d === '\\u007f'){ piImgBackspace(); return; }
-      if(d && d[0] !== '\\x1b') piImgAddText(d);
-      return;
-    }
     if(ws.readyState === WebSocket.OPEN) ws.send(d);
   });
   term.onResize(({cols,rows}) => { if(ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({type:'resize',cols,rows})); });
 
   term.attachCustomKeyEventHandler(function(e){
     if(e.type!=='keydown') return true;
-    if(piImgMode) return piImgKey(e);
     if(e.ctrlKey && e.key==='c'){
       const sel=term.getSelection();
       if(sel){ navigator.clipboard.writeText(sel).catch(function(){}); return false; }
@@ -1608,14 +1519,9 @@ function connectPiPty(initialCmd, isInstall){
     return true;
   });
 
-  // Native paste (right-click / edit menu)
+  // Native paste (right-click / edit menu) — dedup prevents double-fire with attachCustomKeyEventHandler
   if(!wrap.__piPasteHooks){
     wrap.__piPasteHooks = true;
-    wrap.addEventListener('keydown', function(e){
-      if(piImgIsPasteKey(e)){
-        piImgHandlePaste(e).catch(function(){});
-      }
-    }, true);
     wrap.addEventListener('paste', function(e){ piImgHandlePaste(e).catch(function(){}); }, true);
   }
   // Refocus terminal on click so canvas interactions don't steal input

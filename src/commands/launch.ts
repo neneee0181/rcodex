@@ -7,7 +7,7 @@ import { getCodexConfigPath } from "../utils/paths.js";
 import { readCodexConfig, writeCodexConfig, backupCodexConfig } from "../core/config.js";
 import { MANAGED_PROVIDER_KEY } from "../core/constants.js";
 import { loadConfig, killExistingGateway } from "../gateway/auth.js";
-import { isCodexRunning, killCodex, openCodexApp } from "../core/codex.js";
+import { isCodexRunning, killCodex } from "../core/codex.js";
 import { hasUnmigratedThreads, migrateThreads } from "./migrate.js";
 
 const RCODEX_DIR = join(homedir(), ".rcodex");
@@ -131,15 +131,6 @@ export async function runLaunch(): Promise<void> {
     }
     await migrateThreads(MANAGED_PROVIDER_KEY, false);
   }
-
-  // 6. Restart Codex if running, otherwise just launch it
-  if (await isCodexRunning()) {
-    logger.info("Restarting Codex...");
-    await killCodex();
-    await new Promise((r) => setTimeout(r, 800));
-  }
-  await openCodexApp();
-  logger.success("Codex launched");
 
   // Open gateway UI in the default browser
   const uiUrl = `http://localhost:${actualPort}`;

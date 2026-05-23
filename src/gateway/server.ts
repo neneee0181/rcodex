@@ -11,7 +11,7 @@ import { homedir, tmpdir } from "os";
 import { getCodexConfigPath } from "../utils/paths.js";
 import { readCodexConfig, writeCodexConfig } from "../core/config.js";
 import { MANAGED_PROVIDER_KEY, OPENAI_PROVIDER_KEY } from "../core/constants.js";
-import { isCodexRunning, killCodex, openCodexApp } from "../core/codex.js";
+import { isCodexRunning, killCodex } from "../core/codex.js";
 import { migrateThreads } from "../commands/migrate.js";
 import {
   loadConfig, saveConfig, addAccount, removeAccount, setAccountNodeState, reorderConnectedAccounts,
@@ -333,8 +333,6 @@ export function createGatewayServer(): GatewayServer {
     // 3. Migrate threads to target provider
     await migrateThreads(targetProvider, false);
 
-    // 4. Restart Codex
-    openCodexApp().catch(() => {});
     return { ok: true, mode };
   });
 

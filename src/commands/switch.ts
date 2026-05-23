@@ -3,7 +3,7 @@ import { getCodexConfigPath, displayPath } from "../utils/paths.js";
 import { readCodexConfig, writeCodexConfig, backupCodexConfig, removeLegacyProviders } from "../core/config.js";
 import { MANAGED_PROVIDER_KEY, OPENAI_PROVIDER_KEY, DEFAULT_OPENAI_BASE_URL } from "../core/constants.js";
 import { loadConfig } from "../gateway/auth.js";
-import { isCodexRunning, killCodex, openCodexApp } from "../core/codex.js";
+import { isCodexRunning, killCodex } from "../core/codex.js";
 import { migrateThreads } from "./migrate.js";
 
 type SwitchTarget = "gateway" | "openai";
@@ -78,12 +78,6 @@ export async function runSwitch(target: SwitchTarget): Promise<void> {
   logger.separator();
   const migrateTarget = target === "gateway" ? MANAGED_PROVIDER_KEY : OPENAI_PROVIDER_KEY;
   await migrateThreads(migrateTarget, false);
-
-  // Reopen Codex if it was running before
-  if (wasRunning) {
-    await openCodexApp();
-    logger.success("Codex restarted.");
-  }
 
   logger.done();
 }

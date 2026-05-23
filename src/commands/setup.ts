@@ -6,7 +6,7 @@ import { loadConfig, killExistingGateway } from "../gateway/auth.js";
 import { getCodexConfigPath } from "../utils/paths.js";
 import { readCodexConfig, writeCodexConfig, backupCodexConfig } from "../core/config.js";
 import { MANAGED_PROVIDER_KEY } from "../core/constants.js";
-import { openCodexApp } from "../core/codex.js";
+
 
 function openBrowser(url: string): void {
   const cmd =
@@ -69,10 +69,6 @@ export async function runSetup(): Promise<void> {
 
   // 4. Open browser to management UI
   openBrowser(url);
-
-  // 5. Open Codex app
-  logger.info("Opening Codex...");
-  await openCodexApp();
 
   logger.separator();
   logger.success("Ready. Configure providers at: " + url);
