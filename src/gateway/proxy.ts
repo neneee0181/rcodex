@@ -258,10 +258,10 @@ function parseGeminiTextToolCall(text: string): { before: string; name: string; 
   const name = call[1];
   const rawArgs = call[2];
   const args: Record<string, unknown> = {};
-  const kvRe = /([A-Za-z_]\w*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
+  const kvRe = /([A-Za-z_]\w*)\s*=\s*(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')/g;
   for (const m of rawArgs.matchAll(kvRe)) {
     const key = m[1] === "command" ? "cmd" : m[1];
-    args[key] = m[2] ?? m[3] ?? "";
+    args[key] = (m[2] ?? m[3] ?? "").replace(/\\(.)/g, '$1');
   }
   if (Object.keys(args).length === 0) return null;
   return { before: text.slice(0, start).trimEnd(), name, args };
@@ -1786,18 +1786,15 @@ async function* streamSingleProvider(
       const assistantParts: unknown[] = [];
       if (agCapturedText.value) assistantParts.push({ text: agCapturedText.value });
       for (const t of agCapturedTools) {
-        if (!t.thoughtSignature) {
-          assistantParts.push({ text: `Tool call: ${t.name}\nArguments: ${JSON.stringify(t.input)}` });
-          continue;
-        }
-        const fc: Record<string, unknown> = { name: t.name, args: t.input };
-        assistantParts.push({ functionCall: fc, thoughtSignature: t.thoughtSignature });
+        const part: Record<string, unknown> = { functionCall: { name: t.name, args: t.input } };
+        if (t.thoughtSignature) part.thoughtSignature = t.thoughtSignature;
+        assistantParts.push(part);
       }
       convStore.set(responseId, {
         provider: "antigravity", model,
         messages: [],
         googleContents: [...agCurrentContents, { role: "model", parts: assistantParts }],
-        googleToolCalls: agCapturedTools.filter(t => t.thoughtSignature).map(t => ({ id: t.id, name: t.name })),
+        googleToolCalls: agCapturedTools.map(t => ({ id: t.id, name: t.name })),
         instructions: agSystem, tools: req.tools, ts: Date.now(),
       });
       glog(`[gateway] conv stored (antigravity): ${responseId} (${agCapturedTools.length} tools)`);
