@@ -26,6 +26,7 @@ Last synced: 2026-05-21T17:52:16+0900
 - Gateway Fastify body limit is configurable with `bodyLimitMiB` in `~/.rcodex/gateway.json`; default is 64MiB and values are clamped to 1-1024MiB.
 - Pi terminal image paste saves clipboard images to temp files, renders inline `[이미지#N]` tokens in xterm, buffers post-image input through xterm `onData` for IME-safe Korean input, and sends real paths only on Enter.
 - Pi now runs its own native providers only. The old rcodex Pi model-node bridge is removed from the UI/routing path, and Pi startup cleanup removes only `providers.rcodex` from `~/.pi/agent/models.json` while preserving other Pi providers.
+- Pi UI/Monitor shows native Pi status, rcodex cleanup state, recent paste-image count, paste cleanup action, and request source filters (`all`, `rcodex`, `pi`, `api`).
 - Canvas UI state (`pos`, canvas slot ids, node slots, hidden slots) is mirrored to `GatewayConfig.uiState` so idle provider nodes survive gateway port changes.
 - Pi fullscreen mode animates from the node rect and resizes the fixed xterm wrapper from header bottom to viewport bottom.
 

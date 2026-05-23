@@ -664,7 +664,9 @@ let monitorRefreshTimer = null;
 let usageHtmlCache = '';
 let quotaState = {};
 let lastReqData = null;
+let requestFilter = 'all';
 let codexMode = 'rcodex';
+let piStatusCache = null;
 
 // Canvas state (localStorage) ??keyed by slotId (not accountId)
 const LS_POS    = 'rcodex-pos-v4';
@@ -1286,6 +1288,7 @@ async function initPiBackground(){
   try{
     const r = await api('GET', '/api/pi/status');
     const d = await r.json();
+    piStatusCache = d;
     if(d.platform) piIsWindows = d.platform === 'win32';
     if(!d.installed) return;
     if(d.piPath) piResolvedPath = d.piPath;
@@ -1301,6 +1304,7 @@ async function initPiTerminal(){
   try{
     const r = await api('GET', '/api/pi/status');
     statusData = await r.json();
+    piStatusCache = statusData;
     if(statusData?.platform) piIsWindows = statusData.platform === 'win32';
   }catch{}
 
@@ -1640,6 +1644,26 @@ async function resetPi(){
   }catch(e){ toast('Reset failed', true); return; }
   restartPi();
 }
+async function cleanupPiModels(){
+  try{
+    const r=await api('POST','/api/pi/sync-models');
+    const d=await r.json();
+    toast(d.removed?'Removed rcodex from Pi models.json':'Pi models.json already clean');
+    await refreshPiStatusCache();
+  }catch{ toast('Cleanup failed',true); }
+}
+async function clearPiPasteImages(){
+  try{
+    const r=await fetch('/api/pi/paste-images',{method:'DELETE',headers:{'content-type':'application/json'},body:JSON.stringify({all:true})});
+    const d=await r.json();
+    toast('Removed '+(d.removed?.length||0)+' pasted image(s)');
+    await refreshPiStatusCache();
+  }catch{ toast('Image cleanup failed',true); }
+}
+async function refreshPiStatusCache(){
+  try{ piStatusCache=await fetch('/api/pi/status').then(r=>r.json()); render(); }
+  catch{}
+}
 
 // Pi canvas node — small (collapsed) or full terminal (expanded)
 function buildPiNode(){
@@ -1650,6 +1674,10 @@ function buildPiNode(){
     ? \`<span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;margin-right:4px;flex-shrink:0"></span>\`
     : \`<span style="width:6px;height:6px;border-radius:50%;background:#4b5563;display:inline-block;margin-right:4px;flex-shrink:0"></span>\`;
   const PI_ICON = \`<svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 11V3l4 5 4-5v8" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>\`;
+  const statusLine = piStatusCache
+    ? \`\${piStatusCache.version||'pi'} · \${piStatusCache.providerCount||0} native provider\${piStatusCache.providerCount===1?'':'s'}\${piStatusCache.rcodexProviderPresent?' · rcodex found':''}\`
+    : 'Native Pi providers';
+  const pasteCount = piStatusCache?.pasteImages?.length || 0;
 
   if(!piOpen){
     // ── Collapsed: small status node ──
@@ -1658,7 +1686,7 @@ function buildPiNode(){
     <div class="nic" style="background:rgba(129,140,248,.15)">\${PI_ICON}</div>
     <div style="flex:1;min-width:0">
       <div style="font-size:11px;font-weight:600;color:#e0e0f0;display:flex;align-items:center">\${dot}Pi Agent</div>
-      <div style="font-size:9px;color:#606080">\${running?'Native Pi running':'Native Pi'}</div>
+      <div style="font-size:9px;color:#606080;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\${running?'Running · ':''}\${statusLine}</div>
     </div>
     <button class="nd-rm" onclick="restartPi()" title="Restart Pi" style="font-size:13px">↺</button>
     <button class="nd-rm" onclick="togglePi()" title="Open terminal" style="font-size:13px">▸</button>
@@ -1673,8 +1701,10 @@ function buildPiNode(){
     <div class="nic" style="background:rgba(129,140,248,.15)">\${PI_ICON}</div>
     <div style="flex:1;min-width:0">
       <div style="font-size:11px;font-weight:600;color:#e0e0f0;display:flex;align-items:center">\${dot}Pi Agent</div>
-      <div style="font-size:9px;margin-top:1px;color:#606080">Native Pi providers</div>
+      <div style="font-size:9px;margin-top:1px;color:#606080;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\${statusLine}</div>
     </div>
+    <button class="nd-rm" onclick="cleanupPiModels()" title="Remove rcodex from Pi models.json" style="font-size:12px">⌫</button>
+    <button class="nd-rm" onclick="clearPiPasteImages()" title="Clear pasted images" style="font-size:11px">\${pasteCount}</button>
     <button class="nd-rm" onclick="restartPi()" title="Restart Pi" style="font-size:13px">↺</button>
     <button class="nd-rm" style="font-size:14px;width:22px;height:22px" onclick="togglePiMax()" title="Fullscreen">⛶</button>
     <button class="nd-rm" onclick="togglePi()" title="Collapse" style="font-size:13px">▾</button>
@@ -1857,7 +1887,9 @@ function buildMonitorNode(){
   } else if(monitorTab==='logs'){
     content=\`<div class="log-wrap" id="mn-logs-body"><div class="mn-empty">Loading</div></div>\`;
   } else if(monitorTab==='requests'){
-    content=\`<div class="req-wrap" id="mn-reqs-body"><div class="mn-empty">Loading</div></div>\`;
+    const filters=['all','rcodex','pi','api'];
+    const filterHtml=\`<div style="display:flex;gap:4px;padding:6px 8px;border-bottom:1px solid var(--b1)">\${filters.map(f=>\`<button onclick="setRequestFilter('\${f}')" style="border:1px solid \${requestFilter===f?'var(--bl)':'var(--b2)'};background:\${requestFilter===f?'rgba(99,102,241,.18)':'rgba(255,255,255,.03)'};color:\${requestFilter===f?'#c7d2fe':'var(--mu)'};border-radius:5px;font-size:9px;padding:2px 7px;cursor:pointer;text-transform:uppercase">\${f}</button>\`).join('')}</div>\`;
+    content=\`\${filterHtml}<div class="req-wrap" id="mn-reqs-body"><div class="mn-empty">Loading</div></div>\`;
   } else if(monitorTab==='usage'){
     content=\`<div id="mn-usage-body">\${usageHtmlCache||'<div class="mn-empty">Loading</div>'}</div>\`;
   }
@@ -1876,6 +1908,11 @@ function buildMonitorNode(){
 </div>\`;
 }
 
+function setRequestFilter(f){
+  requestFilter=f;
+  refreshRequests();
+}
+
 function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 // Status / Logs / Requests refresh
@@ -1884,6 +1921,8 @@ async function refreshStatus(){
   if(!body)return;
   try{
     const d=await(await fetch('/api/status')).json();
+    const pi=await fetch('/api/pi/status').then(r=>r.json()).catch(()=>null);
+    if(pi) piStatusCache=pi;
     const upSec=Math.floor(d.uptimeMs/1000);
     const upStr=upSec<60?\`\${upSec}s\`:upSec<3600?\`\${Math.floor(upSec/60)}m\`:\`\${Math.floor(upSec/3600)}h \${Math.floor((upSec%3600)/60)}m\`;
     const provHtml=(d.connectedProviders||[]).map(p=>\`
@@ -1898,6 +1937,13 @@ async function refreshStatus(){
         <div class="st-card"><div class="st-val">\${d.connectedCount}</div><div class="st-key">Connected</div></div>
         <div class="st-card"><div class="st-val">\${upStr}</div><div class="st-key">Uptime</div></div>
       </div>
+      \${pi?\`<div style="padding:8px 10px;border-bottom:1px solid var(--b1);font-size:10px;line-height:1.55;color:var(--mu)">
+        <div style="display:flex;align-items:center;gap:6px;color:var(--tx);font-weight:700;margin-bottom:3px">\${pi.installed?'<span style="width:7px;height:7px;border-radius:50%;background:#22c55e"></span>':'<span style="width:7px;height:7px;border-radius:50%;background:#6b7280"></span>'}Native Pi</div>
+        <div>Version: \${escHtml(pi.version||'not installed')}</div>
+        <div title="\${escHtml(pi.piPath||'')}">Path: \${escHtml(pi.piPath||'-')}</div>
+        <div title="\${escHtml(pi.modelsPath||'')}">models.json: \${pi.modelsJsonExists?pi.providerCount+' provider(s)':'missing'}\${pi.rcodexProviderPresent?' · rcodex cleanup needed':''}</div>
+        <div>Paste images: \${pi.pasteImages?.length||0}</div>
+      </div>\`:''}
       \${provHtml?\`<div class="st-prov">\${provHtml}</div>\`:''}
     \`;
   }catch{body.innerHTML='<div class="mn-empty">Failed to load</div>';}
@@ -1935,9 +1981,13 @@ async function refreshRequests(){
   const savedScroll=scroller?scroller.scrollTop:0;
   try{
     const d=await(await fetch('/api/requests')).json();
-    if(!d.requests?.length){body.innerHTML='<div class="mn-empty">No requests yet</div>';return;}
+    let reqs=d.requests||[];
+    if(requestFilter==='pi') reqs=reqs.filter(r=>r.source==='pi');
+    else if(requestFilter==='api') reqs=reqs.filter(r=>r.source==='api');
+    else if(requestFilter==='rcodex') reqs=reqs.filter(r=>!r.source||r.source==='codex');
+    if(!reqs.length){body.innerHTML='<div class="mn-empty">No requests yet</div>';return;}
     const hdr='<div class="req-row req-hdr"><span>Time</span><span>Provider</span><span>Model</span><span>Src</span><span>ms</span><span>Tokens</span><span></span></div>';
-    const rows=d.requests.map((r,i)=>{
+    const rows=reqs.map((r,i)=>{
       const t=new Date(r.ts);
       const ts=t.toLocaleTimeString('en',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
       const stCls=r.status==='error'?'req-err':r.fallback?'req-fb':'req-ok';

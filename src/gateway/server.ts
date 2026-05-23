@@ -5,7 +5,7 @@ import { spawn as ptySpawn } from "node-pty";
 import { createServer } from "net";
 import { exec } from "child_process";
 import { promisify } from "util";
-import { readFileSync, writeFileSync, accessSync, constants, rmSync, existsSync, mkdirSync, statSync } from "fs";
+import { readFileSync, writeFileSync, accessSync, constants, rmSync, existsSync, mkdirSync, statSync, readdirSync, unlinkSync } from "fs";
 import { join } from "path";
 import { homedir, tmpdir } from "os";
 import { getCodexConfigPath } from "../utils/paths.js";
@@ -432,8 +432,27 @@ export function createGatewayServer(): GatewayServer {
   fastify.get("/api/pi/status", async () => {
     const piPath = await resolvePiPath();
     const npmAvailable = piPath !== null ? true : await isNpmAvailable();
-    const config = loadConfig();
-    return { installed: piPath !== null, piPath, npmAvailable, platform: process.platform, piConnected: false };
+    let version = "";
+    if (piPath) {
+      try { const { stdout } = await execAsync(`"${piPath}" --version`, { timeout: 5000, windowsHide: true }); version = stdout.trim(); } catch {}
+    }
+    const modelsPath = join(homedir(), ".pi", "agent", "models.json");
+    let modelsJsonExists = existsSync(modelsPath);
+    let rcodexProviderPresent = false;
+    let providerCount = 0;
+    if (modelsJsonExists) {
+      try {
+        const modelsJson = JSON.parse(readFileSync(modelsPath, "utf-8")) as { providers?: Record<string, unknown> };
+        rcodexProviderPresent = !!modelsJson.providers?.rcodex;
+        providerCount = Object.keys(modelsJson.providers ?? {}).length;
+      } catch {}
+    }
+    const pasteImages = listPiPasteImages();
+    return {
+      installed: piPath !== null, piPath, npmAvailable, platform: process.platform,
+      piConnected: false, version, modelsPath, modelsJsonExists, rcodexProviderPresent,
+      providerCount, pasteImages,
+    };
   });
 
   fastify.get("/api/pi/diagnose", async () => {
@@ -506,6 +525,35 @@ export function createGatewayServer(): GatewayServer {
     } catch {
       return { ok: true, removed: false };
     }
+  });
+
+  function listPiPasteImages(): { path: string; name: string; size: number; mtimeMs: number }[] {
+    try {
+      return readdirSync(tmpdir(), { withFileTypes: true })
+        .filter(d => d.isFile() && /^pi-paste-\d+\.[a-z0-9]+$/i.test(d.name))
+        .map(d => {
+          const p = join(tmpdir(), d.name);
+          const st = statSync(p);
+          return { path: p, name: d.name, size: st.size, mtimeMs: st.mtimeMs };
+        })
+        .sort((a, b) => b.mtimeMs - a.mtimeMs)
+        .slice(0, 12);
+    } catch { return []; }
+  }
+
+  fastify.get("/api/pi/paste-images", async () => ({ images: listPiPasteImages() }));
+
+  fastify.delete<{ Body: { path?: string; all?: boolean } }>("/api/pi/paste-images", async (req) => {
+    const safe = (p: string) => p.startsWith(tmpdir() + "/") && /\/pi-paste-\d+\.[a-z0-9]+$/i.test(p);
+    const removed: string[] = [];
+    if (req.body?.all) {
+      for (const img of listPiPasteImages()) {
+        try { unlinkSync(img.path); removed.push(img.path); } catch {}
+      }
+    } else if (req.body?.path && safe(req.body.path)) {
+      try { unlinkSync(req.body.path); removed.push(req.body.path); } catch {}
+    }
+    return { ok: true, removed };
   });
 
   fastify.post<{ Body: { data: string; ext?: string } }>("/api/pi/paste-image", async (req, reply) => {
