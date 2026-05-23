@@ -68,7 +68,7 @@ Last synced: 2026-05-21T17:52:16+0900
 - Canvas UI state sync has only been build-verified; smoke-test by adding an idle provider node, restarting on another port, and checking it restores.
 - Windows first-install `rcodex` launch should be smoke-tested with pre-existing Codex conversations to confirm auto-migration into the gateway provider.
 - Large Unreal/codebase investigation turns should be smoke-tested through Claude/Gemini after the gateway body-limit increase.
-- Current package version is `0.0.16`; publish with `npm publish --access public` after review.
+- Current package version is `0.1.8`; publish with `npm publish --access public` after review.
 
 ## Completed Tasks
 
@@ -88,7 +88,7 @@ See `.memoc/worklog/` for full shared activity history.
 - Main runtime config: `~/.rcodex/gateway.json`; logs: `~/.rcodex/gateway.log`; request history: `~/.rcodex/requests.jsonl`.
 - Default gateway port is `3141`; Codex provider key managed by this project is `rcodex`; base URL is `http://localhost:<port>/v1` with `wire_api = "responses"`.
 - Package dependencies include Fastify/CORS for the gateway, Commander for CLI commands, `@iarna/toml` for Codex config edits, and `better-sqlite3` for Codex thread migration support.
-- Current package version is `0.0.16`; npm package name is `@kevin0181/rcodex`, binary/runtime directory/README/provider key are `rcodex`.
+- Current package version is `0.1.8`; npm package name is `@kevin0181/rcodex`, binary/runtime directory/README/provider key are `rcodex`.
 - Ollama can now receive image payloads when Codex sends `input_image` parts or text containing local image paths; those are converted into OpenAI-compatible `image_url` data URLs. A vision-capable Ollama model is still required.
 - If Ollama returns `missing data required for image input`, the stream now completes with a clear text error instead of surfacing a protocol error that makes Codex reconnect repeatedly.
 - If an Ollama model returns `does not support tools` (for example `llama3.2-vision`), rcodex retries that stream without function tools instead of failing the stream.

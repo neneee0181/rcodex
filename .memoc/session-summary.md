@@ -3,14 +3,14 @@ memoc: true
 type: state
 scope: project-memory
 created: 2026-05-21T17:12:48
-updated: 2026-05-24T00:45:00
+updated: 2026-05-24T00:52:00
 status: active
 tags:
   - memoc
   - memoc/state
 ---
 # Session Summary
-Last: 2026-05-24T00:45:00
+Last: 2026-05-24T00:52:00
 Keep <800B. History: worklog. Risks: 04.
 
 ## Status
@@ -20,6 +20,7 @@ Keep <800B. History: worklog. Risks: 04.
 ## Recent Work (2026-05-23)
 - Removed Pi node model connections; cleanup removes Pi `rcodex` provider.
 - Added Pi status, paste cleanup, requests source filter.
+- Version bumped to 0.1.8.
 - Earlier: IME/image paste, fullscreen fit, canvas state sync.
 
 ## Open Tasks
