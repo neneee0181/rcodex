@@ -3,14 +3,14 @@ memoc: true
 type: state
 scope: project-memory
 created: 2026-05-21T17:12:48
-updated: 2026-05-23T23:05:00
+updated: 2026-05-23T23:15:00
 status: active
 tags:
   - memoc
   - memoc/state
 ---
 # Session Summary
-Last: 2026-05-23T23:05:00
+Last: 2026-05-23T23:15:00
 Replace, keep <800B. History: worklog. Risks: 04-handoff.
 
 ## Status
@@ -20,6 +20,7 @@ Replace, keep <800B. History: worklog. Risks: 04-handoff.
 
 ## Recent Work (2026-05-23)
 - Replaced Pi paste overlay with inline tokens + Ctrl/Cmd+V interception.
+- Fixed Korean IME input after image tokens by buffering xterm onData.
 
 ## Open Tasks
 - Windows Pi terminal test pending (user to verify).

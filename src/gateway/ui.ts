@@ -1377,11 +1377,13 @@ function piImgFilterEcho(data){
   return data;
 }
 function piImgKey(e){
-  if(piImgIsPasteKey(e)){ piImgHandlePaste(e).catch(function(){}); return; }
-  if(e.key === 'Escape'){ piImgCancel(); return; }
-  if(e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey){ piImgCommit(); return; }
-  if(e.key === 'Backspace'){ piImgBackspace(); return; }
-  if(e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) piImgAddText(e.key);
+  if(piImgIsPasteKey(e)){ piImgHandlePaste(e).catch(function(){}); return false; }
+  if(e.key === 'Escape'){ piImgCancel(); return false; }
+  if(e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey){ piImgCommit(); return false; }
+  if(e.key === 'Backspace'){ piImgBackspace(); return false; }
+  if(e.ctrlKey || e.metaKey || e.altKey) return false;
+  if(e.key.length === 1 || e.isComposing || e.key === 'Process' || e.keyCode === 229) return true;
+  return false;
 }
 async function piImgUploadBlob(blob, type){
   const ext = (type || blob.type || 'image/png').split('/')[1] || 'png';
@@ -1515,12 +1517,20 @@ function connectPiPty(initialCmd, isInstall){
     }
   };
   ws.onerror = () => { term.write('\\r\\n\\x1b[31m[connection error]\\x1b[0m\\r\\n'); };
-  term.onData(d => { if(!piImgMode && ws.readyState === WebSocket.OPEN) ws.send(d); });
+  term.onData(d => {
+    if(piImgMode){
+      if(d === '\\r'){ piImgCommit(); return; }
+      if(d === '\\u007f'){ piImgBackspace(); return; }
+      if(d && d[0] !== '\\x1b') piImgAddText(d);
+      return;
+    }
+    if(ws.readyState === WebSocket.OPEN) ws.send(d);
+  });
   term.onResize(({cols,rows}) => { if(ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({type:'resize',cols,rows})); });
 
   term.attachCustomKeyEventHandler(function(e){
     if(e.type!=='keydown') return true;
-    if(piImgMode){ piImgKey(e); return false; }
+    if(piImgMode) return piImgKey(e);
     if(e.ctrlKey && e.key==='c'){
       const sel=term.getSelection();
       if(sel){ navigator.clipboard.writeText(sel).catch(function(){}); return false; }

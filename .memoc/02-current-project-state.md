@@ -24,7 +24,7 @@ Last synced: 2026-05-21T17:52:16+0900
 - Antigravity requests preserve tool calls as native Gemini `functionCall` parts, attaching `thoughtSignature` only when present so tool results return as `functionResponse`.
 - First-launch thread migration checks both Codex SQLite state and `.codex/sessions/**/*.jsonl`, and continues session-file migration even if the SQLite DB is absent or unreadable.
 - Gateway Fastify body limit is configurable with `bodyLimitMiB` in `~/.rcodex/gateway.json`; default is 64MiB and values are clamped to 1-1024MiB.
-- Pi terminal image paste saves clipboard images to temp files, renders inline `[이미지#N]` tokens in xterm, and sends the real paths only when the user presses Enter.
+- Pi terminal image paste saves clipboard images to temp files, renders inline `[이미지#N]` tokens in xterm, buffers post-image input through xterm `onData` for IME-safe Korean input, and sends real paths only on Enter.
 
 ## Project Snapshot
 
