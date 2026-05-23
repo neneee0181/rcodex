@@ -16,7 +16,6 @@ import { migrateThreads } from "../commands/migrate.js";
 import {
   loadConfig, saveConfig, addAccount, removeAccount, setAccountNodeState, reorderConnectedAccounts,
   addModelSlot, removeModelSlot, reorderAllSlots, updateAccountProjectId,
-  connectPiAccount, disconnectPiAccount,
   saveGatewayPid, clearGatewayPid, DEFAULT_BODY_LIMIT_MIB, type GatewayConfig, type Account,
 } from "./auth.js";
 import { buildAuthUrl, waitForCallback, exchangeCode } from "./providers/openai-oauth-flow.js";
@@ -434,8 +433,7 @@ export function createGatewayServer(): GatewayServer {
     const piPath = await resolvePiPath();
     const npmAvailable = piPath !== null ? true : await isNpmAvailable();
     const config = loadConfig();
-    const piConnected = config.accounts.some(a => a.connectedToPi && (a.piModels ?? []).length > 0);
-    return { installed: piPath !== null, piPath, npmAvailable, platform: process.platform, piConnected };
+    return { installed: piPath !== null, piPath, npmAvailable, platform: process.platform, piConnected: false };
   });
 
   fastify.get("/api/pi/diagnose", async () => {
@@ -495,76 +493,19 @@ export function createGatewayServer(): GatewayServer {
     return reply;
   });
 
-  fastify.post<{ Body: { accountId: string; model: string } }>("/api/pi/connect", async (req) => {
-    const { accountId, model } = req.body;
-    connectPiAccount(accountId, model);
-    return { ok: true };
-  });
-
-  fastify.delete<{ Params: { accountId: string }; Querystring: { model?: string } }>("/api/pi/connect/:accountId", async (req) => {
-    disconnectPiAccount(req.params.accountId, req.query.model);
-    return { ok: true };
-  });
-
   fastify.post("/api/pi/sync-models", async () => {
-    const config = loadConfig();
-    let repaired = false;
-    const hasUiPiState = Array.isArray(config.uiState?.piConns);
-    const desiredByAccount = new Map<string, Set<string>>();
-    const uiSlots = config.uiState?.slots ?? {};
-    for (const slotId of config.uiState?.piConns ?? []) {
-      const slot = uiSlots[slotId];
-      if (!slot || typeof slot !== "object") continue;
-      const info = slot as { accountId?: unknown; model?: unknown };
-      if (typeof info.accountId !== "string" || typeof info.model !== "string" || !info.model) continue;
-      const account = config.accounts.find(a => a.id === info.accountId);
-      if (!account) continue;
-      let models = desiredByAccount.get(info.accountId);
-      if (!models) { models = new Set<string>(); desiredByAccount.set(info.accountId, models); }
-      models.add(info.model);
-    }
-    if (hasUiPiState) {
-      for (const account of config.accounts) {
-        const desired = [...(desiredByAccount.get(account.id) ?? new Set<string>())];
-        const current = account.piModels ?? [];
-        const sameModels = desired.length === current.length && desired.every(m => current.includes(m));
-        if (desired.length > 0) {
-          if (!account.connectedToPi || !sameModels) {
-            account.connectedToPi = true;
-            account.piModels = desired;
-            repaired = true;
-          }
-        } else if (account.connectedToPi || current.length > 0) {
-          account.connectedToPi = false;
-          account.piModels = [];
-          repaired = true;
-        }
-      }
-    }
-    if (repaired) saveConfig(config);
-
-    const allModels: string[] = [];
-    for (const a of config.accounts.filter(a => a.connectedToPi)) {
-      for (const m of a.piModels ?? []) { if (m && !allModels.includes(m)) allModels.push(m); }
-    }
-    // If no accounts connected, don't overwrite existing models.json — user may have their own config
-    if (allModels.length === 0) return { ok: true, skipped: true };
     const agentDir = join(homedir(), ".pi", "agent");
-    mkdirSync(agentDir, { recursive: true });
     const modelsPath = join(agentDir, "models.json");
-    const modelsJson = {
-      providers: {
-        rcodex: {
-          baseUrl: `http://127.0.0.1:${config.port}/v1`,
-          api: "openai-completions",
-          apiKey: "rcodex",
-          compat: { supportsDeveloperRole: false, supportsReasoningEffort: false },
-          models: allModels.map(id => ({ id, input: ["text", "image"] })),
-        },
-      },
-    };
-    writeFileSync(modelsPath, JSON.stringify(modelsJson, null, 2), "utf-8");
-    return { ok: true, models: allModels };
+    if (!existsSync(modelsPath)) return { ok: true, removed: false };
+    try {
+      const modelsJson = JSON.parse(readFileSync(modelsPath, "utf-8")) as { providers?: Record<string, unknown> };
+      if (!modelsJson.providers?.rcodex) return { ok: true, removed: false };
+      delete modelsJson.providers.rcodex;
+      writeFileSync(modelsPath, JSON.stringify(modelsJson, null, 2), "utf-8");
+      return { ok: true, removed: true };
+    } catch {
+      return { ok: true, removed: false };
+    }
   });
 
   fastify.post<{ Body: { data: string; ext?: string } }>("/api/pi/paste-image", async (req, reply) => {
@@ -697,7 +638,7 @@ export function createGatewayServer(): GatewayServer {
       canvas: Array.isArray(body.canvas) ? body.canvas.filter(x => typeof x === "string") : [],
       slots: body.slots && typeof body.slots === "object" ? body.slots : {},
       hidden: Array.isArray(body.hidden) ? body.hidden.filter(x => typeof x === "string") : [],
-      piConns: Array.isArray(body.piConns) ? body.piConns.filter(x => typeof x === "string") : [],
+      piConns: [],
     };
     saveConfig(config);
     return reply.send({ ok: true });
@@ -1010,10 +951,6 @@ export function createGatewayServer(): GatewayServer {
         const accountModels = await loadModelsForAccount(account, config.ollamaBaseUrl);
         accountModels.forEach(id => push(id, account.provider));
       }
-    }
-
-    for (const account of config.accounts.filter(a => a.connectedToPi)) {
-      for (const m of account.piModels ?? []) push(m, account.provider);
     }
 
     return { object: "list", data: models };

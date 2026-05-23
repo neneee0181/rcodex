@@ -390,15 +390,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
 .pi-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0d0d0f;z-index:10;gap:10px;border-radius:0 0 12px 12px}
 .pi-spin{width:24px;height:24px;border:2px solid #333;border-top-color:#818cf8;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.pi-nd-port{position:absolute;left:-11px;top:50%;transform:translateY(-50%);
-  width:22px;height:22px;border-radius:50%;background:var(--s1);
-  border:2px solid var(--b2);z-index:15;
-  display:flex;align-items:center;justify-content:center;transition:opacity .15s,border-color .15s,box-shadow .15s;
-  pointer-events:none;opacity:0}
-.pi-nd-port::after{content:'';width:8px;height:8px;border-radius:50%;background:var(--b2);transition:background .15s}
-.pi-nd-port.live{border-color:#818cf8;opacity:1;pointer-events:all}.pi-nd-port.live::after{background:#818cf8}
-.pi-nd-port.acc{border-color:var(--bl);box-shadow:0 0 0 4px rgba(99,102,241,.2);opacity:1;pointer-events:all}.pi-nd-port.acc::after{background:var(--bl)}
-body.conn-dragging .pi-nd-port{opacity:1;pointer-events:all}
 </style>
 </head>
 <body style="display:flex;flex-direction:column;height:100vh">
@@ -704,12 +695,11 @@ function canvasStateHasData(s){
     (s.canvas && s.canvas.length) ||
     (s.slots && Object.keys(s.slots).length) ||
     (s.pos && Object.keys(s.pos).length) ||
-    (s.hidden && s.hidden.length) ||
-    (s.piConns && s.piConns.length)
+    (s.hidden && s.hidden.length)
   );
 }
 function currentUiState(){
-  return { pos:NP, canvas:[...onCanvas], slots:nodeSlots, hidden:[...hiddenSlots], piConns:[...piConns] };
+  return { pos:NP, canvas:[...onCanvas], slots:nodeSlots, hidden:[...hiddenSlots] };
 }
 function applyUiState(s){
   if(!canvasStateHasData(s)) return false;
@@ -719,8 +709,6 @@ function applyUiState(s){
     onCanvas = new Set(Array.isArray(s.canvas) ? s.canvas : []);
     nodeSlots = (s.slots && typeof s.slots === 'object') ? s.slots : {};
     hiddenSlots = new Set(Array.isArray(s.hidden) ? s.hidden : []);
-    piConns = new Set(Array.isArray(s.piConns) ? s.piConns : []);
-    savePiConns();
     saveLS();
   } finally {
     applyingUiState = false;
@@ -1191,13 +1179,6 @@ async function removeFromCanvas(slotId){
   hiddenSlots.add(slotId);
   delete NP[slotId];
   delete nodeSlots[slotId];
-  if(piConns.has(slotId)){
-    piConns.delete(slotId); savePiConns();
-    saveLS();
-    await saveUiStateNow();
-    if(info) await api('DELETE', '/api/pi/connect/' + info.accountId + (info.model ? '?model=' + encodeURIComponent(info.model) : ''));
-    await api('POST', '/api/pi/sync-models');
-  }
   saveLS();
   await saveUiStateNow();
   render();
@@ -1221,10 +1202,8 @@ let piFit = null;
 let piTermWrap = null; // persists #pi-term-wrap across renders (detached DOM survives collapse)
 // NP.piNode default position is set in fetchStatus() after DOM is ready
 if(!NP.piSize) NP.piSize = { w: 780, h: 480 };
-let piConns = new Set(JSON.parse(localStorage.getItem('rcodex-pi-conns')||'[]'));
 let piMaximized = false;
 let piMaxTimer = null; // cancel pending resize on rapid ⛶ toggle
-function savePiConns(){ localStorage.setItem('rcodex-pi-conns', JSON.stringify([...piConns])); }
 
 let piResolvedPath = 'pi'; // updated by initPiBackground / initPiTerminal after status check
 let piIsWindows = false;   // set from /api/pi/status — controls xterm windowsMode
@@ -1670,55 +1649,31 @@ function buildPiNode(){
   const dot = running
     ? \`<span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;margin-right:4px;flex-shrink:0"></span>\`
     : \`<span style="width:6px;height:6px;border-radius:50%;background:#4b5563;display:inline-block;margin-right:4px;flex-shrink:0"></span>\`;
-  const connSlots = [...piConns].map(slotId=>{
-    const info = nodeSlots[slotId];
-    if(!info) return null;
-    const acc = ST.accounts.find(a=>a.id===info.accountId);
-    return acc ? {slotId, model: info.model, acc} : null;
-  }).filter(Boolean);
-  const hasConns = connSlots.length > 0;
-  const portLive = hasConns ? ' live' : '';
   const PI_ICON = \`<svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 11V3l4 5 4-5v8" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>\`;
 
   if(!piOpen){
     // ── Collapsed: small status node ──
-    const modelsHtml = hasConns
-      ? connSlots.map(({slotId,model,acc})=>\`<div style="display:flex;align-items:center;gap:4px;padding:2px 0">
-          <span style="width:5px;height:5px;border-radius:50%;background:\${COL[acc.provider]||'#818cf8'};flex-shrink:0"></span>
-          <span style="color:#9090b0;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px">\${model||'(auto)'}</span>
-          <button onclick="removePiConn('\${slotId}')" style="margin-left:auto;background:none;border:none;color:#555;cursor:pointer;font-size:10px;padding:0 1px;line-height:1">✕</button>
-        </div>\`).join('')
-      : \`<div style="color:#444;font-size:10px">Drag node here to connect</div>\`;
     return \`<div class="nd" id="nd-pi" style="left:\${pos.x}px;top:\${pos.y}px;min-width:180px">
-  <div class="pi-nd-port\${portLive}" id="pi-nd-port" title="Drop account node here"></div>
   <div class="nh" id="pi-nd-hdr" style="cursor:grab">
     <div class="nic" style="background:rgba(129,140,248,.15)">\${PI_ICON}</div>
     <div style="flex:1;min-width:0">
       <div style="font-size:11px;font-weight:600;color:#e0e0f0;display:flex;align-items:center">\${dot}Pi Agent</div>
-      <div style="font-size:9px;color:#606080">\${running?'Running':'Stopped'}</div>
+      <div style="font-size:9px;color:#606080">\${running?'Native Pi running':'Native Pi'}</div>
     </div>
     <button class="nd-rm" onclick="restartPi()" title="Restart Pi" style="font-size:13px">↺</button>
     <button class="nd-rm" onclick="togglePi()" title="Open terminal" style="font-size:13px">▸</button>
   </div>
-  <div class="nb">\${modelsHtml}</div>
 </div>\`;
   }
 
   // ── Expanded: full terminal node ──
   const sz = NP.piSize || { w:780, h:480 };
-  const connHtml = hasConns
-    ? connSlots.map(({slotId,model,acc})=>\`<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(0,0,0,.25);border-radius:4px;padding:1px 5px 1px 3px;font-size:9px;color:#9090b0;margin-right:3px">
-        <span style="width:5px;height:5px;border-radius:50%;background:\${COL[acc.provider]||'#818cf8'};flex-shrink:0"></span>\${model||'(auto)'}
-        <button onclick="removePiConn('\${slotId}')" style="background:none;border:none;color:#555;cursor:pointer;font-size:9px;padding:0;line-height:1;margin-left:1px">✕</button>
-      </span>\`).join('')
-    : \`<span style="color:#444;font-size:9px">Drop node to connect</span>\`;
   return \`<div class="nd mn" id="nd-pi" style="left:\${pos.x}px;top:\${pos.y}px;width:\${sz.w}px">
-  <div class="pi-nd-port\${portLive}" id="pi-nd-port" title="Drop account node here"></div>
   <div class="nh" id="pi-nd-hdr" style="cursor:grab">
     <div class="nic" style="background:rgba(129,140,248,.15)">\${PI_ICON}</div>
     <div style="flex:1;min-width:0">
       <div style="font-size:11px;font-weight:600;color:#e0e0f0;display:flex;align-items:center">\${dot}Pi Agent</div>
-      <div style="font-size:9px;margin-top:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">\${connHtml}</div>
+      <div style="font-size:9px;margin-top:1px;color:#606080">Native Pi providers</div>
     </div>
     <button class="nd-rm" onclick="restartPi()" title="Restart Pi" style="font-size:13px">↺</button>
     <button class="nd-rm" style="font-size:14px;width:22px;height:22px" onclick="togglePiMax()" title="Fullscreen">⛶</button>
@@ -1730,40 +1685,6 @@ function buildPiNode(){
   <div class="mn-rs-s" onpointerdown="startPiResize(event,'s')"></div>
   <div class="mn-rs-se" onpointerdown="startPiResize(event,'se')"></div>
 </div>\`;
-}
-
-async function connectPi(slotId){
-  const info = nodeSlots[slotId];
-  if(!info){ toast('Slot not found', true); return; }
-  piConns.add(slotId);
-  savePiConns();
-  saveLS();
-  await saveUiStateNow();
-  const r = await api('POST', '/api/pi/connect', { accountId: info.accountId, model: info.model });
-  if(!r.ok){
-    piConns.delete(slotId);
-    savePiConns();
-    saveLS();
-    await saveUiStateNow();
-    toast('Pi connect failed', true);
-    return;
-  }
-  await api('POST', '/api/pi/sync-models');
-  render();
-  const modelName = info.model || '(model)';
-  toast((piWs && piWs.readyState === WebSocket.OPEN)
-    ? modelName + ' added — use /model in Pi to select'
-    : 'Connected to Pi Agent: ' + modelName);
-}
-async function removePiConn(slotId){
-  const info = nodeSlots[slotId];
-  piConns.delete(slotId);
-  savePiConns();
-  saveLS();
-  await saveUiStateNow();
-  if(info) await api('DELETE', '/api/pi/connect/' + info.accountId + (info.model ? '?model=' + encodeURIComponent(info.model) : ''));
-  await api('POST', '/api/pi/sync-models');
-  render();
 }
 
 function togglePiMax(){
@@ -1790,8 +1711,6 @@ function togglePiMax(){
       piTermWrap.style.transition = 'left .18s ease, top .18s ease, width .18s ease, height .18s ease';
       piTermWrap.style.zIndex = '201';
     }
-    const port = nd.querySelector('#pi-nd-port');
-    if(port) port.style.display = 'none';
     nd.querySelectorAll('.mn-rs-e,.mn-rs-s,.mn-rs-se').forEach(function(el){el.style.display='none';});
     requestAnimationFrame(function(){
       nd.style.left = '0';
@@ -1810,8 +1729,6 @@ function togglePiMax(){
       piTermWrap.style.right = '';
       piTermWrap.style.bottom = '';
     }
-    const port = nd.querySelector('#pi-nd-port');
-    if(port) port.style.display = '';
     nd.querySelectorAll('.mn-rs-e,.mn-rs-s,.mn-rs-se').forEach(function(el){el.style.display='';});
     nd.style.transition = '';
     nd.style.position = '';
@@ -2600,24 +2517,6 @@ function drawLines(){
     path.setAttribute('d',bezier(sp.x,sp.y,tp.x,tp.y));
     svg.appendChild(path);
   });
-  // Lines to Pi Agent node
-  const piNdPort=document.getElementById('pi-nd-port');
-  if(piNdPort){
-    const pp=portPos(piNdPort);
-    [...piConns].forEach(slotId=>{
-      const info=nodeSlots[slotId];
-      if(!info)return;
-      const acc=ST.accounts.find(a=>a.id===info.accountId);
-      const pe=document.getElementById('po-'+slotId);
-      if(!pe)return;
-      const sp=portPos(pe);
-      const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-      path.classList.add('cp');
-      path.setAttribute('stroke',acc?COL[acc.provider]||'#818cf8':'#818cf8');
-      path.setAttribute('d',bezier(sp.x,sp.y,pp.x,pp.y));
-      svg.appendChild(path);
-    });
-  }
 }
 
 // Node drag
@@ -2670,7 +2569,6 @@ function startConn(e,fromId){
   tmp.setAttribute('d',bezier(sp.x,sp.y,sp.x,sp.y));
   svg.appendChild(tmp);
   document.getElementById('pi')?.classList.add('acc');
-  document.getElementById('pi-nd-port')?.classList.add('acc');
 }
 
 window.addEventListener('pointermove',e=>{
@@ -2724,12 +2622,6 @@ window.addEventListener('pointermove',e=>{
       const hasConn=ST.accounts.some(a=>(a.activeModels||[]).length>0);
       pi.className='pi '+(near?'acc':hasConn?'live':'');
     }
-    const piNdPort=document.getElementById('pi-nd-port');
-    if(piNdPort){
-      const pr=piNdPort.getBoundingClientRect();
-      const near=Math.hypot(e.clientX-(pr.left+pr.width/2),e.clientY-(pr.top+pr.height/2))<34;
-      piNdPort.className='pi-nd-port '+(near?'acc':piConns.size>0?'live':'');
-    }
   }
 });
 
@@ -2746,7 +2638,6 @@ window.addEventListener('pointerup',async e=>{
     document.getElementById('po-'+connD.fromId)?.classList.remove('dragging');
     document.getElementById('ctmp')?.remove();
     document.getElementById('pi')?.classList.remove('acc');
-    document.getElementById('pi-nd-port')?.classList.remove('acc');
     document.body.classList.remove('conn-dragging');
     let handled = false;
     const pi=document.getElementById('pi');
@@ -2754,14 +2645,6 @@ window.addEventListener('pointerup',async e=>{
       const pr=pi.getBoundingClientRect();
       const near=Math.hypot(e.clientX-(pr.left+pr.width/2),e.clientY-(pr.top+pr.height/2))<36;
       if(near){await connectOut(connD.fromId);handled=true;}
-    }
-    if(!handled){
-      const piNdPort=document.getElementById('pi-nd-port');
-      if(piNdPort){
-        const pr=piNdPort.getBoundingClientRect();
-        const near=Math.hypot(e.clientX-(pr.left+pr.width/2),e.clientY-(pr.top+pr.height/2))<36;
-        if(near) connectPi(connD.fromId);
-      }
     }
     connD=null;
   }
@@ -2792,13 +2675,6 @@ async function removeOut(accountId,slotId){
   hiddenSlots.add(slotId);
   delete nodeSlots[slotId];
   delete NP[slotId];
-  if(piConns.has(slotId)){
-    piConns.delete(slotId); savePiConns();
-    saveLS();
-    await saveUiStateNow();
-    if(info) await api('DELETE', '/api/pi/connect/' + info.accountId + (info.model ? '?model=' + encodeURIComponent(info.model) : ''));
-    await api('POST', '/api/pi/sync-models');
-  }
   saveLS();
   await saveUiStateNow();
   render();
@@ -2864,49 +2740,6 @@ async function fetchStatus(){
         onCanvas.delete(id); delete nodeSlots[id]; delete NP[id];
       }
     });
-
-    // Reconcile Pi links both ways. Restored UI state may know about a Pi chip
-    // before gateway.json has repaired connectedToPi/piModels for that account.
-    let needSync=false;
-    let repairedPi=false;
-    for(const slotId of [...piConns]){
-      const info=nodeSlots[slotId];
-      const acc=info&&ST.accounts.find(a=>a.id===info.accountId);
-      if(!info||!acc){
-        piConns.delete(slotId);
-        needSync=true;
-        continue;
-      }
-      if(!acc.connectedToPi || !(acc.piModels||[]).includes(info.model)){
-        const r=await api('POST','/api/pi/connect',{accountId:info.accountId,model:info.model});
-        if(r.ok){
-          acc.connectedToPi=true;
-          acc.piModels=[...new Set([...(acc.piModels||[]),info.model])];
-          repairedPi=true;
-          needSync=true;
-        }
-      }
-    }
-
-    // Clear stale server Pi models not reflected in the live UI connections.
-    const piConnKeys=new Set([...piConns].map(id=>{
-      const info=nodeSlots[id];
-      return info ? info.accountId + '\\0' + info.model : '';
-    }).filter(Boolean));
-    for(const acc of ST.accounts){
-      for(const model of (acc.piModels||[])){
-        if(!piConnKeys.has(acc.id + '\\0' + model)){
-          needSync=true;
-          await api('DELETE','/api/pi/connect/'+acc.id+'?model='+encodeURIComponent(model)).catch(()=>{});
-        }
-      }
-      if(acc.connectedToPi && !(acc.piModels||[]).length){
-        needSync=true;
-        await api('DELETE','/api/pi/connect/'+acc.id).catch(()=>{});
-      }
-    }
-    if(needSync) await api('POST','/api/pi/sync-models').catch(()=>{});
-    if(repairedPi) setTimeout(fetchStatus,300);
 
     saveLS();
     render();

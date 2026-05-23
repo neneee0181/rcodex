@@ -25,12 +25,9 @@ Last synced: 2026-05-21T17:52:16+0900
 - First-launch thread migration checks both Codex SQLite state and `.codex/sessions/**/*.jsonl`, and continues session-file migration even if the SQLite DB is absent or unreadable.
 - Gateway Fastify body limit is configurable with `bodyLimitMiB` in `~/.rcodex/gateway.json`; default is 64MiB and values are clamped to 1-1024MiB.
 - Pi terminal image paste saves clipboard images to temp files, renders inline `[이미지#N]` tokens in xterm, buffers post-image input through xterm `onData` for IME-safe Korean input, and sends real paths only on Enter.
-- Pi models sync writes exactly the UI-connected Pi slots with `input: ["text", "image"]`, pruning stale models from `models.json`; chat-completions fallback preserves OpenAI `image_url` parts through Responses `input_image` into Gemini inline image parts for Antigravity.
-- Canvas UI state (`pos`, canvas slot ids, node slots, hidden slots, Pi connections) is mirrored to `GatewayConfig.uiState` so idle provider nodes survive gateway port changes.
-- Pi provider routing can recover from restored UI Pi slots when `connectedToPi/piModels` is stale, so switching Pi from Gemini to a Copilot GPT model routes to the slot account instead of failing with `No provider connected to output`.
-- Pi/Antigravity greeting-only turns suppress function tools so simple `hello`/`hi` prompts do not trigger workspace scans; real file/image/code requests still get tools.
+- Pi now runs its own native providers only. The old rcodex Pi model-node bridge is removed from the UI/routing path, and Pi startup cleanup removes only `providers.rcodex` from `~/.pi/agent/models.json` while preserving other Pi providers.
+- Canvas UI state (`pos`, canvas slot ids, node slots, hidden slots) is mirrored to `GatewayConfig.uiState` so idle provider nodes survive gateway port changes.
 - Pi fullscreen mode animates from the node rect and resizes the fixed xterm wrapper from header bottom to viewport bottom.
-- Pi canvas/connect mutations force an immediate `/api/ui-state` save before Pi model sync, preventing refresh from reverting just-added or just-removed nodes/models.
 
 ## Project Snapshot
 

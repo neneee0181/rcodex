@@ -1358,30 +1358,7 @@ function resolveAccounts(requestedModel: string, config: GatewayConfig, source?:
   const candidates: { account: Account; model: string; order: number }[] = [];
 
   if (source === "pi") {
-    // Pi requests: only route to explicitly Pi-connected accounts.
-    // Output-chain accounts are NOT eligible — removing a Pi connection
-    // must fully cut access even while Pi is running.
-    for (const account of config.accounts) {
-      if (account.connectedToPi && account.piModels?.includes(requestedModel)) {
-        candidates.push({ account, model: requestedModel, order: -1 });
-      }
-    }
-
-    // UI state is the source of truth for restored canvas Pi links. A browser
-    // restart or port migration can restore the Pi chip before connectedToPi is
-    // repaired in gateway.json; route those exact slots so mid-session model
-    // switching keeps working.
-    if (candidates.length === 0) {
-      const slots = config.uiState?.slots ?? {};
-      for (const [idx, slotId] of (config.uiState?.piConns ?? []).entries()) {
-        const slot = slots[slotId];
-        if (!slot || typeof slot !== "object") continue;
-        const info = slot as { accountId?: unknown; model?: unknown };
-        if (info.model !== requestedModel || typeof info.accountId !== "string") continue;
-        const account = config.accounts.find(a => a.id === info.accountId);
-        if (account) candidates.push({ account, model: requestedModel, order: idx });
-      }
-    }
+    return [];
   } else {
     for (const account of config.accounts) {
       if (account.activeModels?.length) {
@@ -1395,8 +1372,6 @@ function resolveAccounts(requestedModel: string, config: GatewayConfig, source?:
         const model = account.selectedModel ||
           (providerFromModel === account.provider ? requestedModel : safeDefault[account.provider] || requestedModel);
         candidates.push({ account, model, order: account.connectedOrder ?? 999 });
-      } else if (account.connectedToPi && account.piModels?.includes(requestedModel)) {
-        candidates.push({ account, model: requestedModel, order: -1 });
       }
     }
   }
