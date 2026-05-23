@@ -21,9 +21,10 @@ Last synced: 2026-05-21T17:52:16+0900
 - Gateway runtime logs now avoid emoji/mojibake prefixes in active log lines, and Ollama tool fallback file search uses a Node-based command instead of Unix `find ... 2>/dev/null`.
 - OpenAI quota refresh treats ChatGPT usage API 401/403 as unavailable for the Codex OAuth token rather than a fatal UI error.
 - Copilot requests sanitize OpenAI-format chat history before calling GitHub Copilot, dropping dangling assistant tool calls and orphan tool outputs that can appear after interrupted tool turns.
-- Antigravity requests avoid replaying unsigned Gemini `functionCall` history; stateless/interrupted tool turns without `thoughtSignature` are sent back as text transcript.
+- Antigravity requests preserve tool calls as native Gemini `functionCall` parts, attaching `thoughtSignature` only when present so tool results return as `functionResponse`.
 - First-launch thread migration checks both Codex SQLite state and `.codex/sessions/**/*.jsonl`, and continues session-file migration even if the SQLite DB is absent or unreadable.
 - Gateway Fastify body limit is configurable with `bodyLimitMiB` in `~/.rcodex/gateway.json`; default is 64MiB and values are clamped to 1-1024MiB.
+- Pi terminal image paste saves clipboard images to temp files, renders inline `[이미지#N]` tokens in xterm, and sends the real paths only when the user presses Enter.
 
 ## Project Snapshot
 
@@ -57,7 +58,8 @@ Last synced: 2026-05-21T17:52:16+0900
 
 - No automated test script exists; use `npm run build` as the baseline verification for source edits.
 - Copilot real GitHub device OAuth and provider API calls have not been smoke-tested after the strict tool-history fix.
-- Antigravity strict tool-history fix has only been build-verified; smoke-test with a real Flash Lite account/model.
+- Antigravity tool-history/quote-escaping fix has only been build-verified; smoke-test with a real Flash Lite account/model.
+- Pi terminal image paste inline composition has only been build-verified; smoke-test Ctrl+V/Cmd+V in a restarted running app.
 - Windows first-install `rcodex` launch should be smoke-tested with pre-existing Codex conversations to confirm auto-migration into the gateway provider.
 - Large Unreal/codebase investigation turns should be smoke-tested through Claude/Gemini after the gateway body-limit increase.
 - Current package version is `0.0.16`; publish with `npm publish --access public` after review.
@@ -91,7 +93,7 @@ See `.memoc/worklog/` for full shared activity history.
 - Antigravity provider subtitle is `Google Code Assist`; the old `Google (Daily)` wording came from Google's daily-cloudcode internal endpoint naming.
 - Dynamic Windows Codex App Detection searches `%LOCALAPPDATA%\OpenAI\Codex\bin\*\codex.exe` dynamically to cover dynamic hash/version subfolders from local app installations.
 - Copilot GPT-5 mini can reject histories with `assistant.tool_calls` lacking matching `tool` responses; `src/gateway/proxy.ts` now sanitizes those histories before both streaming and non-streaming Copilot calls.
-- Antigravity/Gemini can reject `functionCall` history missing `thoughtSignature`; `src/gateway/proxy.ts` now preserves signed calls only and downgrades unsigned/interrupted turns to text.
+- Antigravity/Gemini tool history is stored as native function calls even without `thoughtSignature`; `src/gateway/proxy.ts` includes all captured tools in `googleToolCalls` and stores signatures only when present.
 - `src/commands/launch.ts` already calls migration on first launch; the important guard is `hasUnmigratedThreads()`, which now detects DB rows, null providers, and session JSONL metadata instead of only SQLite rows.
 
 ## Change Log

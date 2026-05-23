@@ -387,12 +387,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
 .pi-term-wrap .xterm-viewport::-webkit-scrollbar-track{background:transparent}
 .pi-term-wrap .xterm-viewport::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:3px}
 .pi-term-wrap .xterm-viewport::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.35)}
-.pi-img-overlay{display:none;position:absolute;bottom:0;left:0;right:0;background:#0d0d0f;border-top:1px solid #1e1e2e;padding:5px 8px;font-family:Menlo,Monaco,Consolas,monospace;font-size:13px;align-items:center;flex-wrap:wrap;gap:4px;z-index:20;min-height:30px;cursor:text;color:#e4e4e7}
-.pi-img-overlay.active{display:flex}
-.pi-tok-img{background:#312e81;color:#a5b4fc;border-radius:3px;padding:1px 5px;font-size:12px;white-space:nowrap;cursor:default}
-.pi-tok-txt{color:#e4e4e7;white-space:pre}
-.pi-img-cur{display:inline-block;width:7px;height:14px;background:#818cf8;animation:blink 1s step-end infinite;vertical-align:middle;margin-left:1px}
-@keyframes blink{50%{opacity:0}}
 .pi-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0d0d0f;z-index:10;gap:10px;border-radius:0 0 12px 12px}
 .pi-spin{width:24px;height:24px;border:2px solid #333;border-top-color:#818cf8;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -1190,6 +1184,7 @@ function piCmd(){ return piResolvedPath; }
 let piImgMode = false;
 let piImgTokens = [];
 let piImgCount = 0;
+let piImgPendingEcho = '';
 
 function fitPi(){
   if(!piFit || !piTerm) return;
@@ -1308,65 +1303,123 @@ async function initPiTerminal(){
   connectPiPty('npm install -g @earendil-works/pi-coding-agent; exit', true);
 }
 
-function piImgRender(){
-  const tEl = document.getElementById('pi-img-tokens');
-  if(!tEl) return;
-  tEl.innerHTML = '';
-  for(const t of piImgTokens){
-    const s = document.createElement('span');
-    if(t.type === 'img'){
-      s.className = 'pi-tok-img';
-      s.textContent = '[\\uc774\\ubbf8\\uc9c0#' + t.n + ']';
-    } else {
-      s.className = 'pi-tok-txt';
-      s.textContent = t.v;
-    }
-    tEl.appendChild(s);
-  }
+function piImgIsPasteKey(e){
+  return (e.ctrlKey || e.metaKey) && (((e.key || '').toLowerCase() === 'v') || e.code === 'KeyV');
 }
-function piImgExit(){
-  piImgMode = false; piImgTokens = [];
-  const ov = document.getElementById('pi-img-overlay');
-  if(ov) ov.classList.remove('active');
-  if(piTerm){ piTerm.write('\\x1b[?25h'); piTerm.focus(); }
+function piImgWidth(text){
+  let w = 0;
+  for(const ch of Array.from(text)) w += ch.charCodeAt(0) > 0x7f ? 2 : 1;
+  return w;
 }
-function piImgActivate(){
+function piImgErase(text){
+  if(!piTerm || !text) return;
+  const w = piImgWidth(text);
+  if(w > 0) piTerm.write('\\x1b[' + w + 'D\\x1b[' + w + 'P');
+}
+function piImgAppendToken(display, actual, type){
   piImgMode = true;
-  const ov = document.getElementById('pi-img-overlay');
-  if(ov) ov.classList.add('active');
-  if(piTerm) piTerm.write('\\x1b[?25l');
-}
-function piImgEnter(){
-  let cmd = '';
-  for(const t of piImgTokens){ cmd += (t.type === 'img' ? t.path : t.v); }
-  piImgExit();
-  if(cmd.trim() && piWs && piWs.readyState === WebSocket.OPEN) piWs.send(cmd + '\\r');
-}
-function piImgKey(e){
-  if(e.key === 'Escape'){ piImgExit(); return; }
-  if(e.key === 'Enter' && !e.shiftKey && !e.ctrlKey){ piImgEnter(); return; }
-  if(e.key === 'Backspace'){
-    if(!piImgTokens.length) return;
-    const last = piImgTokens[piImgTokens.length - 1];
-    if(last.type === 'img'){ piImgTokens.pop(); }
-    else { last.v = last.v.slice(0, -1); if(!last.v) piImgTokens.pop(); }
-    piImgRender(); return;
-  }
-  if(e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey){
-    const last = piImgTokens[piImgTokens.length - 1];
-    if(last && last.type === 'text') last.v += e.key;
-    else piImgTokens.push({type:'text', v:e.key});
-    piImgRender();
-  }
+  piImgTokens.push({display:display, actual:actual, type:type});
+  if(piTerm){ piTerm.write(display); piTerm.focus(); }
 }
 function piImgAddText(text){
   if(!text) return;
+  piImgMode = true;
   const last = piImgTokens[piImgTokens.length - 1];
-  if(last && last.type === 'text') last.v += text;
-  else piImgTokens.push({type:'text', v:text});
-  piImgRender();
+  if(last && last.type === 'text'){
+    last.display += text;
+    last.actual += text;
+  } else {
+    piImgTokens.push({display:text, actual:text, type:'text'});
+  }
+  if(piTerm){ piTerm.write(text); piTerm.focus(); }
 }
-async function piImgHandlePaste(){
+function piImgBackspace(){
+  if(!piImgTokens.length) return;
+  const last = piImgTokens[piImgTokens.length - 1];
+  if(last.type === 'image'){
+    piImgErase(last.display);
+    piImgTokens.pop();
+  } else {
+    const chars = Array.from(last.display);
+    const removed = chars.pop() || '';
+    piImgErase(removed);
+    last.display = chars.join('');
+    last.actual = Array.from(last.actual).slice(0, -1).join('');
+    if(!last.display) piImgTokens.pop();
+  }
+  if(!piImgTokens.length) piImgMode = false;
+}
+function piImgCancel(){
+  for(let i = piImgTokens.length - 1; i >= 0; i--) piImgErase(piImgTokens[i].display);
+  piImgMode = false;
+  piImgTokens = [];
+}
+function piImgCommit(){
+  const actual = piImgTokens.map(function(t){ return t.actual; }).join('');
+  piImgMode = false;
+  piImgTokens = [];
+  if(piWs && piWs.readyState === WebSocket.OPEN){
+    if(actual) piImgPendingEcho += actual;
+    piWs.send(actual + '\\r');
+  }
+}
+function piImgFilterEcho(data){
+  if(!piImgPendingEcho || typeof data !== 'string') return data;
+  if(data.startsWith(piImgPendingEcho)){
+    const rest = data.slice(piImgPendingEcho.length);
+    piImgPendingEcho = '';
+    return rest;
+  }
+  if(piImgPendingEcho.startsWith(data)){
+    piImgPendingEcho = piImgPendingEcho.slice(data.length);
+    return '';
+  }
+  return data;
+}
+function piImgKey(e){
+  if(piImgIsPasteKey(e)){ piImgHandlePaste(e).catch(function(){}); return; }
+  if(e.key === 'Escape'){ piImgCancel(); return; }
+  if(e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey){ piImgCommit(); return; }
+  if(e.key === 'Backspace'){ piImgBackspace(); return; }
+  if(e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) piImgAddText(e.key);
+}
+async function piImgUploadBlob(blob, type){
+  const ext = (type || blob.type || 'image/png').split('/')[1] || 'png';
+  const arr = await blob.arrayBuffer();
+  const bytes = new Uint8Array(arr);
+  let b64 = ''; const chunk = 8192;
+  for(let i = 0; i < bytes.length; i += chunk)
+    b64 += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  b64 = btoa(b64);
+  const res = await fetch('/api/pi/paste-image', {
+    method:'POST', headers:{'content-type':'application/json'},
+    body: JSON.stringify({data:b64, ext:ext}),
+  });
+  if(!res.ok) return;
+  const d = await res.json();
+  piImgCount++;
+  piImgAppendToken('[\\uc774\\ubbf8\\uc9c0#' + piImgCount + ']', d.path, 'image');
+}
+async function piImgHandlePaste(e){
+  if(e && e.preventDefault) e.preventDefault();
+  if(e && e.stopPropagation) e.stopPropagation();
+  if(e && e.stopImmediatePropagation) e.stopImmediatePropagation();
+  const dt = e && e.clipboardData;
+  if(dt && dt.items && dt.items.length){
+    let hasImg = false;
+    for(const item of Array.from(dt.items)){
+      if(item.type && item.type.startsWith('image/')){
+        const file = item.getAsFile();
+        if(file){ hasImg = true; await piImgUploadBlob(file, item.type); }
+      }
+    }
+    const text = dt.getData ? dt.getData('text/plain') : '';
+    if(text){
+      if(hasImg || piImgMode) piImgAddText(text);
+      else if(piTerm) piTerm.paste(text);
+    }
+    if(hasImg || text) return;
+  }
   let items;
   try { items = await navigator.clipboard.read(); } catch {
     const text = await navigator.clipboard.readText().catch(function(){ return ''; });
@@ -1380,24 +1433,7 @@ async function piImgHandlePaste(){
       hasImg = true;
       try {
         const blob = await item.getType(imgType);
-        const ext = imgType.split('/')[1] || 'png';
-        const arr = await blob.arrayBuffer();
-        const bytes = new Uint8Array(arr);
-        let b64 = ''; const chunk = 8192;
-        for(let i = 0; i < bytes.length; i += chunk)
-          b64 += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
-        b64 = btoa(b64);
-        const res = await fetch('/api/pi/paste-image', {
-          method:'POST', headers:{'content-type':'application/json'},
-          body: JSON.stringify({data:b64, ext:ext}),
-        });
-        if(res.ok){
-          const d = await res.json();
-          piImgCount++;
-          if(!piImgMode) piImgActivate();
-          piImgTokens.push({type:'img', n:piImgCount, path:d.path});
-          piImgRender();
-        }
+        await piImgUploadBlob(blob, imgType);
       } catch(err){ console.error('paste-image error', err); }
     }
     if(item.types.includes('text/plain')){
@@ -1420,18 +1456,7 @@ function connectPiPty(initialCmd, isInstall){
   if(piTerm){ piTerm.dispose(); piTerm = null; }
   if(piWs){ try{ piWs.close(); }catch{} piWs = null; }
   piImgMode = false; piImgTokens = [];
-  const _ovReset = document.getElementById('pi-img-overlay');
-  if(_ovReset) _ovReset.classList.remove('active');
-
-  // Image paste overlay — persists inside wrap
-  if(!document.getElementById('pi-img-overlay')){
-    const ov = document.createElement('div');
-    ov.id = 'pi-img-overlay';
-    ov.className = 'pi-img-overlay';
-    ov.innerHTML = '<span id="pi-img-tokens" style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;flex:1;min-width:0"></span><span class="pi-img-cur"></span>';
-    ov.addEventListener('click', function(){ if(piTerm) piTerm.focus(); });
-    wrap.appendChild(ov);
-  }
+  piImgPendingEcho = '';
 
   const term = new Terminal({
     theme:{ background:'#0d0d0f', foreground:'#e4e4e7', cursor:'#818cf8', selectionBackground:'rgba(129,140,248,.3)' },
@@ -1448,7 +1473,10 @@ function connectPiPty(initialCmd, isInstall){
   const wsUrl = \`ws://\${location.host}/api/pty?cols=\${term.cols}&rows=\${term.rows}&cmd=\${encodeURIComponent(initialCmd||'')}\`;
   const ws = new WebSocket(wsUrl);
   piWs = ws;
-  ws.onmessage = e => term.write(typeof e.data === 'string' ? e.data : new Uint8Array(e.data));
+  ws.onmessage = e => {
+    const data = piImgFilterEcho(typeof e.data === 'string' ? e.data : new Uint8Array(e.data));
+    if(data) term.write(data);
+  };
   ws.onclose = () => {
     if(isInstall){
       term.write('\\r\\n\\x1b[90m[session ended]\\x1b[0m\\r\\n');
@@ -1487,7 +1515,7 @@ function connectPiPty(initialCmd, isInstall){
     }
   };
   ws.onerror = () => { term.write('\\r\\n\\x1b[31m[connection error]\\x1b[0m\\r\\n'); };
-  term.onData(d => { if(ws.readyState === WebSocket.OPEN) ws.send(d); });
+  term.onData(d => { if(!piImgMode && ws.readyState === WebSocket.OPEN) ws.send(d); });
   term.onResize(({cols,rows}) => { if(ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({type:'resize',cols,rows})); });
 
   term.attachCustomKeyEventHandler(function(e){
@@ -1498,8 +1526,8 @@ function connectPiPty(initialCmd, isInstall){
       if(sel){ navigator.clipboard.writeText(sel).catch(function(){}); return false; }
       return true;
     }
-    if((e.ctrlKey || e.metaKey) && e.key==='v'){
-      piImgHandlePaste().catch(function(){});
+    if(piImgIsPasteKey(e)){
+      piImgHandlePaste(e).catch(function(){});
       return false;
     }
     if(e.shiftKey && e.key==='Enter'){
@@ -1514,7 +1542,15 @@ function connectPiPty(initialCmd, isInstall){
   });
 
   // Native paste (right-click / edit menu)
-  wrap.addEventListener('paste', function(e){ e.preventDefault(); piImgHandlePaste().catch(function(){}); });
+  if(!wrap.__piPasteHooks){
+    wrap.__piPasteHooks = true;
+    wrap.addEventListener('keydown', function(e){
+      if(piImgIsPasteKey(e)){
+        piImgHandlePaste(e).catch(function(){});
+      }
+    }, true);
+    wrap.addEventListener('paste', function(e){ piImgHandlePaste(e).catch(function(){}); }, true);
+  }
   // Refocus terminal on click so canvas interactions don't steal input
   wrap.addEventListener('mousedown', function(){ term.focus(); });
   wrap.addEventListener('wheel', e => e.stopPropagation());
