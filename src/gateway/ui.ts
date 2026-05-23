@@ -1498,7 +1498,7 @@ function connectPiPty(initialCmd, isInstall){
       if(sel){ navigator.clipboard.writeText(sel).catch(function(){}); return false; }
       return true;
     }
-    if(e.ctrlKey && e.key==='v'){
+    if((e.ctrlKey || e.metaKey) && e.key==='v'){
       piImgHandlePaste().catch(function(){});
       return false;
     }
