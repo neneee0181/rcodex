@@ -1371,7 +1371,11 @@ function connectPiPty(initialCmd, isInstall){
       }).catch(function(){});
       return false;
     }
-    if((e.shiftKey && e.key==='Enter') || (e.ctrlKey && e.shiftKey && e.key==='Enter')){
+    if(e.shiftKey && e.key==='Enter'){
+      if(piWs && piWs.readyState===WebSocket.OPEN) piWs.send('\\n');
+      return false;
+    }
+    if(e.ctrlKey && e.key==='Enter'){
       if(piWs && piWs.readyState===WebSocket.OPEN) piWs.send('\\n');
       return false;
     }
@@ -2345,7 +2349,6 @@ function startPiNodeDrag(e){
     const nd=document.getElementById('nd-pi');
     if(nd){nd.style.left=NP.piNode.x+'px';nd.style.top=NP.piNode.y+'px';}
     drawLines();
-    repositionPiTermWrap();
   }
   function onUp(){saveLS();document.removeEventListener('pointermove',onMove);document.removeEventListener('pointerup',onUp);}
   document.addEventListener('pointermove',onMove);
