@@ -7,7 +7,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { readFileSync, writeFileSync, accessSync, constants, rmSync, existsSync, mkdirSync, statSync } from "fs";
 import { join } from "path";
-import { homedir } from "os";
+import { homedir, tmpdir } from "os";
 import { getCodexConfigPath } from "../utils/paths.js";
 import { readCodexConfig, writeCodexConfig } from "../core/config.js";
 import { MANAGED_PROVIDER_KEY, OPENAI_PROVIDER_KEY } from "../core/constants.js";
@@ -530,6 +530,16 @@ export function createGatewayServer(): GatewayServer {
     };
     writeFileSync(modelsPath, JSON.stringify(modelsJson, null, 2), "utf-8");
     return { ok: true, models: allModels };
+  });
+
+  fastify.post<{ Body: { data: string; ext?: string } }>("/api/pi/paste-image", async (req, reply) => {
+    const { data, ext = "png" } = req.body;
+    const safeExt = /^[a-z0-9]+$/i.test(ext) ? ext : "png";
+    const buf = Buffer.from(data, "base64");
+    const name = `pi-paste-${Date.now()}.${safeExt}`;
+    const p = join(tmpdir(), name);
+    writeFileSync(p, buf);
+    return reply.send({ path: p });
   });
 
   fastify.post("/api/pi/reset", async () => {

@@ -387,6 +387,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
 .pi-term-wrap .xterm-viewport::-webkit-scrollbar-track{background:transparent}
 .pi-term-wrap .xterm-viewport::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:3px}
 .pi-term-wrap .xterm-viewport::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.35)}
+.pi-img-overlay{display:none;position:absolute;bottom:0;left:0;right:0;background:#0d0d0f;border-top:1px solid #1e1e2e;padding:5px 8px;font-family:Menlo,Monaco,Consolas,monospace;font-size:13px;align-items:center;flex-wrap:wrap;gap:4px;z-index:20;min-height:30px;cursor:text;color:#e4e4e7}
+.pi-img-overlay.active{display:flex}
+.pi-tok-img{background:#312e81;color:#a5b4fc;border-radius:3px;padding:1px 5px;font-size:12px;white-space:nowrap;cursor:default}
+.pi-tok-txt{color:#e4e4e7;white-space:pre}
+.pi-img-cur{display:inline-block;width:7px;height:14px;background:#818cf8;animation:blink 1s step-end infinite;vertical-align:middle;margin-left:1px}
+@keyframes blink{50%{opacity:0}}
 .pi-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0d0d0f;z-index:10;gap:10px;border-radius:0 0 12px 12px}
 .pi-spin{width:24px;height:24px;border:2px solid #333;border-top-color:#818cf8;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -1181,6 +1187,9 @@ function savePiConns(){ localStorage.setItem('rcodex-pi-conns', JSON.stringify([
 let piResolvedPath = 'pi'; // updated by initPiBackground / initPiTerminal after status check
 let piIsWindows = false;   // set from /api/pi/status — controls xterm windowsMode
 function piCmd(){ return piResolvedPath; }
+let piImgMode = false;
+let piImgTokens = [];
+let piImgCount = 0;
 
 function fitPi(){
   if(!piFit || !piTerm) return;
@@ -1299,6 +1308,104 @@ async function initPiTerminal(){
   connectPiPty('npm install -g @earendil-works/pi-coding-agent; exit', true);
 }
 
+function piImgRender(){
+  const tEl = document.getElementById('pi-img-tokens');
+  if(!tEl) return;
+  tEl.innerHTML = '';
+  for(const t of piImgTokens){
+    const s = document.createElement('span');
+    if(t.type === 'img'){
+      s.className = 'pi-tok-img';
+      s.textContent = '[\\uc774\\ubbf8\\uc9c0#' + t.n + ']';
+    } else {
+      s.className = 'pi-tok-txt';
+      s.textContent = t.v;
+    }
+    tEl.appendChild(s);
+  }
+}
+function piImgExit(){
+  piImgMode = false; piImgTokens = [];
+  const ov = document.getElementById('pi-img-overlay');
+  if(ov) ov.classList.remove('active');
+  if(piTerm){ piTerm.write('\\x1b[?25h'); piTerm.focus(); }
+}
+function piImgActivate(){
+  piImgMode = true;
+  const ov = document.getElementById('pi-img-overlay');
+  if(ov) ov.classList.add('active');
+  if(piTerm) piTerm.write('\\x1b[?25l');
+}
+function piImgEnter(){
+  let cmd = '';
+  for(const t of piImgTokens){ cmd += (t.type === 'img' ? t.path : t.v); }
+  piImgExit();
+  if(cmd.trim() && piWs && piWs.readyState === WebSocket.OPEN) piWs.send(cmd + '\\r');
+}
+function piImgKey(e){
+  if(e.key === 'Escape'){ piImgExit(); return; }
+  if(e.key === 'Enter' && !e.shiftKey && !e.ctrlKey){ piImgEnter(); return; }
+  if(e.key === 'Backspace'){
+    if(!piImgTokens.length) return;
+    const last = piImgTokens[piImgTokens.length - 1];
+    if(last.type === 'img'){ piImgTokens.pop(); }
+    else { last.v = last.v.slice(0, -1); if(!last.v) piImgTokens.pop(); }
+    piImgRender(); return;
+  }
+  if(e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey){
+    const last = piImgTokens[piImgTokens.length - 1];
+    if(last && last.type === 'text') last.v += e.key;
+    else piImgTokens.push({type:'text', v:e.key});
+    piImgRender();
+  }
+}
+function piImgAddText(text){
+  if(!text) return;
+  const last = piImgTokens[piImgTokens.length - 1];
+  if(last && last.type === 'text') last.v += text;
+  else piImgTokens.push({type:'text', v:text});
+  piImgRender();
+}
+async function piImgHandlePaste(){
+  let items;
+  try { items = await navigator.clipboard.read(); } catch {
+    const text = await navigator.clipboard.readText().catch(function(){ return ''; });
+    if(text){ if(!piImgMode){ if(piTerm) piTerm.paste(text); return; } piImgAddText(text); }
+    return;
+  }
+  let hasImg = false; let textContent = '';
+  for(const item of items){
+    const imgType = item.types.find(function(t){ return t.startsWith('image/'); });
+    if(imgType){
+      hasImg = true;
+      try {
+        const blob = await item.getType(imgType);
+        const ext = imgType.split('/')[1] || 'png';
+        const arr = await blob.arrayBuffer();
+        const bytes = new Uint8Array(arr);
+        let b64 = ''; const chunk = 8192;
+        for(let i = 0; i < bytes.length; i += chunk)
+          b64 += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+        b64 = btoa(b64);
+        const res = await fetch('/api/pi/paste-image', {
+          method:'POST', headers:{'content-type':'application/json'},
+          body: JSON.stringify({data:b64, ext:ext}),
+        });
+        if(res.ok){
+          const d = await res.json();
+          piImgCount++;
+          if(!piImgMode) piImgActivate();
+          piImgTokens.push({type:'img', n:piImgCount, path:d.path});
+          piImgRender();
+        }
+      } catch(err){ console.error('paste-image error', err); }
+    }
+    if(item.types.includes('text/plain')){
+      try { const b = await item.getType('text/plain'); textContent = await b.text(); } catch {}
+    }
+  }
+  if(textContent){ if(!hasImg && !piImgMode){ if(piTerm) piTerm.paste(textContent); return; } piImgAddText(textContent); }
+}
 function connectPiPty(initialCmd, isInstall){
   // Always keep wrap on body as position:fixed — never inside #world (avoids CSS zoom)
   let wrap = piTermWrap || document.getElementById('pi-term-wrap');
@@ -1312,6 +1419,19 @@ function connectPiPty(initialCmd, isInstall){
   piTermWrap = wrap;
   if(piTerm){ piTerm.dispose(); piTerm = null; }
   if(piWs){ try{ piWs.close(); }catch{} piWs = null; }
+  piImgMode = false; piImgTokens = [];
+  const _ovReset = document.getElementById('pi-img-overlay');
+  if(_ovReset) _ovReset.classList.remove('active');
+
+  // Image paste overlay — persists inside wrap
+  if(!document.getElementById('pi-img-overlay')){
+    const ov = document.createElement('div');
+    ov.id = 'pi-img-overlay';
+    ov.className = 'pi-img-overlay';
+    ov.innerHTML = '<span id="pi-img-tokens" style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;flex:1;min-width:0"></span><span class="pi-img-cur"></span>';
+    ov.addEventListener('click', function(){ if(piTerm) piTerm.focus(); });
+    wrap.appendChild(ov);
+  }
 
   const term = new Terminal({
     theme:{ background:'#0d0d0f', foreground:'#e4e4e7', cursor:'#818cf8', selectionBackground:'rgba(129,140,248,.3)' },
@@ -1372,15 +1492,14 @@ function connectPiPty(initialCmd, isInstall){
 
   term.attachCustomKeyEventHandler(function(e){
     if(e.type!=='keydown') return true;
+    if(piImgMode){ piImgKey(e); return false; }
     if(e.ctrlKey && e.key==='c'){
       const sel=term.getSelection();
       if(sel){ navigator.clipboard.writeText(sel).catch(function(){}); return false; }
       return true;
     }
     if(e.ctrlKey && e.key==='v'){
-      navigator.clipboard.readText().then(function(text){
-        if(text && piTerm) piTerm.paste(text);
-      }).catch(function(){});
+      piImgHandlePaste().catch(function(){});
       return false;
     }
     if(e.shiftKey && e.key==='Enter'){
@@ -1394,6 +1513,8 @@ function connectPiPty(initialCmd, isInstall){
     return true;
   });
 
+  // Native paste (right-click / edit menu)
+  wrap.addEventListener('paste', function(e){ e.preventDefault(); piImgHandlePaste().catch(function(){}); });
   // Refocus terminal on click so canvas interactions don't steal input
   wrap.addEventListener('mousedown', function(){ term.focus(); });
   wrap.addEventListener('wheel', e => e.stopPropagation());
