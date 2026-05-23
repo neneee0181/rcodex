@@ -1210,8 +1210,13 @@ let piMaxTimer = null; // cancel pending resize on rapid ⛶ toggle
 let piResolvedPath = 'pi'; // updated by initPiBackground / initPiTerminal after status check
 let piIsWindows = false;   // set from /api/pi/status — controls xterm windowsMode
 function piCmd(){ return piResolvedPath; }
+let piImgMode = false;
+let piImgTokens = [];
+let piImgPtyBuffer = [];
+let piImgOverlayEl = null;
 let piImgCount = 0;
 let piImgLastPaste = 0;
+let piImgCursorPos = null;
 
 function fitPi(){
   if(!piFit || !piTerm) return;
@@ -1360,9 +1365,101 @@ async function initPiTerminal(){
 function piImgIsPasteKey(e){
   return (e.ctrlKey || e.metaKey) && (((e.key || '').toLowerCase() === 'v') || e.code === 'KeyV');
 }
-async function piImgUploadBlob(blob, type){
-  const ext = (type || blob.type || 'image/png').split('/')[1] || 'png';
-  const arr = await blob.arrayBuffer();
+function piImgEscHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function piImgGetCursorPixel(){
+  if(!piTerm || !piTermWrap) return null;
+  const el = piTerm.element;
+  if(!el) return null;
+  const screen = el.querySelector('.xterm-screen') || el;
+  if(!screen.offsetWidth || !screen.offsetHeight) return null;
+  const cx = piTerm.buffer.active.cursorX;
+  const cy = piTerm.buffer.active.cursorY;
+  const cellW = screen.offsetWidth / piTerm.cols;
+  const cellH = screen.offsetHeight / piTerm.rows;
+  const sr = screen.getBoundingClientRect();
+  const wr = piTermWrap.getBoundingClientRect();
+  return { x: sr.left - wr.left + cx * cellW, y: sr.top - wr.top + cy * cellH, h: cellH };
+}
+function piImgPositionOverlay(){
+  if(!piImgOverlayEl || !piImgCursorPos) return;
+  const p = piImgCursorPos;
+  piImgOverlayEl.style.top = p.y + 'px';
+  piImgOverlayEl.style.left = p.x + 'px';
+  piImgOverlayEl.style.bottom = '';
+  piImgOverlayEl.style.right = '';
+  piImgOverlayEl.style.width = 'auto';
+  piImgOverlayEl.style.minHeight = p.h + 'px';
+  piImgOverlayEl.style.lineHeight = Math.round(p.h) + 'px';
+}
+function piImgUpdateOverlay(){
+  if(!piImgOverlayEl) return;
+  if(!piImgTokens.length){ piImgOverlayEl.style.display='none'; return; }
+  piImgPositionOverlay();
+  piImgOverlayEl.style.display='inline-flex';
+  let html = '';
+  for(const t of piImgTokens){
+    if(t.type==='image') html += '<span style="color:#818cf8;background:rgba(129,140,248,.18);border-radius:3px;padding:0 4px;margin-right:2px;flex-shrink:0;">' + piImgEscHtml(t.display) + '</span>';
+    else html += '<span>' + piImgEscHtml(t.display) + '</span>';
+  }
+  html += '<span class="pi-img-cur">&#9608;</span>';
+  piImgOverlayEl.innerHTML = html;
+}
+function piImgAppendToken(display, actual, type){
+  if(!piImgMode){
+    piImgMode = true;
+    piImgCursorPos = piImgGetCursorPixel();
+  }
+  piImgTokens.push({display:display, actual:actual, type:type});
+  piImgUpdateOverlay();
+  if(piTerm) piTerm.focus();
+}
+function piImgAddText(text){
+  if(!text) return;
+  if(!piImgMode) piImgMode = true;
+  const last = piImgTokens[piImgTokens.length - 1];
+  if(last && last.type==='text'){ last.display += text; last.actual += text; }
+  else piImgTokens.push({display:text, actual:text, type:'text'});
+  piImgUpdateOverlay();
+}
+function piImgBackspace(){
+  if(!piImgTokens.length) return;
+  const last = piImgTokens[piImgTokens.length - 1];
+  if(last.type==='image') piImgTokens.pop();
+  else {
+    const chars = Array.from(last.display); chars.pop();
+    last.display = chars.join('');
+    last.actual = Array.from(last.actual).slice(0,-1).join('');
+    if(!last.display) piImgTokens.pop();
+  }
+  if(!piImgTokens.length){ piImgMode=false; piImgCursorPos=null; piImgUpdateOverlay(); piImgFlushBuffer(); }
+  else piImgUpdateOverlay();
+}
+function piImgCancel(){
+  piImgMode=false; piImgTokens=[]; piImgCursorPos=null;
+  piImgUpdateOverlay(); piImgFlushBuffer();
+}
+function piImgFlushBuffer(){
+  for(const d of piImgPtyBuffer) if(piTerm) piTerm.write(d);
+  piImgPtyBuffer=[];
+}
+function piImgCommit(){
+  const actual = piImgTokens.map(function(t){ return t.actual!==null?t.actual:t.display; }).join('');
+  piImgMode=false; piImgTokens=[]; piImgCursorPos=null;
+  piImgUpdateOverlay(); piImgFlushBuffer();
+  if(piWs && piWs.readyState===WebSocket.OPEN) piWs.send(actual+'\\r');
+}
+function piImgKey(e){
+  if(piImgIsPasteKey(e)){ piImgHandlePaste(e).catch(function(){}); return false; }
+  if(e.key==='Escape'){ piImgCancel(); return false; }
+  if(e.key==='Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey){ piImgCommit(); return false; }
+  if(e.key==='Backspace'){ piImgBackspace(); return false; }
+  if(e.ctrlKey || e.metaKey || e.altKey) return false;
+  if(e.key.length===1 || e.isComposing || e.key==='Process' || e.keyCode===229) return true;
+  return false;
+}
+async function piImgUploadToToken(file, type, tokenIdx){
+  const ext = (type || 'image/png').split('/')[1] || 'png';
+  const arr = await file.arrayBuffer();
   const bytes = new Uint8Array(arr);
   let b64 = ''; const chunk = 8192;
   for(let i = 0; i < bytes.length; i += chunk)
@@ -1372,10 +1469,7 @@ async function piImgUploadBlob(blob, type){
     method:'POST', headers:{'content-type':'application/json'},
     body: JSON.stringify({data:b64, ext:ext}),
   });
-  if(!res.ok) return;
-  piImgCount++;
-  // Send label directly to PTY so Pi echoes it at the correct cursor position
-  if(piWs && piWs.readyState === WebSocket.OPEN) piWs.send('[\\uc774\\ubbf8\\uc9c0 #' + piImgCount + '] ');
+  if(res.ok){ const d = await res.json(); if(piImgTokens[tokenIdx]) piImgTokens[tokenIdx].actual = d.path; }
 }
 async function piImgHandlePaste(e){
   const now = Date.now();
@@ -1386,19 +1480,32 @@ async function piImgHandlePaste(e){
   if(e && e.stopImmediatePropagation) e.stopImmediatePropagation();
   const dt = e && e.clipboardData;
   if(dt && dt.items && dt.items.length){
-    let hasImg = false;
+    // Collect image files SYNCHRONOUSLY before any await
+    const imageFiles = [];
     for(const item of Array.from(dt.items)){
       if(item.type && item.type.startsWith('image/')){
         const file = item.getAsFile();
-        if(file){ hasImg = true; await piImgUploadBlob(file, item.type); }
+        if(file) imageFiles.push({file:file, type:item.type});
       }
     }
-    if(!hasImg){
-      const text = dt.getData ? dt.getData('text/plain') : '';
-      if(text && piTerm) piTerm.paste(text);
+    if(imageFiles.length > 0){
+      // IMMEDIATELY write placeholders — cursor still at Pi input area (no await yet)
+      const uploads = imageFiles.map(function(img){
+        piImgCount++;
+        const label = '\\u300a\\uc774\\ubbf8\\uc9c0 #' + piImgCount + '\\u300b';
+        const idx = piImgTokens.length;
+        piImgAppendToken(label, null, 'image');
+        return {idx:idx, file:img.file, type:img.type};
+      });
+      // Upload async, update actuals when done
+      for(const u of uploads) await piImgUploadToToken(u.file, u.type, u.idx).catch(function(){});
+      return;
     }
+    const text = dt.getData ? dt.getData('text/plain') : '';
+    if(text && piTerm) piTerm.paste(text);
     return;
   }
+  // Fallback: navigator.clipboard (no clipboardData — can't do synchronous check)
   let items;
   try { items = await navigator.clipboard.read(); } catch {
     const text = await navigator.clipboard.readText().catch(function(){ return ''; });
@@ -1410,15 +1517,16 @@ async function piImgHandlePaste(e){
     const imgType = item.types.find(function(t){ return t.startsWith('image/'); });
     if(imgType){
       hasImg = true;
-      try {
-        const blob = await item.getType(imgType);
-        await piImgUploadBlob(blob, imgType);
-      } catch(err){ console.error('paste-image error', err); }
+      piImgCount++;
+      const label = '\\u300a\\uc774\\ubbf8\\uc9c0 #' + piImgCount + '\\u300b';
+      const idx = piImgTokens.length;
+      piImgAppendToken(label, null, 'image');
+      try { const blob = await item.getType(imgType); await piImgUploadToToken(blob, imgType, idx); } catch {}
     }
   }
   if(!hasImg){
     const textItem = items.find(function(i){ return i.types.includes('text/plain'); });
-    if(textItem){ try { const b = await textItem.getType('text/plain'); const t = await b.text(); if(t && piTerm) piTerm.paste(t); } catch {} }
+    if(textItem){ try{ const b = await textItem.getType('text/plain'); const t = await b.text(); if(t && piTerm) piTerm.paste(t); }catch{} }
   }
 }
 function connectPiPty(initialCmd, isInstall){
@@ -1435,6 +1543,19 @@ function connectPiPty(initialCmd, isInstall){
   wrap.style.zIndex = '50';
   if(piTerm){ piTerm.dispose(); piTerm = null; }
   if(piWs){ try{ piWs.close(); }catch{} piWs = null; }
+  piImgMode = false; piImgTokens = []; piImgPtyBuffer = []; piImgCursorPos = null;
+  if(!document.getElementById('pi-img-cur-style')){
+    const s=document.createElement('style'); s.id='pi-img-cur-style';
+    s.textContent='@keyframes piImgCurBlink{0%,100%{opacity:1}50%{opacity:0}}.pi-img-cur{display:inline-block;animation:piImgCurBlink 1.1s step-end infinite;color:#818cf8;margin-left:1px;}';
+    document.head.appendChild(s);
+  }
+  if(!wrap.__piImgOverlay){
+    const ov = document.createElement('div');
+    ov.style.cssText = 'display:none;position:absolute;top:0;left:0;background:rgba(13,13,15,.97);border:1px solid #2a2a3e;border-radius:3px;padding:1px 6px;font-family:Menlo,Monaco,Consolas,monospace;font-size:13px;color:#e4e4e7;z-index:300;align-items:center;gap:2px;box-sizing:border-box;white-space:nowrap;pointer-events:none;';
+    wrap.appendChild(ov);
+    wrap.__piImgOverlay = ov;
+  }
+  piImgOverlayEl = wrap.__piImgOverlay;
   const term = new Terminal({
     theme:{ background:'#0d0d0f', foreground:'#e4e4e7', cursor:'#818cf8', selectionBackground:'rgba(129,140,248,.3)' },
     fontFamily:'Menlo, Monaco, Consolas, "Courier New", monospace',
@@ -1452,7 +1573,9 @@ function connectPiPty(initialCmd, isInstall){
   piWs = ws;
   ws.onmessage = e => {
     const data = typeof e.data === 'string' ? e.data : new Uint8Array(e.data);
-    if(data) term.write(data);
+    if(!data) return;
+    if(piImgMode){ piImgPtyBuffer.push(data); return; }
+    term.write(data);
   };
   ws.onclose = () => {
     if(isInstall){
@@ -1493,21 +1616,25 @@ function connectPiPty(initialCmd, isInstall){
   };
   ws.onerror = () => { term.write('\\r\\n\\x1b[31m[connection error]\\x1b[0m\\r\\n'); };
   term.onData(d => {
+    if(piImgMode){
+      if(d === '\\r'){ piImgCommit(); return; }
+      if(d === '\\u007f'){ piImgBackspace(); return; }
+      if(d && d[0] !== '\\x1b') piImgAddText(d);
+      return;
+    }
     if(ws.readyState === WebSocket.OPEN) ws.send(d);
   });
   term.onResize(({cols,rows}) => { if(ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({type:'resize',cols,rows})); });
 
   term.attachCustomKeyEventHandler(function(e){
     if(e.type!=='keydown') return true;
+    if(piImgMode) return piImgKey(e);
     if(e.ctrlKey && e.key==='c'){
       const sel=term.getSelection();
       if(sel){ navigator.clipboard.writeText(sel).catch(function(){}); return false; }
       return true;
     }
-    if(piImgIsPasteKey(e)){
-      piImgHandlePaste(e).catch(function(){});
-      return false;
-    }
+    if(piImgIsPasteKey(e)) return false; // 'paste' DOM event handles with clipboardData
     if(e.shiftKey && e.key==='Enter'){
       if(piWs && piWs.readyState===WebSocket.OPEN) piWs.send('\\n');
       return false;
