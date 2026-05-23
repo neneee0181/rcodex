@@ -508,6 +508,21 @@ export function createGatewayServer(): GatewayServer {
 
   fastify.post("/api/pi/sync-models", async () => {
     const config = loadConfig();
+    let repaired = false;
+    const uiSlots = config.uiState?.slots ?? {};
+    for (const slotId of config.uiState?.piConns ?? []) {
+      const slot = uiSlots[slotId];
+      if (!slot || typeof slot !== "object") continue;
+      const info = slot as { accountId?: unknown; model?: unknown };
+      if (typeof info.accountId !== "string" || typeof info.model !== "string" || !info.model) continue;
+      const account = config.accounts.find(a => a.id === info.accountId);
+      if (!account) continue;
+      if (!account.connectedToPi) { account.connectedToPi = true; repaired = true; }
+      account.piModels ??= [];
+      if (!account.piModels.includes(info.model)) { account.piModels.push(info.model); repaired = true; }
+    }
+    if (repaired) saveConfig(config);
+
     const allModels: string[] = [];
     for (const a of config.accounts.filter(a => a.connectedToPi)) {
       for (const m of a.piModels ?? []) { if (m && !allModels.includes(m)) allModels.push(m); }

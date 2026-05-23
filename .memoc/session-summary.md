@@ -3,26 +3,25 @@ memoc: true
 type: state
 scope: project-memory
 created: 2026-05-21T17:12:48
-updated: 2026-05-23T23:50:00
+updated: 2026-05-23T23:58:00
 status: active
 tags:
   - memoc
   - memoc/state
 ---
 # Session Summary
-Last: 2026-05-23T23:50:00
-Replace, keep <800B. History: worklog. Risks: 04-handoff.
+Last: 2026-05-23T23:58:00
+Keep <800B. History: worklog. Risks: 04.
 
 ## Status
 - Pi terminal: PTY auto-install, inline image paste.
-- Pi models.json marks connected models image-capable.
-- Antigravity native tool history is in main.
-- Canvas UI state syncs to gateway config, not only per-port localStorage.
+- Pi models.json marks models image-capable; Gemini image path works.
+- Canvas UI state syncs to gateway config.
 
 ## Recent Work (2026-05-23)
 - Inline tokens, Ctrl/Cmd+V, Korean IME, sidebar z-index.
-- Pi image path: chat `image_url` -> Responses `input_image` -> Gemini.
+- Pi model switching: restored UI slots repair config + proxy routing.
 
 ## Open Tasks
 - Windows Pi terminal test pending (user to verify).
-- Smoke test Pi image paste in running app after dev-server restart.
+- Smoke test Copilot/GPT Pi image route after dev-server restart.

@@ -2798,17 +2798,39 @@ async function fetchStatus(){
       }
     });
 
-    // Reconcile: config may have stale connectedToPi entries not reflected in piConns.
+    // Reconcile Pi links both ways. Restored UI state may know about a Pi chip
+    // before gateway.json has repaired connectedToPi/piModels for that account.
+    let needSync=false;
+    let repairedPi=false;
+    for(const slotId of [...piConns]){
+      const info=nodeSlots[slotId];
+      const acc=info&&ST.accounts.find(a=>a.id===info.accountId);
+      if(!info||!acc){
+        piConns.delete(slotId);
+        needSync=true;
+        continue;
+      }
+      if(!acc.connectedToPi || !(acc.piModels||[]).includes(info.model)){
+        const r=await api('POST','/api/pi/connect',{accountId:info.accountId,model:info.model});
+        if(r.ok){
+          acc.connectedToPi=true;
+          acc.piModels=[...new Set([...(acc.piModels||[]),info.model])];
+          repairedPi=true;
+          needSync=true;
+        }
+      }
+    }
+
     // Clear any account that config thinks is Pi-connected but UI has no piConn for.
     const piConnAccIds=new Set([...piConns].map(id=>nodeSlots[id]?.accountId).filter(Boolean));
-    let needSync=false;
     for(const acc of ST.accounts){
       if(acc.connectedToPi && !piConnAccIds.has(acc.id)){
         needSync=true;
         api('DELETE','/api/pi/connect/'+acc.id).catch(()=>{});
       }
     }
-    if(needSync) api('POST','/api/pi/sync-models').catch(()=>{});
+    if(needSync) await api('POST','/api/pi/sync-models').catch(()=>{});
+    if(repairedPi) setTimeout(fetchStatus,300);
 
     saveLS();
     render();
