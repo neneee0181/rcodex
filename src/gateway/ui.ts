@@ -2349,6 +2349,7 @@ function startPiNodeDrag(e){
     const nd=document.getElementById('nd-pi');
     if(nd){nd.style.left=NP.piNode.x+'px';nd.style.top=NP.piNode.y+'px';}
     drawLines();
+    repositionPiTermWrap();
   }
   function onUp(){saveLS();document.removeEventListener('pointermove',onMove);document.removeEventListener('pointerup',onUp);}
   document.addEventListener('pointermove',onMove);
