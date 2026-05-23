@@ -1253,6 +1253,27 @@ function repositionPiTermWrap(){
   if(Math.abs(r.width-oldW)>2||Math.abs(r.height-oldH)>2) fitPi();
 }
 
+function applyPiFullscreenTermWrap(){
+  if(!piTermWrap || !piMaximized) return;
+  const nd=document.getElementById('nd-pi');
+  if(!nd) return;
+  const nr=nd.getBoundingClientRect();
+  const hdr=nd.querySelector('.nh');
+  const hr=hdr ? hdr.getBoundingClientRect() : null;
+  const top=hr ? hr.bottom : nr.top;
+  const h=Math.max(120, nr.bottom - top);
+  piTermWrap.style.position='fixed';
+  piTermWrap.style.left=nr.left+'px';
+  piTermWrap.style.top=top+'px';
+  piTermWrap.style.width=nr.width+'px';
+  piTermWrap.style.height=h+'px';
+  piTermWrap.style.visibility='';
+  piTermWrap.style.pointerEvents='';
+  piTermWrap.style.zIndex='201';
+  piTermWrap.style.borderRadius='0 0 12px 12px';
+  fitPi();
+}
+
 function togglePi(){
   piOpen = !piOpen;
   document.getElementById('hb-pi')?.classList.toggle('on', piOpen);
@@ -1727,41 +1748,54 @@ function togglePiMax(){
   const nd = document.getElementById('nd-pi');
   if(!nd) return;
   if(piMaximized){
+    const r = nd.getBoundingClientRect();
     // Move out of #world so position:fixed works correctly (bypasses CSS zoom)
+    document.body.appendChild(nd);
     nd.style.position = 'fixed';
-    nd.style.inset = '0';
-    nd.style.width = '100vw';
-    nd.style.height = '100vh';
+    nd.style.left = r.left + 'px';
+    nd.style.top = r.top + 'px';
+    nd.style.width = r.width + 'px';
+    nd.style.height = r.height + 'px';
+    nd.style.transition = 'left .18s ease, top .18s ease, width .18s ease, height .18s ease, border-radius .18s ease';
     nd.style.borderRadius = '0';
     nd.style.zIndex = '200';
     nd.style.display = 'flex';
     nd.style.flexDirection = 'column';
-    // Terminal must flex-fill remaining height/width instead of using fixed px
-    const termEl = piTermWrap || document.getElementById('pi-term-slot');
-    if(termEl){ termEl.style.flex = '1'; termEl.style.width = ''; termEl.style.height = 'auto'; }
+    if(piTermWrap){
+      piTermWrap.style.transition = 'left .18s ease, top .18s ease, width .18s ease, height .18s ease';
+      piTermWrap.style.zIndex = '201';
+    }
     const port = nd.querySelector('#pi-nd-port');
     if(port) port.style.display = 'none';
     nd.querySelectorAll('.mn-rs-e,.mn-rs-s,.mn-rs-se').forEach(function(el){el.style.display='none';});
-    document.body.appendChild(nd);
-    piMaxTimer = setTimeout(() => { piMaxTimer = null; fitPi(); }, 80);
+    requestAnimationFrame(function(){
+      nd.style.left = '0';
+      nd.style.top = '0';
+      nd.style.width = '100vw';
+      nd.style.height = '100vh';
+      applyPiFullscreenTermWrap();
+    });
+    piMaxTimer = setTimeout(() => { piMaxTimer = null; applyPiFullscreenTermWrap(); }, 220);
   } else {
     // Reset flex before render rebuilds the node
     const sz = NP.piSize || { w:780, h:480 };
-    const termEl = piTermWrap || document.getElementById('pi-term-slot');
-    if(termEl){ termEl.style.flex = ''; termEl.style.width = sz.w + 'px'; termEl.style.height = sz.h + 'px'; }
+    if(piTermWrap){
+      piTermWrap.style.transition = '';
+      piTermWrap.style.borderRadius = '0 0 12px 12px';
+    }
     const port = nd.querySelector('#pi-nd-port');
     if(port) port.style.display = '';
     nd.querySelectorAll('.mn-rs-e,.mn-rs-s,.mn-rs-se').forEach(function(el){el.style.display='';});
+    nd.style.transition = '';
     nd.style.position = '';
-    nd.style.inset = '';
+    nd.style.left = NP.piNode.x + 'px';
+    nd.style.top  = NP.piNode.y + 'px';
     nd.style.width = sz.w + 'px';
     nd.style.height = '';
     nd.style.borderRadius = '';
     nd.style.zIndex = '';
     nd.style.display = '';
     nd.style.flexDirection = '';
-    nd.style.left = NP.piNode.x + 'px';
-    nd.style.top  = NP.piNode.y + 'px';
     document.getElementById('world').appendChild(nd);
     render();
     // render() already schedules fitPi at 60ms — that single fit is sufficient.
@@ -2376,6 +2410,9 @@ function render(){
     setTimeout(function(){ repositionPiTermWrap(); if(piTerm) piTerm.focus(); }, 60);
     if(piLoadEl){const slot=document.getElementById('pi-loading-slot');if(slot)slot.replaceWith(piLoadEl);}
   }
+  if(piOpen && piMaximized){
+    setTimeout(function(){ applyPiFullscreenTermWrap(); if(piTerm) piTerm.focus(); }, 60);
+  }
 
   [...onCanvas].filter(id=>id!=='out'&&id!=='monitor').forEach(slotId=>{
     const port=document.getElementById('po-'+slotId);
@@ -2821,12 +2858,21 @@ async function fetchStatus(){
       }
     }
 
-    // Clear any account that config thinks is Pi-connected but UI has no piConn for.
-    const piConnAccIds=new Set([...piConns].map(id=>nodeSlots[id]?.accountId).filter(Boolean));
+    // Clear stale server Pi models not reflected in the live UI connections.
+    const piConnKeys=new Set([...piConns].map(id=>{
+      const info=nodeSlots[id];
+      return info ? info.accountId + '\\0' + info.model : '';
+    }).filter(Boolean));
     for(const acc of ST.accounts){
-      if(acc.connectedToPi && !piConnAccIds.has(acc.id)){
+      for(const model of (acc.piModels||[])){
+        if(!piConnKeys.has(acc.id + '\\0' + model)){
+          needSync=true;
+          await api('DELETE','/api/pi/connect/'+acc.id+'?model='+encodeURIComponent(model)).catch(()=>{});
+        }
+      }
+      if(acc.connectedToPi && !(acc.piModels||[]).length){
         needSync=true;
-        api('DELETE','/api/pi/connect/'+acc.id).catch(()=>{});
+        await api('DELETE','/api/pi/connect/'+acc.id).catch(()=>{});
       }
     }
     if(needSync) await api('POST','/api/pi/sync-models').catch(()=>{});

@@ -25,9 +25,11 @@ Last synced: 2026-05-21T17:52:16+0900
 - First-launch thread migration checks both Codex SQLite state and `.codex/sessions/**/*.jsonl`, and continues session-file migration even if the SQLite DB is absent or unreadable.
 - Gateway Fastify body limit is configurable with `bodyLimitMiB` in `~/.rcodex/gateway.json`; default is 64MiB and values are clamped to 1-1024MiB.
 - Pi terminal image paste saves clipboard images to temp files, renders inline `[이미지#N]` tokens in xterm, buffers post-image input through xterm `onData` for IME-safe Korean input, and sends real paths only on Enter.
-- Pi models sync writes connected models with `input: ["text", "image"]` and the chat-completions fallback preserves OpenAI `image_url` parts through Responses `input_image` into Gemini inline image parts for Antigravity.
+- Pi models sync writes exactly the UI-connected Pi slots with `input: ["text", "image"]`, pruning stale models from `models.json`; chat-completions fallback preserves OpenAI `image_url` parts through Responses `input_image` into Gemini inline image parts for Antigravity.
 - Canvas UI state (`pos`, canvas slot ids, node slots, hidden slots, Pi connections) is mirrored to `GatewayConfig.uiState` so idle provider nodes survive gateway port changes.
 - Pi provider routing can recover from restored UI Pi slots when `connectedToPi/piModels` is stale, so switching Pi from Gemini to a Copilot GPT model routes to the slot account instead of failing with `No provider connected to output`.
+- Pi/Antigravity greeting-only turns suppress function tools so simple `hello`/`hi` prompts do not trigger workspace scans; real file/image/code requests still get tools.
+- Pi fullscreen mode animates from the node rect and resizes the fixed xterm wrapper from header bottom to viewport bottom.
 
 ## Project Snapshot
 
@@ -63,7 +65,7 @@ Last synced: 2026-05-21T17:52:16+0900
 - Copilot real GitHub device OAuth and provider API calls have not been smoke-tested after the strict tool-history fix.
 - Antigravity tool-history/quote-escaping fix has only been build-verified; smoke-test with a real Flash Lite account/model.
 - Pi terminal image paste inline composition has only been build-verified; smoke-test Ctrl+V/Cmd+V in a restarted running app.
-- Pi image recognition through Antigravity works in manual smoke test; Copilot/GPT Pi image routing after restored UI-slot repair still needs a restarted-app smoke test.
+- Pi image recognition through Antigravity works in manual smoke test; Copilot/GPT Pi image routing, exact `/model` pruning, and fullscreen fit still need a restarted-app smoke test.
 - Canvas UI state sync has only been build-verified; smoke-test by adding an idle provider node, restarting on another port, and checking it restores.
 - Windows first-install `rcodex` launch should be smoke-tested with pre-existing Codex conversations to confirm auto-migration into the gateway provider.
 - Large Unreal/codebase investigation turns should be smoke-tested through Claude/Gemini after the gateway body-limit increase.

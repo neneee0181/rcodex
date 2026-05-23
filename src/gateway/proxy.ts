@@ -1442,6 +1442,23 @@ function copilotInstructions(req: ResponsesRequest, tools?: unknown[]): string |
   ].join("\n");
 }
 
+function plainTextFromContent(content: unknown): string {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  return content.map(part => {
+    if (!part || typeof part !== "object") return "";
+    const p = part as Record<string, unknown>;
+    return typeof p.text === "string" ? p.text : "";
+  }).join("");
+}
+
+function isPiGreetingOnly(req: ResponsesRequest): boolean {
+  const input = Array.isArray(req.input) ? req.input as unknown as { role?: string; content?: unknown }[] : [];
+  const lastUser = input.filter(i => i.role === "user").slice(-1)[0];
+  const text = plainTextFromContent(lastUser?.content ?? req.input).trim();
+  return /^(hi|hello|hey|yo|안녕|안녕하세요|ㅎㅇ|하이)[!?.,~\s]*$/i.test(text);
+}
+
   // --- Single provider call (non-streaming) ---
 async function callSingleProvider(
   rawAccount: Account,
@@ -1592,11 +1609,13 @@ async function* streamSingleProvider(
   config: GatewayConfig,
   signal?: AbortSignal,
   usage: { inputTokens?: number; outputTokens?: number } = {},
-  responseId?: string
+  responseId?: string,
+  source?: "codex" | "pi" | "api"
 ): AsyncGenerator<StreamChunk> {
   let account = rawAccount;
   const messages = parseInput(req.input);
   const { instructions } = req;
+  const piGreetingOnly = source === "pi" && isPiGreetingOnly(req);
 
   if (account.provider === "anthropic") {
     account = await ensureFreshToken(account);
@@ -1669,13 +1688,16 @@ async function* streamSingleProvider(
 
   if (account.provider === "google") {
     const auth = accountToProviderAuth(account);
-    const hasToolInstructions = (Array.isArray(req.tools) && req.tools.length > 0) ||
-      CODEX_TOOL_MARKERS.some(m => (instructions ?? "").includes(m));
+    const hasToolInstructions = !piGreetingOnly && (
+      (Array.isArray(req.tools) && req.tools.length > 0) ||
+      CODEX_TOOL_MARKERS.some(m => (instructions ?? "").includes(m))
+    );
+    const directGreetingSystem = "Answer this greeting directly and briefly in the user's language. Do not call tools or inspect files.";
     const googleSystem = hasToolInstructions
       ? "Use the provided function tools for all file, command, system, and web requests. Call tools directly without narrating what you plan to do."
-      : cleanInstructions(instructions);
+      : piGreetingOnly ? directGreetingSystem : cleanInstructions(instructions);
     const rawTools = Array.isArray(req.tools) ? (req.tools as Record<string, unknown>[]) : [];
-    const googleTools = rawTools
+    const googleTools = piGreetingOnly ? [] : rawTools
       .filter(t => { const type = t.type as string | undefined; return !type || (!COMPUTER_USE_TYPES.has(type) && type !== "web_search"); })
       .map(toGoogleTool)
       .filter((t): t is Record<string, unknown> => t !== null);
@@ -1743,14 +1765,17 @@ async function* streamSingleProvider(
       }
     }
 
-    const hasToolInstructions = (Array.isArray(req.tools) && req.tools.length > 0) ||
-      CODEX_TOOL_MARKERS.some(m => (instructions ?? "").includes(m));
+    const hasToolInstructions = !piGreetingOnly && (
+      (Array.isArray(req.tools) && req.tools.length > 0) ||
+      CODEX_TOOL_MARKERS.some(m => (instructions ?? "").includes(m))
+    );
+    const directGreetingSystem = "Answer this greeting directly and briefly in the user's language. Do not call tools or inspect files.";
     const agSystem = hasToolInstructions
       ? "Use the provided function tools for all file, command, system, and web requests. Call tools directly without narrating what you plan to do."
-      : cleanInstructions(instructions);
+      : piGreetingOnly ? directGreetingSystem : cleanInstructions(instructions);
 
     const rawTools = Array.isArray(req.tools) ? (req.tools as Record<string, unknown>[]) : [];
-    const agTools = rawTools
+    const agTools = piGreetingOnly ? [] : rawTools
       .filter(t => { const type = t.type as string | undefined; return !type || (!COMPUTER_USE_TYPES.has(type) && type !== "web_search"); })
       .map(toGoogleTool)
       .filter((t): t is Record<string, unknown> => t !== null);
@@ -2306,7 +2331,7 @@ export async function* streamProxyRequest(
     let outputText = "";
     const toolCallNames: string[] = [];
     try {
-      for await (const chunk of streamSingleProvider(account, model, req, config, signal, usage, responseId)) {
+      for await (const chunk of streamSingleProvider(account, model, req, config, signal, usage, responseId, source)) {
         if (!yielded) {
           if (i > 0) gwarn(`[gateway] stream fallback: ${account.provider}(${model})`);
           else glog(`[gateway] stream ${account.provider}(${model})`);

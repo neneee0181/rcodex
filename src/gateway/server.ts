@@ -509,6 +509,8 @@ export function createGatewayServer(): GatewayServer {
   fastify.post("/api/pi/sync-models", async () => {
     const config = loadConfig();
     let repaired = false;
+    const hasUiPiState = Array.isArray(config.uiState?.piConns);
+    const desiredByAccount = new Map<string, Set<string>>();
     const uiSlots = config.uiState?.slots ?? {};
     for (const slotId of config.uiState?.piConns ?? []) {
       const slot = uiSlots[slotId];
@@ -517,9 +519,27 @@ export function createGatewayServer(): GatewayServer {
       if (typeof info.accountId !== "string" || typeof info.model !== "string" || !info.model) continue;
       const account = config.accounts.find(a => a.id === info.accountId);
       if (!account) continue;
-      if (!account.connectedToPi) { account.connectedToPi = true; repaired = true; }
-      account.piModels ??= [];
-      if (!account.piModels.includes(info.model)) { account.piModels.push(info.model); repaired = true; }
+      let models = desiredByAccount.get(info.accountId);
+      if (!models) { models = new Set<string>(); desiredByAccount.set(info.accountId, models); }
+      models.add(info.model);
+    }
+    if (hasUiPiState) {
+      for (const account of config.accounts) {
+        const desired = [...(desiredByAccount.get(account.id) ?? new Set<string>())];
+        const current = account.piModels ?? [];
+        const sameModels = desired.length === current.length && desired.every(m => current.includes(m));
+        if (desired.length > 0) {
+          if (!account.connectedToPi || !sameModels) {
+            account.connectedToPi = true;
+            account.piModels = desired;
+            repaired = true;
+          }
+        } else if (account.connectedToPi || current.length > 0) {
+          account.connectedToPi = false;
+          account.piModels = [];
+          repaired = true;
+        }
+      }
     }
     if (repaired) saveConfig(config);
 
