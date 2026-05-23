@@ -1196,6 +1196,8 @@ function repositionPiTermWrap(){
   if(!slot) return;
   const r=slot.getBoundingClientRect();
   if(!r.width||!r.height) return;
+  const oldW=parseFloat(piTermWrap.style.width)||0;
+  const oldH=parseFloat(piTermWrap.style.height)||0;
   piTermWrap.style.position='fixed';
   piTermWrap.style.left=r.left+'px';
   piTermWrap.style.top=r.top+'px';
@@ -1204,7 +1206,8 @@ function repositionPiTermWrap(){
   piTermWrap.style.visibility='';
   piTermWrap.style.pointerEvents='';
   piTermWrap.style.zIndex='100';
-  fitPi();
+  // Only refit when size actually changed — skip during drag (position-only move)
+  if(Math.abs(r.width-oldW)>2||Math.abs(r.height-oldH)>2) fitPi();
 }
 
 function togglePi(){
@@ -1369,6 +1372,10 @@ function connectPiPty(initialCmd, isInstall){
       return false;
     }
     if(e.shiftKey && e.key==='Enter'){
+      if(piWs && piWs.readyState===WebSocket.OPEN) piWs.send('\\n');
+      return false;
+    }
+    if(e.ctrlKey && e.key==='Enter'){
       if(piWs && piWs.readyState===WebSocket.OPEN) piWs.send('\\n');
       return false;
     }
