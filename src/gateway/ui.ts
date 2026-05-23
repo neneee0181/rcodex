@@ -1320,6 +1320,7 @@ function connectPiPty(initialCmd, isInstall){
     theme:{ background:'#0d0d0f', foreground:'#e4e4e7', cursor:'#818cf8', selectionBackground:'rgba(129,140,248,.3)' },
     fontFamily:'Menlo, Monaco, Consolas, "Courier New", monospace',
     fontSize:13, lineHeight:1.5, cursorBlink:true, scrollback:5000,
+    windowsMode: true,
   });
   const fit = new FitAddon.FitAddon();
   term.loadAddon(fit);
@@ -1363,7 +1364,7 @@ function connectPiPty(initialCmd, isInstall){
     }
     if(e.ctrlKey && e.key==='v'){
       navigator.clipboard.readText().then(function(text){
-        if(text && piWs && piWs.readyState===WebSocket.OPEN) piWs.send(text);
+        if(text && piTerm) piTerm.paste(text);
       }).catch(function(){});
       return false;
     }
@@ -2414,6 +2415,7 @@ window.addEventListener('pointermove',e=>{
     const el=document.getElementById('nd-'+nodeD.id);
     if(el){el.style.left=NP[nodeD.id].x+'px';el.style.top=NP[nodeD.id].y+'px'}
     drawLines();
+    if(nodeD.id==='pi') repositionPiTermWrap();
   }
   if(panD){vp.x=Math.round(panD.vx+(e.clientX-panD.sx));vp.y=Math.round(panD.vy+(e.clientY-panD.sy));applyVp()}
   if(connD){
