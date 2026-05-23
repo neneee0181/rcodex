@@ -30,6 +30,7 @@ Last synced: 2026-05-21T17:52:16+0900
 - Pi provider routing can recover from restored UI Pi slots when `connectedToPi/piModels` is stale, so switching Pi from Gemini to a Copilot GPT model routes to the slot account instead of failing with `No provider connected to output`.
 - Pi/Antigravity greeting-only turns suppress function tools so simple `hello`/`hi` prompts do not trigger workspace scans; real file/image/code requests still get tools.
 - Pi fullscreen mode animates from the node rect and resizes the fixed xterm wrapper from header bottom to viewport bottom.
+- Pi canvas/connect mutations force an immediate `/api/ui-state` save before Pi model sync, preventing refresh from reverting just-added or just-removed nodes/models.
 
 ## Project Snapshot
 

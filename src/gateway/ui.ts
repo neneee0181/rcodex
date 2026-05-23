@@ -730,8 +730,14 @@ function applyUiState(s){
 function queueSaveUiState(){
   clearTimeout(uiStateSaveTimer);
   uiStateSaveTimer = setTimeout(function(){
-    api('POST','/api/ui-state',currentUiState()).catch(function(){});
+    saveUiStateNow().catch(function(){});
   }, 250);
+}
+async function saveUiStateNow(){
+  if(!uiStateReady || applyingUiState) return;
+  clearTimeout(uiStateSaveTimer);
+  uiStateSaveTimer = null;
+  await api('POST','/api/ui-state',currentUiState());
 }
 function accountNo(acc){
   const same=(ST.accounts||[]).filter(a=>a.provider===acc.provider&&a.label===acc.label);
@@ -1174,6 +1180,7 @@ function addToCanvas(accountId){
     NP[slotId]=findBestPos();
   }
   saveLS();
+  saveUiStateNow().catch(function(){});
   render();
   renderSb();
 }
@@ -1186,10 +1193,13 @@ async function removeFromCanvas(slotId){
   delete nodeSlots[slotId];
   if(piConns.has(slotId)){
     piConns.delete(slotId); savePiConns();
+    saveLS();
+    await saveUiStateNow();
     if(info) await api('DELETE', '/api/pi/connect/' + info.accountId + (info.model ? '?model=' + encodeURIComponent(info.model) : ''));
     await api('POST', '/api/pi/sync-models');
   }
   saveLS();
+  await saveUiStateNow();
   render();
   if(sbOpen)renderSb();
   if(info){
@@ -1244,6 +1254,8 @@ function repositionPiTermWrap(){
   piTermWrap.style.position='fixed';
   piTermWrap.style.left=r.left+'px';
   piTermWrap.style.top=r.top+'px';
+  piTermWrap.style.right='';
+  piTermWrap.style.bottom='';
   piTermWrap.style.width=r.width+'px';
   piTermWrap.style.height=r.height+'px';
   piTermWrap.style.visibility='';
@@ -1257,21 +1269,23 @@ function applyPiFullscreenTermWrap(){
   if(!piTermWrap || !piMaximized) return;
   const nd=document.getElementById('nd-pi');
   if(!nd) return;
-  const nr=nd.getBoundingClientRect();
   const hdr=nd.querySelector('.nh');
   const hr=hdr ? hdr.getBoundingClientRect() : null;
-  const top=hr ? hr.bottom : nr.top;
-  const h=Math.max(120, nr.bottom - top);
+  const top=hr ? hr.bottom : 0;
   piTermWrap.style.position='fixed';
-  piTermWrap.style.left=nr.left+'px';
+  piTermWrap.style.left='0';
   piTermWrap.style.top=top+'px';
-  piTermWrap.style.width=nr.width+'px';
-  piTermWrap.style.height=h+'px';
+  piTermWrap.style.right='0';
+  piTermWrap.style.bottom='0';
+  piTermWrap.style.width='auto';
+  piTermWrap.style.height='auto';
   piTermWrap.style.visibility='';
   piTermWrap.style.pointerEvents='';
   piTermWrap.style.zIndex='201';
   piTermWrap.style.borderRadius='0 0 12px 12px';
   fitPi();
+  setTimeout(fitPi,80);
+  setTimeout(fitPi,240);
 }
 
 function togglePi(){
@@ -1721,10 +1735,19 @@ function buildPiNode(){
 async function connectPi(slotId){
   const info = nodeSlots[slotId];
   if(!info){ toast('Slot not found', true); return; }
-  const r = await api('POST', '/api/pi/connect', { accountId: info.accountId, model: info.model });
-  if(!r.ok){ toast('Pi connect failed', true); return; }
   piConns.add(slotId);
   savePiConns();
+  saveLS();
+  await saveUiStateNow();
+  const r = await api('POST', '/api/pi/connect', { accountId: info.accountId, model: info.model });
+  if(!r.ok){
+    piConns.delete(slotId);
+    savePiConns();
+    saveLS();
+    await saveUiStateNow();
+    toast('Pi connect failed', true);
+    return;
+  }
   await api('POST', '/api/pi/sync-models');
   render();
   const modelName = info.model || '(model)';
@@ -1734,9 +1757,11 @@ async function connectPi(slotId){
 }
 async function removePiConn(slotId){
   const info = nodeSlots[slotId];
-  if(info) await api('DELETE', '/api/pi/connect/' + info.accountId + (info.model ? '?model=' + encodeURIComponent(info.model) : ''));
   piConns.delete(slotId);
   savePiConns();
+  saveLS();
+  await saveUiStateNow();
+  if(info) await api('DELETE', '/api/pi/connect/' + info.accountId + (info.model ? '?model=' + encodeURIComponent(info.model) : ''));
   await api('POST', '/api/pi/sync-models');
   render();
 }
@@ -1782,6 +1807,8 @@ function togglePiMax(){
     if(piTermWrap){
       piTermWrap.style.transition = '';
       piTermWrap.style.borderRadius = '0 0 12px 12px';
+      piTermWrap.style.right = '';
+      piTermWrap.style.bottom = '';
     }
     const port = nd.querySelector('#pi-nd-port');
     if(port) port.style.display = '';
@@ -2767,10 +2794,13 @@ async function removeOut(accountId,slotId){
   delete NP[slotId];
   if(piConns.has(slotId)){
     piConns.delete(slotId); savePiConns();
+    saveLS();
+    await saveUiStateNow();
     if(info) await api('DELETE', '/api/pi/connect/' + info.accountId + (info.model ? '?model=' + encodeURIComponent(info.model) : ''));
     await api('POST', '/api/pi/sync-models');
   }
   saveLS();
+  await saveUiStateNow();
   render();
   toast('Disconnected');
   await fetchStatus();

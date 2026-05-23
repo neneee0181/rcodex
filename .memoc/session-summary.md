@@ -3,14 +3,14 @@ memoc: true
 type: state
 scope: project-memory
 created: 2026-05-21T17:12:48
-updated: 2026-05-24T00:12:00
+updated: 2026-05-24T00:20:00
 status: active
 tags:
   - memoc
   - memoc/state
 ---
 # Session Summary
-Last: 2026-05-24T00:12:00
+Last: 2026-05-24T00:20:00
 Keep <800B. History: worklog. Risks: 04.
 
 ## Status
@@ -22,6 +22,7 @@ Keep <800B. History: worklog. Risks: 04.
 - Inline tokens, Ctrl/Cmd+V, Korean IME, sidebar z-index.
 - Pi model switching: restored UI slots repair config + proxy routing.
 - Gemini greeting guard; Pi fullscreen wrapper fit.
+- Pi connect/disconnect saves uiState before sync.
 
 ## Open Tasks
 - Windows Pi terminal test pending (user to verify).
