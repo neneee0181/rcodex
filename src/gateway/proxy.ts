@@ -1,4 +1,4 @@
-import { appendFileSync, readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { appendFileSync, readFileSync, writeFileSync, existsSync, mkdirSync, statSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import type { GatewayConfig, Account } from "./auth.js";
@@ -196,10 +196,114 @@ function toOpenAIFunctionTool(tool: Record<string, unknown>): Record<string, unk
   };
 }
 
-function parseGeminiTextToolCall(text: string): { before: string; name: string; args: Record<string, unknown> } | null {
+function parseRelaxedJson(str: string): Record<string, unknown> {
+  let s = str.trim();
+  // 윈도우 경로의 잘못된 백슬래시 이스케이프 복구 (예: \P, \A, \S 등을 \\P, \\A, \\S 로 변경)
+  // 단, 이미 이중화되었거나 유효한 이스케이프 시퀀스는 건드리지 않음
+  s = s.replace(/\\(?![nrtbf"\\\/]|u[0-9a-fA-F]{4})/g, '\\\\');
+
+  try {
+    return JSON.parse(s) as Record<string, unknown>;
+  } catch {
+    const obj: Record<string, unknown> = {};
+    // 앞뒤 백슬래시(\)를 선택적으로 허용하는 키 정규식으로 보완!
+    const keyRe = /\\?"([A-Za-z0-9_]+)\\?"\s*:/g;
+    const matches: Array<{ key: string; index: number; lastIndex: number }> = [];
+    let match: RegExpExecArray | null;
+    while ((match = keyRe.exec(s)) !== null) {
+      matches.push({
+        key: match[1],
+        index: match.index,
+        lastIndex: keyRe.lastIndex
+      });
+    }
+    for (let i = 0; i < matches.length; i++) {
+      const current = matches[i];
+      const next = matches[i + 1];
+      let valStr = next ? s.slice(current.lastIndex, next.index) : s.slice(current.lastIndex);
+      valStr = valStr.trim();
+      if (valStr.startsWith(":")) {
+        valStr = valStr.slice(1).trim();
+      }
+      if (valStr.endsWith(",")) {
+        valStr = valStr.slice(0, -1).trim();
+      }
+      // 백슬래시가 섞인 쉼표 제거 (예: \", )
+      if (valStr.endsWith('\\","') || valStr.endsWith('\\",') || valStr.endsWith('",')) {
+        valStr = valStr.replace(/\\?",\s*$/, '').trim();
+      }
+      if (!next && valStr.endsWith("}")) {
+        valStr = valStr.slice(0, -1).trim();
+      }
+      
+      let parsedVal: unknown = valStr;
+      if ((valStr.startsWith('"') && valStr.endsWith('"')) || (valStr.startsWith("'") && valStr.endsWith("'")) || (valStr.startsWith('\\"') && valStr.endsWith('\\"'))) {
+        try {
+          let checkStr = valStr;
+          if (checkStr.startsWith('\\"')) {
+            checkStr = checkStr.slice(2, -2);
+          } else {
+            checkStr = checkStr.slice(1, -1);
+          }
+          parsedVal = checkStr
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, '\\')
+            .replace(/\\n/g, '\n')
+            .replace(/\\r/g, '\r')
+            .replace(/\\t/g, '\t');
+        } catch {
+          let temp = valStr.replace(/^\\?"|\\?"$/g, '');
+          parsedVal = temp
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, '\\')
+            .replace(/\\n/g, '\n')
+            .replace(/\\r/g, '\r')
+            .replace(/\\t/g, '\t');
+        }
+      } else {
+        let temp = valStr.replace(/^\\?"|\\?"$/g, '');
+        parsedVal = temp
+          .replace(/\\"/g, '"')
+          .replace(/\\\\/g, '\\')
+          .replace(/\\n/g, '\n')
+          .replace(/\\r/g, '\r')
+          .replace(/\\t/g, '\t');
+      }
+      obj[current.key] = parsedVal;
+    }
+    return obj;
+  }
+}
+
+function parseGeminiTextToolCall(text: string): { before: string; name: string; args: Record<string, unknown>; after?: string } | null {
   const start = toolMarkupStart(text);
   if (start < 0) return null;
   const tail = text.slice(start);
+  const toolCallBlock = tail.match(/(?:[Tt]ool [Cc]all:\s*)?([A-Za-z0-9_]+)(?:\s*\(([^)]+)\))?\s*\n\s*(?:Arguments|arguments):\s*(\{[\s\S]*)/i);
+  if (toolCallBlock) {
+    const invokeName = toolCallBlock[1];
+    let body = toolCallBlock[3].trim();
+    let braceCount = 0;
+    let closedIndex = -1;
+    for (let i = 0; i < body.length; i++) {
+      if (body[i] === '{') braceCount++;
+      else if (body[i] === '}') {
+        braceCount--;
+        if (braceCount === 0) {
+          closedIndex = i;
+          break;
+        }
+      }
+    }
+    if (closedIndex !== -1) {
+      body = body.slice(0, closedIndex + 1);
+      const args = parseRelaxedJson(body);
+      const argStart = tail.indexOf(toolCallBlock[3]);
+      const after = tail.slice(argStart + closedIndex + 1);
+      return { before: text.slice(0, start).trimEnd(), name: invokeName, args, after };
+    }
+    return null;
+  }
   const browserBlock = tail.match(/<browser\s*>([\s\S]*?)<\/browser>/);
   if (browserBlock) {
     const fields = parseSimpleXmlFields(browserBlock[1]);
@@ -275,7 +379,7 @@ function parseSimpleXmlFields(body: string): Record<string, string> {
 }
 
 function toolMarkupStart(text: string): number {
-  return text.search(/<tool_code>|<?\/?function_calls>?|<\/?(invoke|parameter|browser|file|action|target|path|content|section)\b|(?:^|\n)tool_code\s*\n|default_api\.[A-Za-z_]\w*\(/);
+  return text.search(/(?:[Tt]ool [Cc]all:\s*)?[A-Za-z0-9_]+(?:\s*\([^)]+\))?\s*\n\s*(?:Arguments|arguments):\s*|<tool_code>|<?\/?function_calls>?|<\/?(invoke|parameter|browser|file|action|target|path|content|section)\b|(?:^|\n)tool_code\s*\n|default_api\.[A-Za-z_]\w*\(/);
 }
 
 function stripUnparsedToolMarkup(text: string): string {
@@ -339,6 +443,25 @@ function remapOllamaTool(name: string, input: Record<string, unknown>): { name: 
     if (!normalized.cmd) {
       const alt = normalized.command ?? normalized.shell ?? normalized.shell_command ?? normalized.run ?? normalized.exec;
       if (alt !== undefined) { normalized.cmd = alt; delete normalized.command; delete normalized.shell; delete normalized.shell_command; delete normalized.run; delete normalized.exec; }
+    }
+    // Auto-patch Select-String directory path container error
+    if (normalized.cmd && typeof normalized.cmd === "string" && normalized.cmd.includes("Select-String")) {
+      const pathMatch = normalized.cmd.match(/-Path\s+(?:"([^"]+)"|'([^']+)'|([^\s]+))/);
+      if (pathMatch) {
+        const rawPath = pathMatch[1] ?? pathMatch[2] ?? pathMatch[3];
+        if (rawPath) {
+          try {
+            if (existsSync(rawPath) && statSync(rawPath).isDirectory()) {
+              if (!rawPath.endsWith("\\*") && !rawPath.endsWith("/*") && !rawPath.endsWith("\\**\\*")) {
+                const separator = rawPath.endsWith("\\") || rawPath.endsWith("/") ? "*" : "\\*";
+                const newPath = rawPath + separator;
+                normalized.cmd = normalized.cmd.replace(pathMatch[0], `-Path "${newPath}"`);
+                glog(`[gateway] patched Select-String directory path: ${rawPath} -> ${newPath}`);
+              }
+            }
+          } catch { /* ignore */ }
+        }
+      }
     }
     return { name, input: normalized };
   }
@@ -1010,7 +1133,7 @@ async function* readOpenAISSEWithUsage(
   function* flushToolCalls(): Generator<StreamChunk> {
     for (const [idx, call] of toolCalls) {
       let rawInput: Record<string, unknown> = {};
-      try { rawInput = JSON.parse(call.args || "{}"); } catch { /* ignore */ }
+      try { rawInput = parseRelaxedJson(call.args || "{}"); } catch { /* ignore */ }
       const { name: finalName, input: finalInput } = remapOllamaTool(call.name, rawInput);
       if (finalName !== call.name) glog(`[ollama] remap tool: ${call.name} -> ${finalName}(${JSON.stringify(finalInput)})`);
       else glog(`[ollama] tool call: ${finalName}(${call.args})`);
@@ -1037,8 +1160,13 @@ async function* readOpenAISSEWithUsage(
     yield { type: 'tool_call_delta', id, delta: argText, index: 0 };
     yield { type: 'tool_call_end', id, name: finalName, arguments: argText, index: 0 };
     if (capturedTools) capturedTools.push({ id, name: finalName, input: finalInput, rawArgs: argText });
-    // Preserve text after </invoke></function_calls> instead of discarding it
-    textBufForToolMarkup = extractAfterInvokeBlock(buf);
+    
+    // parsedTool.after가 반환되면 텍스트 버퍼를 after로 업데이트하고, 없으면 기존 extractAfterInvokeBlock 폴백 사용
+    if (parsedTool.after !== undefined) {
+      textBufForToolMarkup = parsedTool.after;
+    } else {
+      textBufForToolMarkup = extractAfterInvokeBlock(buf);
+    }
   }
 
   function* handleTextDelta(text: string, final = false): Generator<StreamChunk> {
@@ -1294,13 +1422,14 @@ async function* readGoogleSSEWithUsage(
             if (part.functionCall?.name) {
               const id = `call_g_${Date.now()}_${toolIdx}`;
               const args = part.functionCall.args ?? {};
-              const argText = JSON.stringify(args);
+              const { name: finalName, input: finalInput } = remapOllamaTool(part.functionCall.name, args as Record<string, unknown>);
+              const argText = JSON.stringify(finalInput);
               const thoughtSig = pendingThoughtSig ?? part.thoughtSignature;
               pendingThoughtSig = undefined;
-              if (capturedTools) capturedTools.push({ id, name: part.functionCall.name, input: args, thoughtSignature: thoughtSig });
-              yield { type: 'tool_call_start', id, name: part.functionCall.name, index: toolIdx };
+              if (capturedTools) capturedTools.push({ id, name: finalName, input: finalInput, thoughtSignature: thoughtSig });
+              yield { type: 'tool_call_start', id, name: finalName, index: toolIdx };
               yield { type: 'tool_call_delta', id, delta: argText, index: toolIdx };
-              yield { type: 'tool_call_end', id, name: part.functionCall.name, arguments: argText, index: toolIdx };
+              yield { type: 'tool_call_end', id, name: finalName, arguments: argText, index: toolIdx };
               toolIdx++;
             }
           }
